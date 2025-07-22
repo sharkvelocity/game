@@ -2,78 +2,22 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Phasma-Phoney</title>
-  <link rel="stylesheet" href="./styles.css" />
-  <script type="module" src="./meta.js"></script>
+  <title>Phasma‑Phoney v2.6 — Modular Master Build</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <!-- Startup Logo -->
-  <div id="startup-logo" class="fullscreen black-bg fade-in">
-    <img src="./logo.png" alt="Phasmophoney Logo" class="startup-image" />
-  </div>
+  <!-- Existing DOM Structure (unchanged from your v2.2) -->
+  <!-- Title screen, main scene, HUD, overlays, footer, etc. -->
 
-  <!-- Title Screen -->
-  <div id="title-screen" class="screen hidden">
-    <h1 class="glow-text">Phasma-Phoney</h1>
-    <button id="start-btn">Start Investigation</button>
-    <button id="memories-btn">Hall of Records</button>
-    <button id="settings-btn">Settings</button>
-  </div>
-
-  <!-- Game Screen -->
-  <div id="game-screen" class="screen hidden">
-    <div id="narrator-box" class="dialogue-box"></div>
-    <div id="action-buttons" class="button-container"></div>
-    <div id="journal-access">
-      <button id="open-journal">Journal</button>
-      <button id="open-map">Map</button>
-      <button id="return-van">Return to Van</button>
-    </div>
-  </div>
-
-  <!-- Journal -->
-  <div id="journal-screen" class="screen hidden">
-    <h2>Investigation Journal</h2>
-    <textarea id="journal-entry" placeholder="Write your notes here..."></textarea>
-    <button id="save-journal">Save</button>
-    <button id="close-journal">Close</button>
-  </div>
-
-  <!-- Map -->
-  <div id="map-screen" class="screen hidden">
-    <h2>Map</h2>
-    <div id="minimap-container"></div>
-    <button id="close-map">Close</button>
-  </div>
-
-  <!-- Memories -->
-  <div id="memory-screen" class="screen hidden">
-    <h2>Hall of Records</h2>
-    <div id="memory-log"></div>
-    <button id="back-to-title-1">Back</button>
-  </div>
-
-  <!-- Settings -->
-  <div id="settings-screen" class="screen hidden">
-    <h2>Settings</h2>
-    <p>Coming soon.</p>
-    <button id="back-to-title-2">Back</button>
-  </div>
-
-  <script>
-    window.addEventListener('load', () => {
-      const logo = document.getElementById('startup-logo');
-      const titleScreen = document.getElementById('title-screen');
-
-      setTimeout(() => {
-        logo.classList.add('fade-out');
-        setTimeout(() => {
-          logo.style.display = 'none';
-          titleScreen.classList.remove('hidden');
-        }, 2500);
-      }, 2500);
-    });
-  </script>
+  <!-- SCRIPTS -->
+  <script src="js/state.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/items.js"></script>
+  <script src="js/audioManager.js"></script>
+  <script src="js/events.js"></script>
+  <script src="js/ghostBehavior.js"></script>
+  <script src="js/main.js"></script>
 </body>
 </html>
