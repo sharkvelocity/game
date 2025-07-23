@@ -1,140 +1,101 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — UI.JS ===
- * Handles HUD updates, log display, loadout selection,
- * and visual updates for main scene.
+ * === PHASMA-PHONEY v2.9 — UI.JS (Modular) ===
+ * Handles HUD, logs, and loadout screen
  *****************************************************/
+import { game } from "./state.js";
 
-import { game, roomVisuals, allLoadoutItems } from "./state.js";
-
-/***********************
- === GAME LOG SYSTEM ===
-************************/
-export function logToGame(message) {
+/* === GAME LOG === */
+export function logToGame(text) {
   const log = document.getElementById("game-log");
-  if (!log) return; // Safety fallback
+  if (!log) return;
 
   const entry = document.createElement("div");
   entry.className = "log-entry";
-  entry.textContent = message;
+  entry.textContent = text;
   log.appendChild(entry);
 
   log.scrollTop = log.scrollHeight;
-  setTimeout(() => entry.classList.add("fade"), 7000);
+
+  // Fade older entries
+  const entries = log.querySelectorAll(".log-entry");
+  if (entries.length > 10) {
+    entries[0].classList.add("fade");
+  }
 }
 
-/***********************
- === HUD UPDATES ===
-************************/
+/* === HUD === */
 export function renderHUD() {
-  document.getElementById("hud-location").textContent = game.playerRoom;
-  document.getElementById("hud-weather").textContent = game.weather || "--";
-  document.getElementById("hud-turns").textContent = game.currentTurn;
-  document.getElementById("held-items-display").textContent =
-    game.inventory.length ? game.inventory.join(", ") : "None";
+  const loc = document.getElementById("hud-location");
+  const weath = document.getElementById("hud-weather");
+  const turns = document.getElementById("hud-turns");
+  const sanityBar = document.getElementById("sanity-bar");
+  const temp = document.getElementById("hud-temp");
 
-  // Temperature display (thermometer logic)
-  if (game.inventory.includes("Thermometer") && game.playerRoom !== "Van") {
-    const temp =
-      game.playerRoom === game.ghostRoom
-        ? (Math.random() < 0.3 ? -5 : 2 + Math.random() * 3)
-        : 15 + Math.random() * 5;
-    document.getElementById("hud-temp").textContent = temp.toFixed(1) + "°C";
-  } else {
-    document.getElementById("hud-temp").textContent = "--°C";
-  }
+  if (!loc) return;
 
-  updateSanityBar();
+  loc.textContent = game.playerRoom || "Van";
+  weath.textContent = game.weather || "--";
+  turns.textContent = game.currentTurn;
+
+  sanityBar.style.width = `${game.sanity}%`;
+  sanityBar.style.background = game.sanity > 60 ? "#0f0" :
+                               game.sanity > 30 ? "#ff0" : "#f00";
+
+  temp.textContent = game.playerRoom === game.ghostRoom ? "Low" : "--°C";
 }
 
-function updateSanityBar() {
-  const bar = document.getElementById("sanity-bar");
-  if (!bar) return;
-  const s = Math.max(0, Math.floor(game.sanity));
-  bar.style.width = s + "%";
-  bar.style.background = s > 66 ? "#0f0" : s > 33 ? "#ff0" : "#f00";
-}
-
-/***********************
- === BACKGROUND UPDATE ===
-************************/
-export function updateBackground() {
-  const visuals = roomVisuals[game.playerRoom] || roomVisuals["Van"];
-  const direction = game.playerDirection || "N";
-  const bg = document.getElementById("background");
-
-  if (visuals && visuals[direction]) {
-    bg.style.backgroundImage = `url('${visuals[direction]}')`;
-  } else {
-    console.warn(`Missing background for ${game.playerRoom} (${direction})`);
-    bg.style.backgroundImage = `url('${roomVisuals["Van"]["N"]}')`;
-  }
-}
-
-/***********************
- === LOADOUT SCREEN ===
-************************/
+/* === LOADOUT SCREEN === */
 export function showLoadout() {
-  let tempHeld = [];
-  let tempVan = [...allLoadoutItems];
-
+  const loadoutScreen = document.getElementById("loadout-screen");
   const heldList = document.getElementById("held-list");
   const vanList = document.getElementById("van-list");
   const confirmBtn = document.getElementById("confirm-loadout");
 
-  function renderLoadout() {
-    heldList.innerHTML = tempHeld
-      .map(
-        (i) =>
-          `<button class="item-button selected" onclick="removeHeldItem('${i}')">${i}</button>`
-      )
-      .join("");
+  if (!loadoutScreen) return;
+  loadoutScreen.style.display = "flex";
+  heldList.innerHTML = "";
+  vanList.innerHTML = "";
+  confirmBtn.disabled = true;
 
-    vanList.innerHTML = tempVan
-      .map(
-        (i) =>
-          `<button class="item-button" onclick="addHeldItem('${i}')">${i}</button>`
-      )
-      .join("");
+  // Reset temporary selections
+  if (!Array.isArray(game.inventory)) game.inventory = [];
+  game.inventory = [];
+  game.vanStock = [...game.vanStock];
 
-    if (tempHeld.length > 0) {
-      confirmBtn.classList.add("active");
-      confirmBtn.disabled = false;
+  game.vanStock.forEach(item => {
+    const btn = document.createElement("button");
+    btn.textContent = item;
+    btn.onclick = () => toggleItem(item, btn);
+    vanList.appendChild(btn);
+  });
+
+  function toggleItem(item, btn) {
+    const index = game.inventory.indexOf(item);
+    if (index > -1) {
+      game.inventory.splice(index, 1);
+      btn.style.background = "";
     } else {
-      confirmBtn.classList.remove("active");
-      confirmBtn.disabled = true;
+      if (game.inventory.length >= 3) {
+        logToGame("⚠️ You can only hold 3 items!");
+        return;
+      }
+      game.inventory.push(item);
+      btn.style.background = "#0a0";
     }
+
+    heldList.innerHTML = game.inventory.map(i => `<div>${i}</div>`).join("") || "None";
+    confirmBtn.disabled = game.inventory.length === 0;
+    confirmBtn.classList.toggle("active", game.inventory.length > 0);
   }
-
-  window.addHeldItem = function (item) {
-    if (tempHeld.length >= 3) {
-      logToGame("⚠️ You can only hold 3 items.");
-      return;
-    }
-    tempHeld.push(item);
-    tempVan = tempVan.filter((v) => v !== item);
-    renderLoadout();
-  };
-
-  window.removeHeldItem = function (item) {
-    tempVan.push(item);
-    tempHeld = tempHeld.filter((h) => h !== item);
-    renderLoadout();
-  };
-
-  renderLoadout();
-  document.getElementById("loadout-screen").style.display = "flex";
 }
 
-/***********************
- === CONFIRM LOADOUT ===
-************************/
+/* === CONFIRM LOADOUT === */
 export function confirmLoadout() {
-  const heldList = document.querySelectorAll("#held-list .item-button");
-  const selected = [...heldList].map((b) => b.textContent);
+  const loadoutScreen = document.getElementById("loadout-screen");
+  if (!loadoutScreen) return;
 
-  game.inventory = [...selected, "Notebook", "Lighter"];
-  game.vanStock = [...allLoadoutItems].filter((i) => !selected.includes(i));
+  game.vanStock = game.vanStock.filter(i => !game.inventory.includes(i));
+  loadoutScreen.style.display = "none";
 
-  document.getElementById("loadout-screen").style.display = "none";
-  renderHUD();
+  logToGame(`You selected: ${game.inventory.join(", ")}`);
 }
