@@ -1,71 +1,85 @@
-// map.js
+/*****************************************************
+ * === PHASMA-PHONEY v2.9 — MAP & MOVEMENT MODULE ===
+ * Handles room navigation, map connections, and
+ * updates the visual background per direction.
+ *****************************************************/
 
-export const RoomMap = {
-  Attic: ['Hallway'],
-  Hallway: ['Attic', 'Bathroom', 'Bedroom', 'Living Room'],
-  Bathroom: ['Hallway'],
-  Bedroom: ['Hallway', 'Garage'],
-  Garage: ['Bedroom', 'Kitchen'],
-  Kitchen: ['Garage', 'Living Room'],
-  Living Room: ['Kitchen', 'Hallway', 'Basement'],
-  Basement: ['Living Room']
-};
+import { game, mapConnections, roomVisuals } from "./state.js";
+import { logToGame, renderHUD } from "./ui.js";
+import { triggerGhostBehavior } from "./ghostBehavior.js";
+import { saveGame } from "./events.js";
 
-let currentRoom = 'Van';
+/* === MOVE OVERLAY (UI) === */
+export function openMoveOverlay() {
+  const existing = document.getElementById("move-temp");
+  if (existing) document.body.removeChild(existing);
 
-export function generateRandomMap() {
-  // For now, structure is fixed — but rooms can be shuffled later.
-  return RoomMap;
-}
-
-export function getCurrentRoom() {
-  return currentRoom;
-}
-
-export function moveToRoom(targetRoom, updateTurnCallback) {
-  const path = calculatePath(currentRoom, targetRoom);
-  if (!path || path.length === 0) {
-    alert("You can't move there directly.");
+  const exits = mapConnections[game.playerRoom] || [];
+  if (!exits.length) {
+    logToGame("No available exits from this room.");
     return;
   }
 
-  const turnsNeeded = path.length - 1;
-  currentRoom = targetRoom;
-
-  if (updateTurnCallback) {
-    updateTurnCallback(turnsNeeded);
-  }
-
-  updateMapView();
-}
-
-function calculatePath(start, end, visited = new Set()) {
-  if (start === end) return [start];
-  visited.add(start);
-
-  const neighbors = RoomMap[start] || [];
-  for (let neighbor of neighbors) {
-    if (!visited.has(neighbor)) {
-      const path = calculatePath(neighbor, end, visited);
-      if (path) return [start, ...path];
-    }
-  }
-  return null;
-}
-
-export function updateMapView() {
-  const mapElement = document.getElementById('map-view');
-  if (!mapElement) return;
-
-  mapElement.innerHTML = '';
-  Object.keys(RoomMap).forEach(room => {
-    const button = document.createElement('button');
-    button.textContent = room;
-    button.onclick = () => moveToRoom(room, turns => {
-      window.dispatchEvent(new CustomEvent('turnsTaken', { detail: { turns } }));
-    });
-    button.style.margin = '4px';
-    button.disabled = room === currentRoom;
-    mapElement.appendChild(button);
+  const overlay = document.createElement("div");
+  overlay.id = "move-temp";
+  Object.assign(overlay.style, {
+    position: "fixed",
+    top: "50%", left: "50%",
+    transform: "translate(-50%,-50%)",
+    background: "#111",
+    padding: "10px",
+    maxWidth: "90%",
+    zIndex: "3000",
+    border: "1px solid #555",
+    borderRadius: "4px"
   });
+
+  let html = `<h3 style="color:#0ff;margin-top:0;">Available Exits</h3>`;
+  html += exits.map(r => `<button data-move="${r}">Go to ${r}</button>`).join("");
+  html += `<button style="margin-top:6px;" data-close="true">Close</button>`;
+
+  overlay.innerHTML = html;
+  document.body.appendChild(overlay);
+
+  overlay.addEventListener("click", (e) => {
+    if (e.target.dataset.move) {
+      moveToRoom(e.target.dataset.move);
+      document.body.removeChild(overlay);
+    }
+    if (e.target.dataset.close) {
+      document.body.removeChild(overlay);
+    }
+  });
+}
+
+/* === MOVE TO A ROOM === */
+export function moveToRoom(room) {
+  if (game.playerRoom === room) {
+    logToGame(`You are already in ${room}.`);
+    return;
+  }
+
+  game.playerRoom = room;
+  game.currentTurn++;
+  game.playerDirection = "N"; // Reset view direction
+  logToGame(`You move to ${room}.`);
+
+  renderHUD();
+  updateBackground();
+  triggerGhostBehavior();
+  saveGame(true);
+}
+
+/* === UPDATE BACKGROUND IMAGE === */
+export function updateBackground() {
+  const visuals = roomVisuals[game.playerRoom] || roomVisuals["Van"];
+  const direction = game.playerDirection || "N";
+  const bg = document.getElementById("background");
+
+  if (visuals && visuals[direction]) {
+    bg.style.backgroundImage = `url('${visuals[direction]}')`;
+  } else {
+    console.warn(`Missing background for ${game.playerRoom} (${direction}).`);
+    bg.style.backgroundImage = `url('${roomVisuals["Van"]["N"]}')`;
+  }
 }
