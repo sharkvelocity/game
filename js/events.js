@@ -1,159 +1,80 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — EVENTS MODULE (No Required Audio) ===
- * Handles turn-based updates, ambient events,
- * sanity drain, hunts, and player death WITHOUT required audio.
+ * === PHASMA-PHONEY v2.9 — EVENTS (SAFE AUDIO) ===
+ * Handles ambient events, random ghost cues, and
+ * turn-based environmental interactions.
  *****************************************************/
 
 import { game, randomFromArray } from "./state.js";
 import { logToGame, updateSanityBar } from "./ui.js";
-import { assignMimicForm, triggerGhostBehavior } from "./ghostBehavior.js";
+import { playAudio } from "./audioManager.js";
+import { ghostBehaviorTable } from "./ghostBehavior.js";
+import { startHunt } from "./ghostBehavior.js";
 
-/* === SAFE AUDIO PLAYER (No Required Audio) === */
-function safePlay(audioId) {
-  try {
-    const audioElem = document.getElementById(audioId);
-    if (audioElem && typeof audioElem.play === "function") {
-      audioElem.play().catch(() => {}); // Suppress autoplay errors
-    }
-  } catch (e) {
-    console.warn(`Audio skipped: ${audioId}`, e);
-  }
-}
-
-/* === TURN ADVANCEMENT === */
+/**
+ * Called every turn to update ghost behavior, sanity,
+ * and trigger ambient cues or hunts.
+ */
 export function advanceTurn() {
   game.currentTurn++;
 
-  if (game.ghost === "TheMimic" && game.currentTurn >= game.nextMimicShift) {
-    assignMimicForm();
-    logToGame("The Mimic shifts its behavior...");
-  }
-
-  applySanityDrain();
-  triggerGhostBehavior();
-  ambientMotionSensor();
-  attemptHunt();
-
-  updateSanityBar();
-}
-
-/* === SANITY DRAIN === */
-function applySanityDrain() {
+  // === Sanity Drain ===
   if (game.playerRoom === game.ghostRoom) {
-    const drain = 3 + Math.random() * 3;
-    game.sanity = Math.max(0, game.sanity - drain);
-
-    if (game.currentTurn % 2 === 0 && Math.random() < 0.3) {
-      const ghost = (game.ghost === "TheMimic" ? game.mimicForm : game.ghost);
-      logToGame(`[Ambient] ${ghost} — ${ghostBehaviorDescription(ghost)}`);
-      // Optional audio if available
-      safePlay("ambient-creak");
-    }
+    game.sanity -= 3 + Math.random() * 3;
   } else {
-    game.sanity = Math.max(0, game.sanity - 1);
+    game.sanity -= 1;
   }
-}
+  game.sanity = Math.max(0, game.sanity);
+  updateSanityBar();
 
-function ghostBehaviorDescription(ghost) {
-  return {
-    Demon: "You feel intense anger surrounding you...",
-    Yurei: "Your mind feels strangely clouded.",
-    Oni: "You sense something watching from nearby.",
-    Succubus: "A cold whisper brushes your ear as if draining your will..."
-  }[ghost] || "The air feels heavy...";
-}
+  // === Ambient Ghost Cues ===
+  if (game.playerRoom === game.ghostRoom && Math.random() < 0.3) {
+    const ghost = game.ghost === "TheMimic" ? game.mimicForm : game.ghost;
+    const behaviorHint = ghostBehaviorTable[ghost]?.behavior || "The air feels heavy...";
+    logToGame(`[Ambient] ${behaviorHint}`);
 
-/* === MOTION SENSOR AMBIENCE === */
-function ambientMotionSensor() {
-  Object.keys(game.roomItems).forEach(room => {
-    if (!game.roomItems[room]?.includes("Motion Sensor")) return;
-
-    if (Math.random() < 0.25) {
-      if (game.playerRoom === "Van") {
-        logToGame(`[Van Monitor] Motion detected in ${room}!`);
-      } else if (game.playerRoom === room) {
-        logToGame("You hear the motion sensor *beep* nearby.");
-      } else if (Math.random() < 0.4) {
-        logToGame("You faintly hear a muffled *beep* through the walls...");
-      }
-      safePlay("motion-beep"); // Optional sound
+    // Play a random ghost sound (safe)
+    const ghostSounds = [
+      "audio/ghost_whisper1.ogg",
+      "audio/ghost_whisper2.ogg",
+      "audio/ghost_breath.ogg"
+    ];
+    if (Math.random() < 0.4) {
+      playAudio(randomFromArray(ghostSounds));
     }
-  });
+  }
+
+  // === Ambient Environmental Sounds (Random) ===
+  if (Math.random() < 0.2) {
+    const randomAmbient = [
+      "audio/floor_creak1.ogg",
+      "audio/floor_creak2.ogg",
+      "audio/wall_knock1.ogg",
+      "audio/wall_knock2.ogg"
+    ];
+    playAudio(randomFromArray(randomAmbient));
+  }
+
+  // === Hunt Attempt ===
+  attemptHunt();
 }
 
-/* === HUNT LOGIC === */
-export function attemptHunt() {
+/**
+ * Attempts to trigger a hunt based on sanity and ghost type.
+ */
+function attemptHunt() {
   if (game.smudgeActive > 0) {
     game.smudgeActive--;
     return;
   }
+
   if (game.huntCooldown > 0) {
     game.huntCooldown--;
     return;
   }
 
-  if (game.sanity <= 30 && Math.random() < 0.25) {
+  if (game.sanity < 30 && Math.random() < 0.25) {
+    logToGame("💀 The ghost is starting a hunt!");
+    playAudio("audio/hunt_start_rumble.ogg");
     startHunt();
   }
-}
-
-function startHunt() {
-  logToGame("💀 The ghost is hunting!");
-  safePlay("hunt-start"); // Optional sound
-  flashRed();
-  logToGame("You hear your heartbeat pounding...");
-  safePlay("heartbeat"); // Optional sound
-
-  if (game.playerRoom === game.ghostRoom) {
-    if (game.placedCrucifix[game.playerRoom] > 0) {
-      game.placedCrucifix[game.playerRoom]--;
-      logToGame(`The crucifix burns, stopping the hunt. (${game.placedCrucifix[game.playerRoom]} uses left)`);
-      if (game.placedCrucifix[game.playerRoom] === 0) {
-        delete game.placedCrucifix[game.playerRoom];
-        logToGame("The crucifix has burned away completely.");
-      }
-      safePlay("crucifix-burn"); // Optional sound
-    } else {
-      setTimeout(playerDeath, 1200);
-    }
-  } else {
-    logToGame("You survive this hunt... for now.");
-  }
-
-  const aggressiveGhosts = ["Demon", "Oni", "Raiju", "Moroi"];
-  game.huntCooldown = aggressiveGhosts.includes(game.ghost)
-    ? 3 + Math.floor(Math.random() * 2)
-    : 5 + Math.floor(Math.random() * 3);
-}
-
-/* === HUNT VISUALS === */
-function flashRed() {
-  const lightning = document.getElementById("lightning");
-  let flashes = 3, count = 0;
-
-  function pulse() {
-    if (count >= flashes) {
-      lightning.style.opacity = 0;
-      return;
-    }
-    lightning.style.background = "red";
-    lightning.style.opacity = 0.6 + Math.random() * 0.3;
-
-    setTimeout(() => {
-      lightning.style.opacity = 0;
-      count++;
-      setTimeout(pulse, 150 + Math.random() * 200);
-    }, 150 + Math.random() * 150);
-  }
-  pulse();
-}
-
-/* === PLAYER DEATH === */
-function playerDeath() {
-  logToGame("💀 The ghost finds you. Everything goes cold...");
-  safePlay("player-death"); // Optional sound
-  setTimeout(() => {
-    alert("You died.");
-    window.location.reload();
-  }, 1000);
 }
