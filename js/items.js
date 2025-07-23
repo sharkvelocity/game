@@ -1,5 +1,5 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — ITEMS.JS ===
+ * === PHASMA-PHONEY v2.9 — ITEMS.JS (FINAL) ===
  * Handles inventory management, item interactions,
  * and cursed item usage.
  *****************************************************/
@@ -256,3 +256,9 @@ export function handleCursedItem(i) {
   renderHUD();
   saveGame(true);
 }
+
+/* ✅ GLOBAL EXPOSURE FOR INLINE BUTTONS */
+window.inspectItem = inspectItem;
+window.dropItem = dropItem;
+window.pickItem = pickItem;
+window.useItem = useItem;
