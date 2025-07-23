@@ -1,13 +1,13 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — MAIN GAME FLOW (Modular) ===
+ * === PHASMA-PHONEY v2.9 — MAIN GAME FLOW (MODULAR) ===
  *****************************************************/
 import { game, randomFromArray, allRooms, possibleWeather } from "./state.js";
 import { logToGame, renderHUD, showLoadout, confirmLoadout, updateBackground } from "./ui.js";
 import { preloadAllAudio, stopAllSounds } from "./audioManager.js";
-import { ghostProfiles } from "./state.js";
+import { ghostBehaviorTable } from "./ghostBehavior.js";
 import { advanceTurn } from "./events.js";
 
-// ✅ Ensures runs even if DOM already loaded
+// ✅ Ensure initialization works on GitHub Pages too
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", initGame);
 } else {
@@ -15,7 +15,7 @@ if (document.readyState === "loading") {
 }
 
 function initGame() {
-  preloadAllAudio();
+  preloadAllAudio(); // Safe — missing files don't break anything
   setupTitleScreen();
 }
 
@@ -25,7 +25,7 @@ function setupTitleScreen() {
   const startBtn = document.getElementById("startButton");
 
   if (!startBtn) {
-    console.error("❌ Start button not found in DOM!");
+    console.error("❌ Start button not found!");
     return;
   }
 
@@ -41,12 +41,18 @@ function setupTitleScreen() {
 // === START A NEW GAME ===
 function startNewGame() {
   Object.assign(game, {
-    currentTurn: 0, sanity: 100, usedCursedItems: {}, roomItems: {},
-    smudgeActive: 0, huntCooldown: 0, placedCrucifix: {}, mimicForm: null,
+    currentTurn: 0,
+    sanity: 100,
+    usedCursedItems: {},
+    roomItems: {},
+    smudgeActive: 0,
+    huntCooldown: 0,
+    placedCrucifix: {},
+    mimicForm: null,
     nextMimicShift: 0
   });
 
-  game.ghost = randomFromArray(Object.keys(ghostProfiles));
+  game.ghost = randomFromArray(Object.keys(ghostBehaviorTable));
   game.weather = randomFromArray(possibleWeather);
   game.ghostRoom = randomFromArray(allRooms.filter(r => r !== "Van"));
 
@@ -60,6 +66,7 @@ function startNewGame() {
   };
 }
 
+// === START INVESTIGATION ===
 function startInvestigation() {
   game.playerRoom = "Van";
   game.currentTurn = 1;
@@ -67,11 +74,16 @@ function startInvestigation() {
   updateBackground();
   logToGame("You are ready to begin investigating.");
 
-  document.getElementById("main-scene").style.display = "block";
-  document.getElementById("narrator-ui").style.display = "flex";
+  const scene = document.getElementById("main-scene");
+  const narrator = document.getElementById("narrator-ui");
+
+  if (scene) scene.style.display = "block";
+  if (narrator) narrator.style.display = "flex";
+
   advanceTurn();
 }
 
+// === RESTART GAME ===
 export function restartGame() {
   stopAllSounds();
   document.getElementById("main-scene").style.display = "none";
