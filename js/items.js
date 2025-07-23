@@ -1,87 +1,185 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — ITEM & CURSED ITEM LOGIC ===
+ * === PHASMA-PHONEY v2.9 — ITEM & INVENTORY MODULE ===
+ * Handles van stock, pickup/drop logic, cursed items,
+ * and basic item use interactions.
  *****************************************************/
-import { game } from "./state.js";
+
+import { game, allLoadoutItems, cursedItems, getCursedItemCost } from "./state.js";
 import { logToGame, renderHUD } from "./ui.js";
-import { startHunt } from "./events.js";
+import { triggerGhostBehavior, evidenceInteraction } from "./ghostBehavior.js";
+import { playSound } from "./audioManager.js";
 
-export const cursedItems = {
-  "Ouija Board": { desc: "Ask ghost questions, drains sanity.", cost: 15 },
-  "Tarot Cards": { desc: "Random effects, risky.", cost: 5 },
-  "Music Box": { desc: "Attracts ghost, risky.", cost: 10 },
-  "Haunted Mirror": { desc: "Reveals ghost room, drains sanity.", cost: 20 },
-  "Summoning Circle": { desc: "Forces ghost appearance.", cost: 25 },
-  "Monkey Paw": { desc: "Grants risky wishes.", cost: 10 }
-};
+/* === PICK UP AN ITEM === */
+export function pickItem(item) {
+  if (game.inventory.length >= 3) {
+    logToGame("⚠️ You can only hold 3 items at once.");
+    return;
+  }
+  if (cursedItems[item] && item === "Summoning Circle") {
+    logToGame("The summoning circle cannot be moved.");
+    return;
+  }
 
-export function getCursedItemCost(item) {
-  return cursedItems[item]?.cost || 5;
+  game.roomItems[game.playerRoom] = game.roomItems[game.playerRoom] || [];
+  game.roomItems[game.playerRoom] = game.roomItems[game.playerRoom].filter(i => i !== item);
+
+  if (!game.inventory.includes(item)) {
+    game.inventory.push(item);
+    game.inventory.sort();
+    logToGame(`Picked up ${item}.`);
+  }
+  renderHUD();
 }
 
-export function useItem(i) {
-  switch (i) {
+/* === DROP AN ITEM === */
+export function dropItem(item) {
+  if (game.playerRoom === "Van") {
+    if (!game.vanStock.includes(item)) {
+      game.vanStock.push(item);
+      game.vanStock.sort();
+      logToGame(`Returned ${item} to van.`);
+    }
+  } else {
+    game.roomItems[game.playerRoom] = game.roomItems[game.playerRoom] || [];
+    if (!game.roomItems[game.playerRoom].includes(item)) {
+      game.roomItems[game.playerRoom].push(item);
+      logToGame(`Dropped ${item} here.`);
+    }
+  }
+
+  game.inventory = game.inventory.filter(i => i !== item);
+  renderHUD();
+}
+
+/* === USE AN ITEM === */
+export function useItem(item) {
+  if (!item) return;
+  const room = game.playerRoom;
+  const inGhostRoom = room === game.ghostRoom;
+
+  switch (item) {
     case "Smudge Stick":
-      if (game.playerRoom === game.ghostRoom) {
+      if (inGhostRoom) {
         game.smudgeActive = 3;
-        logToGame("You smudge the room, calming the ghost.");
+        logToGame("You smudge the room, calming the ghost temporarily.");
+        playSound("smudge_sizzle.ogg", 0.8);
       } else {
         logToGame("You smudge, but nothing happens.");
       }
       break;
 
     case "Crucifix":
-      if (game.playerRoom !== "Van") {
-        game.placedCrucifix[game.playerRoom] = 2;
-        logToGame("You place the crucifix. It may stop two hunts.");
-        game.inventory = game.inventory.filter(x => x !== i);
+      if (room !== "Van") {
+        game.placedCrucifix[room] = 2;
+        game.inventory = game.inventory.filter(i => i !== item);
+        logToGame("You place a crucifix—it may stop two hunts.");
+        playSound("crucifix_burn.ogg", 0.7);
       } else {
         logToGame("Cannot place crucifix in van.");
       }
       break;
 
+    case "Salt":
+      if (room !== "Van") {
+        game.roomItems[room] = game.roomItems[room] || [];
+        if (!game.roomItems[room].includes("Salt")) {
+          game.roomItems[room].push("Salt");
+          logToGame("You sprinkle salt on the ground.");
+        }
+      }
+      break;
+
+    case "Candle":
+      if (room !== "Van") {
+        game.roomItems[room] = game.roomItems[room] || [];
+        if (!game.roomItems[room].includes("Candle")) {
+          game.roomItems[room].push("Candle");
+          logToGame("You place and light a candle here.");
+          playSound("candle_out.ogg", 0.4);
+        }
+      }
+      break;
+
+    case "Motion Sensor":
+      if (room !== "Van") {
+        game.roomItems[room] = game.roomItems[room] || [];
+        if (!game.roomItems[room].includes("Motion Sensor")) {
+          game.roomItems[room].push("Motion Sensor");
+          logToGame("You place a motion sensor.");
+        }
+      }
+      break;
+
+    case "Camera":
+    case "Video Camera":
+      if (room !== "Van") {
+        game.cameraActive = !game.cameraActive;
+        logToGame(game.cameraActive
+          ? "Camera activated—watch for orbs."
+          : "Camera deactivated.");
+      } else {
+        logToGame("You cannot use cameras in the van.");
+      }
+      break;
+
+    case "UV Light":
+    case "EMF Reader":
+    case "Spirit Box":
+    case "Ghost Writing Book":
+    case "D.O.T.S Projector":
+    case "Thermometer":
+      evidenceInteraction(item);
+      break;
+
     default:
-      if (cursedItems[i]) handleCursedItem(i);
-      else logToGame("You use the " + i + ", but nothing significant occurs.");
+      if (cursedItems[item]) {
+        useCursedItem(item);
+      } else {
+        logToGame(`You use the ${item}, but nothing significant occurs.`);
+      }
   }
-  game.currentTurn++;
-  renderHUD();
+
+  triggerGhostBehavior();
 }
 
-function handleCursedItem(i) {
-  if (game.usedCursedItems[i]) {
-    logToGame("The " + i + " is inert now.");
+/* === USE A CURSED ITEM === */
+export function useCursedItem(item) {
+  if (game.usedCursedItems[item]) {
+    logToGame(`The ${item} is inert now.`);
     return;
   }
-  logToGame("You use the " + i + "...");
-  game.sanity -= getCursedItemCost(i);
+
+  logToGame(`You use the ${item}...`);
+  game.sanity -= getCursedItemCost(item);
   if (game.sanity < 0) game.sanity = 0;
 
-  switch (i) {
+  switch (item) {
     case "Ouija Board":
-      if (Math.random() < 0.2) startHunt();
+      if (Math.random() < 0.2) logToGame("The ghost grows angry after your question!");
       break;
+
     case "Tarot Cards":
       const r = Math.random();
-      if (r < 0.3) logToGame("The Fool — nothing happens.");
-      else if (r < 0.5) logToGame("The Tower — ghost activity spikes!");
-      else if (r < 0.7) {
-        logToGame("The Death card — hunt triggered!");
-        startHunt();
-      } else {
-        logToGame("The Sun — sanity restored.");
+      if (r < 0.2) logToGame("The Fool—nothing happens.");
+      else if (r < 0.4) logToGame("The Tower—activity spikes!");
+      else if (r < 0.6) logToGame("The Death card—a hunt begins!");
+      else {
+        logToGame("The Sun—your mind clears, sanity restored.");
         game.sanity = Math.min(100, game.sanity + 10);
       }
       break;
+
     case "Music Box":
     case "Haunted Mirror":
-      if (Math.random() < 0.3) startHunt();
-      break;
-    case "Summoning Circle":
-      startHunt();
-      break;
     case "Monkey Paw":
-      if (Math.random() < 0.5) startHunt();
+      if (Math.random() < 0.3) logToGame("You feel the ghost's presence drawing closer...");
+      break;
+
+    case "Summoning Circle":
+      logToGame("The ghost is forced to appear!");
       break;
   }
-  game.usedCursedItems[i] = true;
+
+  game.usedCursedItems[item] = true;
+  renderHUD();
 }
