@@ -1,45 +1,101 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — AUDIO MANAGEMENT ===
- * Preloads and plays ambient & ghost sounds.
+ * === PHASMA-PHONEY v2.9 — AUDIO MANAGER (SAFE) ===
+ * Handles optional audio playback, skipping any
+ * missing or failed-to-load files to prevent 404 errors.
  *****************************************************/
-let audioCache = {};
 
+export const audioFiles = {
+  ambient: [
+    "audio/ambient_wind_creaks.ogg",
+    "audio/ambient_fog_whisper.ogg",
+    "audio/ambient_rain_loop.ogg",
+    "audio/ambient_dread_low.ogg"
+  ],
+  ghost: [
+    "audio/ghost_whisper1.ogg",
+    "audio/ghost_whisper2.ogg",
+    "audio/ghost_breath.ogg",
+    "audio/revenant_growl.ogg",
+    "audio/banshee_scream.ogg",
+    "audio/succubus_murmur1.ogg"
+  ],
+  events: [
+    "audio/floor_creak1.ogg",
+    "audio/floor_creak2.ogg",
+    "audio/polter_throw1.ogg",
+    "audio/polter_throw2.ogg",
+    "audio/wall_knock1.ogg",
+    "audio/wall_knock2.ogg",
+    "audio/emf_surge1.ogg",
+    "audio/spiritbox_phrase1.ogg",
+    "audio/freezing_breath1.ogg",
+    "audio/ghost_writing_scratch.ogg",
+    "audio/orb_soft_drift1.ogg",
+    "audio/smudge_ignite.ogg",
+    "audio/smudge_sizzle.ogg",
+    "audio/crucifix_burn.ogg",
+    "audio/hunt_start_rumble.ogg",
+    "audio/candle_out.ogg",
+    "audio/heartbeat_fast.ogg",
+    "audio/flicker_pop.ogg",
+    "audio/player_death_choke.ogg",
+    "audio/mare_light_pop.ogg",
+    "audio/footsteps_fast.ogg",
+    "audio/van_door.ogg",
+    "audio/monitor_boot.ogg",
+    "audio/success_chime.ogg",
+    "audio/fail_distort.ogg",
+    "audio/game_over_hit.ogg"
+  ]
+};
+
+let loadedAudio = {};
+
+/**
+ * Preloads all audio, but gracefully skips files that fail to load.
+ */
 export function preloadAllAudio() {
-  const sounds = [
-    "ambient_wind_creaks.ogg", "ambient_fog_whisper.ogg",
-    "ambient_rain_loop.ogg", "ghost_whisper1.ogg", "ghost_whisper2.ogg",
-    "ambient_dread_low.ogg", "floor_creak1.ogg", "floor_creak2.ogg",
-    "polter_throw1.ogg", "polter_throw2.ogg", "succubus_murmur1.ogg",
-    "emf_surge1.ogg", "spiritbox_phrase1.ogg", "freezing_breath1.ogg",
-    "ghost_writing_scratch.ogg", "smudge_ignite.ogg", "orb_soft_drift1.ogg",
-    "crucifix_burn.ogg", "smudge_sizzle.ogg", "hunt_start_rumble.ogg",
-    "candle_out.ogg", "heartbeat_fast.ogg", "flicker_pop.ogg",
-    "player_death_choke.ogg", "banshee_scream.ogg", "revenant_growl.ogg",
-    "mare_light_pop.ogg", "footsteps_fast.ogg", "van_door.ogg",
-    "monitor_boot.ogg", "success_chime.ogg", "fail_distort.ogg",
-    "game_over_hit.ogg"
-  ];
+  Object.keys(audioFiles).forEach(category => {
+    audioFiles[category].forEach(file => {
+      const audio = new Audio();
+      audio.src = file;
+      audio.preload = "auto";
 
-  sounds.forEach(file => {
-    const a = new Audio(`audio/${file}`);
-    a.load();
-    audioCache[file] = a;
+      audio.addEventListener("canplaythrough", () => {
+        loadedAudio[file] = audio;
+        console.log(`✅ Audio loaded: ${file}`);
+      });
+
+      audio.addEventListener("error", () => {
+        console.warn(`⚠️ Skipping missing audio: ${file}`);
+      });
+    });
   });
 }
 
-export function playSound(file, loop = false) {
-  if (!audioCache[file]) {
-    console.warn(`Missing sound: ${file}`);
+/**
+ * Plays an audio file if it’s loaded and safe.
+ * @param {string} file - The file path to play.
+ * @param {boolean} loop - Whether the sound should loop.
+ */
+export function playAudio(file, loop = false) {
+  if (!loadedAudio[file]) {
+    console.warn(`⚠️ Audio not available: ${file}`);
     return;
   }
-  audioCache[file].loop = loop;
-  audioCache[file].currentTime = 0;
-  audioCache[file].play().catch(() => {});
+  const audio = loadedAudio[file].cloneNode(true);
+  audio.loop = loop;
+  audio.play().catch(() => {
+    console.warn(`⚠️ Could not play audio: ${file}`);
+  });
 }
 
+/**
+ * Stops all currently playing audio by pausing all loaded instances.
+ */
 export function stopAllSounds() {
-  Object.values(audioCache).forEach(a => {
-    a.pause();
-    a.currentTime = 0;
+  Object.values(loadedAudio).forEach(audio => {
+    audio.pause();
+    audio.currentTime = 0;
   });
 }
