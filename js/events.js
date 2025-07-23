@@ -1,24 +1,34 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — EVENTS MODULE ===
+ * === PHASMA-PHONEY v2.9 — EVENTS MODULE (No Required Audio) ===
  * Handles turn-based updates, ambient events,
- * sanity drain, hunts, and player death.
+ * sanity drain, hunts, and player death WITHOUT required audio.
  *****************************************************/
 
 import { game, randomFromArray } from "./state.js";
 import { logToGame, updateSanityBar } from "./ui.js";
 import { assignMimicForm, triggerGhostBehavior } from "./ghostBehavior.js";
 
+/* === SAFE AUDIO PLAYER (No Required Audio) === */
+function safePlay(audioId) {
+  try {
+    const audioElem = document.getElementById(audioId);
+    if (audioElem && typeof audioElem.play === "function") {
+      audioElem.play().catch(() => {}); // Suppress autoplay errors
+    }
+  } catch (e) {
+    console.warn(`Audio skipped: ${audioId}`, e);
+  }
+}
+
 /* === TURN ADVANCEMENT === */
 export function advanceTurn() {
   game.currentTurn++;
 
-  // === Mimic Logic ===
   if (game.ghost === "TheMimic" && game.currentTurn >= game.nextMimicShift) {
     assignMimicForm();
     logToGame("The Mimic shifts its behavior...");
   }
 
-  // === Sanity & Ambient Effects ===
   applySanityDrain();
   triggerGhostBehavior();
   ambientMotionSensor();
@@ -36,6 +46,8 @@ function applySanityDrain() {
     if (game.currentTurn % 2 === 0 && Math.random() < 0.3) {
       const ghost = (game.ghost === "TheMimic" ? game.mimicForm : game.ghost);
       logToGame(`[Ambient] ${ghost} — ${ghostBehaviorDescription(ghost)}`);
+      // Optional audio if available
+      safePlay("ambient-creak");
     }
   } else {
     game.sanity = Math.max(0, game.sanity - 1);
@@ -64,6 +76,7 @@ function ambientMotionSensor() {
       } else if (Math.random() < 0.4) {
         logToGame("You faintly hear a muffled *beep* through the walls...");
       }
+      safePlay("motion-beep"); // Optional sound
     }
   });
 }
@@ -86,11 +99,12 @@ export function attemptHunt() {
 
 function startHunt() {
   logToGame("💀 The ghost is hunting!");
+  safePlay("hunt-start"); // Optional sound
   flashRed();
   logToGame("You hear your heartbeat pounding...");
+  safePlay("heartbeat"); // Optional sound
 
   if (game.playerRoom === game.ghostRoom) {
-    // Crucifix Protection
     if (game.placedCrucifix[game.playerRoom] > 0) {
       game.placedCrucifix[game.playerRoom]--;
       logToGame(`The crucifix burns, stopping the hunt. (${game.placedCrucifix[game.playerRoom]} uses left)`);
@@ -98,6 +112,7 @@ function startHunt() {
         delete game.placedCrucifix[game.playerRoom];
         logToGame("The crucifix has burned away completely.");
       }
+      safePlay("crucifix-burn"); // Optional sound
     } else {
       setTimeout(playerDeath, 1200);
     }
@@ -136,6 +151,7 @@ function flashRed() {
 /* === PLAYER DEATH === */
 function playerDeath() {
   logToGame("💀 The ghost finds you. Everything goes cold...");
+  safePlay("player-death"); // Optional sound
   setTimeout(() => {
     alert("You died.");
     window.location.reload();
