@@ -205,3 +205,11 @@ footer {
   #loadout-screen h2 { font-size:18px; }
   button { font-size:12px; padding:4px 8px; }
 }
+/* === FIX: Initial Visibility === */
+#main-scene {
+  display: none; /* Hidden until startInvestigation() */
+}
+
+#narrator-ui {
+  display: none; /* Hidden until investigation starts */
+}
