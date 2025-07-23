@@ -1,161 +1,100 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — GHOST BEHAVIOR MODULE ===
- * Contains ghost profiles, special behavior logic,
- * and The Mimic's mimicry system.
+ * === PHASMA-PHONEY v2.9 — GHOSTBEHAVIOR.JS ===
+ * Handles ghost behaviors, hunts, mimic shifts,
+ * and ambient events. Fully safe with missing audio.
  *****************************************************/
 
-import { game, randomFromArray } from "./state.js";
-import { logToGame } from "./ui.js";
+import { game, ghostProfiles, randomFromArray } from "./state.js";
+import { logToGame, updateSanityBar, renderHUD } from "./ui.js";
+import { safePlaySound } from "./audioManager.js";
 
-/* === GHOST PROFILES (25 Total, with Succubus) === */
-export const ghostProfiles = {
-  Spirit: {
-    evidence: ["EMF Reader", "Spirit Box", "Ghost Writing"],
-    behavior: "Standard activity; calmer with smudge."
-  },
-  Wraith: {
-    evidence: ["EMF Reader", "Spirit Box", "D.O.T.S Projector"],
-    behavior: "Rarely touches ground; teleporting behavior."
-  },
-  Phantom: {
-    evidence: ["Spirit Box", "Fingerprints", "D.O.T.S Projector"],
-    behavior: "Long visual contact drops sanity faster."
-  },
-  Poltergeist: {
-    evidence: ["Spirit Box", "Fingerprints", "Ghost Writing"],
-    behavior: "Throws multiple objects at once."
-  },
-  Banshee: {
-    evidence: ["Fingerprints", "Orbs", "D.O.T.S Projector"],
-    behavior: "Focuses on one target."
-  },
-  Jinn: {
-    evidence: ["EMF Reader", "Fingerprints", "Freezing Temps"],
-    behavior: "Moves quickly when power is on."
-  },
-  Mare: {
-    evidence: ["Spirit Box", "Ghost Writing", "Orbs"],
-    behavior: "Prefers darkness; active in dark rooms."
-  },
-  Revenant: {
-    evidence: ["Ghost Writing", "Orbs", "Freezing Temps"],
-    behavior: "Very fast during hunts if target seen."
-  },
-  Shade: {
-    evidence: ["EMF Reader", "Ghost Writing", "Freezing Temps"],
-    behavior: "Shy; less active with multiple people."
-  },
-  Demon: {
-    evidence: ["Fingerprints", "Ghost Writing", "Freezing Temps"],
-    behavior: "Aggressive; hunts more often."
-  },
-  Yurei: {
-    evidence: ["Orbs", "Freezing Temps", "D.O.T.S Projector"],
-    behavior: "Strong sanity drain; trapped by smudge."
-  },
-  Oni: {
-    evidence: ["EMF Reader", "Freezing Temps", "D.O.T.S Projector"],
-    behavior: "Very active when visible."
-  },
-  Yokai: {
-    evidence: ["Spirit Box", "Orbs", "D.O.T.S Projector"],
-    behavior: "Talkative; attracted to voices."
-  },
-  Hantu: {
-    evidence: ["Fingerprints", "Orbs", "Freezing Temps"],
-    behavior: "Faster in cold rooms."
-  },
-  Goryo: {
-    evidence: ["EMF Reader", "Fingerprints", "D.O.T.S Projector"],
-    behavior: "Seen only through camera; rarely changes rooms."
-  },
-  Myling: {
-    evidence: ["EMF Reader", "Fingerprints", "Ghost Writing"],
-    behavior: "Quieter footsteps; active on sound equipment."
-  },
-  Onryo: {
-    evidence: ["Spirit Box", "Orbs", "Freezing Temps"],
-    behavior: "Hunts after extinguishing flames; avoids lit candles."
-  },
-  TheTwins: {
-    evidence: ["EMF Reader", "Spirit Box", "Freezing Temps"],
-    behavior: "Alternates activity between rooms."
-  },
-  Raiju: {
-    evidence: ["EMF Reader", "Orbs", "D.O.T.S Projector"],
-    behavior: "Faster near electronic equipment."
-  },
-  Obake: {
-    evidence: ["EMF Reader", "Fingerprints", "Orbs"],
-    behavior: "Rare ghostly fingerprint changes."
-  },
-  TheMimic: {
-    evidence: ["Spirit Box", "Fingerprints", "Freezing Temps"],
-    behavior: "Mimics other ghosts; fake orbs appear on camera only."
-  },
-  Moroi: {
-    evidence: ["Spirit Box", "Ghost Writing", "Freezing Temps"],
-    behavior: "Curses sanity when responding on Spirit Box."
-  },
-  Deogen: {
-    evidence: ["Spirit Box", "Ghost Writing", "D.O.T.S Projector"],
-    behavior: "Always knows player’s location but very slow close."
-  },
-  Thaye: {
-    evidence: ["Ghost Writing", "Orbs", "D.O.T.S Projector"],
-    behavior: "Very active early, weaker over time."
-  },
-  Succubus: {
-    evidence: ["Spirit Box", "Ghost Writing", "Fingerprints"],
-    behavior: "Drains sanity faster if alone; active at night."
-  }
-};
-
-/* === ASSIGN MIMIC FORM === */
+// === MIMIC LOGIC ===
 export function assignMimicForm() {
-  const candidates = Object.keys(ghostProfiles).filter(g => g !== "TheMimic");
-  game.mimicForm = randomFromArray(candidates);
+  const ghostList = Object.keys(ghostProfiles).filter(g => g !== "TheMimic");
+  game.mimicForm = randomFromArray(ghostList);
   game.nextMimicShift = game.currentTurn + 3 + Math.floor(Math.random() * 4);
-  logToGame(`The Mimic now imitates ${game.mimicForm}.`);
+  logToGame("The Mimic shifts its behavior...");
 }
 
-/* === GHOST BEHAVIOR LOGIC (Turn-Based Triggers) === */
-export function triggerGhostBehavior() {
-  const ghost = (game.ghost === "TheMimic" ? game.mimicForm : game.ghost);
-  if (!ghost) return;
+// === ADVANCE TURN ===
+export function advanceTurn() {
+  game.currentTurn++;
 
-  switch (ghost) {
-    case "Poltergeist":
-      if (Math.random() < 0.3) {
-        logToGame("📦 Objects clatter violently around you!");
-      }
-      break;
-
-    case "Banshee":
-      if (Math.random() < 0.2) {
-        logToGame("🔊 A wailing cry echoes faintly in the distance...");
-      }
-      break;
-
-    case "Mare":
-      if (Math.random() < 0.2 && game.playerRoom !== "Van") {
-        logToGame("💡 Lights flicker as darkness surrounds you.");
-      }
-      break;
-
-    case "Succubus":
-      if (Math.random() < 0.3 && game.playerRoom !== "Van") {
-        logToGame("💋 You feel your energy draining as if something watches you...");
-        game.sanity -= 2;
-      }
-      break;
-
-    case "Onryo":
-      if (game.roomItems[game.playerRoom]?.includes("Candle") && Math.random() < 0.4) {
-        game.roomItems[game.playerRoom] =
-          game.roomItems[game.playerRoom].filter(x => x !== "Candle");
-        logToGame("🕯️ A candle suddenly extinguishes!");
-      }
-      break;
+  // === Mimic Behavior Shift ===
+  if (game.ghost === "TheMimic" && game.currentTurn >= game.nextMimicShift) {
+    assignMimicForm();
   }
+
+  // === Sanity Drain ===
+  if (game.playerRoom === game.ghostRoom) {
+    game.sanity -= 3 + Math.random() * 3;
+    const ghostType = (game.ghost === "TheMimic" ? game.mimicForm : game.ghost);
+    if (game.currentTurn % 2 === 0 && Math.random() < 0.3) {
+      logToGame("[Ambient] " + ghostProfiles[ghostType].behavior);
+      safePlaySound("ghost_whisper1");
+    }
+  } else {
+    game.sanity -= 1;
+  }
+
+  // === Motion Sensor Alerts ===
+  Object.keys(game.roomItems).forEach(r => {
+    if (!game.roomItems[r]?.includes("Motion Sensor")) return;
+    if (Math.random() < 0.25) {
+      if (game.playerRoom === "Van") {
+        logToGame("[Van Monitor] Motion detected in " + r + "!");
+        safePlaySound("console_key1");
+      } else if (game.playerRoom === r) {
+        logToGame("You hear the motion sensor *beep* nearby.");
+        safePlaySound("console_key1");
+      }
+    }
+  });
+
+  game.sanity = Math.max(0, game.sanity);
+  updateSanityBar();
+  attemptHunt();
+}
+
+// === HUNT SYSTEM ===
+export function attemptHunt() {
+  if (game.smudgeActive > 0) { game.smudgeActive--; return; }
+  if (game.huntCooldown > 0) { game.huntCooldown--; return; }
+  if (game.sanity < 30 && Math.random() < 0.25) startHunt();
+}
+
+export function startHunt() {
+  logToGame("💀 The ghost is hunting!");
+  safePlaySound("hunt_start_rumble");
+
+  if (game.playerRoom === game.ghostRoom) {
+    if (game.placedCrucifix && game.placedCrucifix[game.playerRoom] > 0) {
+      game.placedCrucifix[game.playerRoom]--;
+      if (game.placedCrucifix[game.playerRoom] === 0) {
+        delete game.placedCrucifix[game.playerRoom];
+        logToGame("The crucifix has burned away completely.");
+      } else {
+        logToGame(`The crucifix burns, stopping the hunt. (${game.placedCrucifix[game.playerRoom]} uses left)`);
+      }
+      safePlaySound("crucifix_burn");
+    } else {
+      setTimeout(playerDeath, 1500);
+    }
+  } else {
+    logToGame("You survived the hunt...");
+  }
+
+  const aggressiveGhosts = ["Demon", "Oni", "Raiju", "Moroi"];
+  game.huntCooldown = aggressiveGhosts.includes(game.ghost)
+    ? 3 + Math.floor(Math.random() * 2)
+    : 5 + Math.floor(Math.random() * 3);
+}
+
+export function playerDeath() {
+  logToGame("💀 The ghost finds you. Everything goes cold...");
+  safePlaySound("player_death_choke");
+  setTimeout(() => {
+    alert("You died.");
+    window.location.reload();
+  }, 800);
 }
