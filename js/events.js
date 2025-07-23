@@ -1,45 +1,74 @@
 /*****************************************************
  * === PHASMA-PHONEY v2.9 — EVENTS MODULE ===
- * Manages turn events, sanity drain, ghost hunts,
- * and game save/load system.
+ * Handles turn-based updates, ambient events,
+ * sanity drain, hunts, and player death.
  *****************************************************/
 
 import { game, randomFromArray } from "./state.js";
-import { ghostProfiles } from "./ghostBehavior.js";
-import { logToGame, renderHUD, updateBackground } from "./ui.js";
-import { playSound, playAmbient, stopAmbient } from "./audioManager.js";
+import { logToGame, updateSanityBar } from "./ui.js";
+import { assignMimicForm, triggerGhostBehavior } from "./ghostBehavior.js";
 
-/* === CHECK TURN EVENTS (SANITY, AMBIENCE, MIMIC SHIFTS) === */
+/* === TURN ADVANCEMENT === */
 export function advanceTurn() {
   game.currentTurn++;
 
-  // Sanity drain
-  if (game.playerRoom === game.ghostRoom) {
-    game.sanity -= 3 + Math.random() * 3;
-    if (game.currentTurn % 2 === 0 && Math.random() < 0.3) {
-      const ghostType = (game.ghost === "TheMimic" ? game.mimicForm : game.ghost);
-      logToGame("[Ambient] " + (ghostProfiles[ghostType]?.behavior || "The air feels heavy..."));
-      playSound("ghostWhisper1", 0.4);
-    }
-  } else {
-    game.sanity -= 1;
-  }
-
-  // Mimic logic
+  // === Mimic Logic ===
   if (game.ghost === "TheMimic" && game.currentTurn >= game.nextMimicShift) {
-    game.mimicForm = randomFromArray(Object.keys(ghostProfiles).filter(g => g !== "TheMimic"));
-    game.nextMimicShift = game.currentTurn + 3 + Math.floor(Math.random() * 4);
-    logToGame("The Mimic shifts behavior...");
+    assignMimicForm();
+    logToGame("The Mimic shifts its behavior...");
   }
 
-  // Update visuals
-  game.sanity = Math.max(0, game.sanity);
-  renderHUD();
+  // === Sanity & Ambient Effects ===
+  applySanityDrain();
+  triggerGhostBehavior();
+  ambientMotionSensor();
   attemptHunt();
-  saveGame();
+
+  updateSanityBar();
 }
 
-/* === HUNT ATTEMPT === */
+/* === SANITY DRAIN === */
+function applySanityDrain() {
+  if (game.playerRoom === game.ghostRoom) {
+    const drain = 3 + Math.random() * 3;
+    game.sanity = Math.max(0, game.sanity - drain);
+
+    if (game.currentTurn % 2 === 0 && Math.random() < 0.3) {
+      const ghost = (game.ghost === "TheMimic" ? game.mimicForm : game.ghost);
+      logToGame(`[Ambient] ${ghost} — ${ghostBehaviorDescription(ghost)}`);
+    }
+  } else {
+    game.sanity = Math.max(0, game.sanity - 1);
+  }
+}
+
+function ghostBehaviorDescription(ghost) {
+  return {
+    Demon: "You feel intense anger surrounding you...",
+    Yurei: "Your mind feels strangely clouded.",
+    Oni: "You sense something watching from nearby.",
+    Succubus: "A cold whisper brushes your ear as if draining your will..."
+  }[ghost] || "The air feels heavy...";
+}
+
+/* === MOTION SENSOR AMBIENCE === */
+function ambientMotionSensor() {
+  Object.keys(game.roomItems).forEach(room => {
+    if (!game.roomItems[room]?.includes("Motion Sensor")) return;
+
+    if (Math.random() < 0.25) {
+      if (game.playerRoom === "Van") {
+        logToGame(`[Van Monitor] Motion detected in ${room}!`);
+      } else if (game.playerRoom === room) {
+        logToGame("You hear the motion sensor *beep* nearby.");
+      } else if (Math.random() < 0.4) {
+        logToGame("You faintly hear a muffled *beep* through the walls...");
+      }
+    }
+  });
+}
+
+/* === HUNT LOGIC === */
 export function attemptHunt() {
   if (game.smudgeActive > 0) {
     game.smudgeActive--;
@@ -49,26 +78,31 @@ export function attemptHunt() {
     game.huntCooldown--;
     return;
   }
-  if (game.sanity < 30 && Math.random() < 0.25) startHunt();
+
+  if (game.sanity <= 30 && Math.random() < 0.25) {
+    startHunt();
+  }
 }
 
-/* === START HUNT === */
-export function startHunt() {
+function startHunt() {
   logToGame("💀 The ghost is hunting!");
-  playSound("startRumble", 0.8);
-  playAmbient("heartbeat", 0.6);
+  flashRed();
+  logToGame("You hear your heartbeat pounding...");
 
   if (game.playerRoom === game.ghostRoom) {
+    // Crucifix Protection
     if (game.placedCrucifix[game.playerRoom] > 0) {
       game.placedCrucifix[game.playerRoom]--;
       logToGame(`The crucifix burns, stopping the hunt. (${game.placedCrucifix[game.playerRoom]} uses left)`);
-      playSound("crucifixBurn");
-      if (game.placedCrucifix[game.playerRoom] === 0) delete game.placedCrucifix[game.playerRoom];
+      if (game.placedCrucifix[game.playerRoom] === 0) {
+        delete game.placedCrucifix[game.playerRoom];
+        logToGame("The crucifix has burned away completely.");
+      }
     } else {
-      setTimeout(playerDeath, 2000);
+      setTimeout(playerDeath, 1200);
     }
   } else {
-    logToGame("You survived the hunt...");
+    logToGame("You survive this hunt... for now.");
   }
 
   const aggressiveGhosts = ["Demon", "Oni", "Raiju", "Moroi"];
@@ -77,57 +111,33 @@ export function startHunt() {
     : 5 + Math.floor(Math.random() * 3);
 }
 
+/* === HUNT VISUALS === */
+function flashRed() {
+  const lightning = document.getElementById("lightning");
+  let flashes = 3, count = 0;
+
+  function pulse() {
+    if (count >= flashes) {
+      lightning.style.opacity = 0;
+      return;
+    }
+    lightning.style.background = "red";
+    lightning.style.opacity = 0.6 + Math.random() * 0.3;
+
+    setTimeout(() => {
+      lightning.style.opacity = 0;
+      count++;
+      setTimeout(pulse, 150 + Math.random() * 200);
+    }, 150 + Math.random() * 150);
+  }
+  pulse();
+}
+
 /* === PLAYER DEATH === */
-export function playerDeath() {
-  stopAmbient();
-  playSound("playerDeath", 0.9);
+function playerDeath() {
   logToGame("💀 The ghost finds you. Everything goes cold...");
   setTimeout(() => {
-    alert("You died. Game Over.");
-    clearSave();
+    alert("You died.");
     window.location.reload();
-  }, 2000);
-}
-
-/* === SAVE & LOAD SYSTEM === */
-export function saveGame() {
-  try {
-    const saveData = {
-      ghost: game.ghost,
-      ghostRoom: game.ghostRoom,
-      playerRoom: game.playerRoom,
-      inventory: game.inventory,
-      sanity: game.sanity,
-      currentTurn: game.currentTurn,
-      placedCrucifix: game.placedCrucifix,
-      roomItems: game.roomItems,
-      smudgeActive: game.smudgeActive,
-      huntCooldown: game.huntCooldown
-    };
-    localStorage.setItem("phasmaPhoneySave", JSON.stringify(saveData));
-  } catch (err) {
-    console.error("Save failed:", err);
-  }
-}
-
-export function loadGame() {
-  const data = localStorage.getItem("phasmaPhoneySave");
-  if (!data) {
-    logToGame("⚠️ No save data found.");
-    return;
-  }
-  try {
-    const s = JSON.parse(data);
-    Object.assign(game, s);
-    logToGame("📂 Game loaded. Resuming investigation...");
-    renderHUD();
-    updateBackground();
-  } catch (err) {
-    console.error("Load failed:", err);
-  }
-}
-
-export function clearSave() {
-  localStorage.removeItem("phasmaPhoneySave");
-  logToGame("🗑️ Save data cleared.");
+  }, 1000);
 }
