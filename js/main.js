@@ -1,28 +1,65 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Phasma‑Phoney v2.9 — Modular Master Build</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="description" content="Phasma‑Phoney: Turn-based ghost investigation horror with 25 ghosts, mimic logic, cursed items, full hunt system, and save/restore." />
-  <link rel="stylesheet" href="css/style.css" />
-</head>
-<body>
-  <!-- === DOM STRUCTURE (your existing title-screen, main-scene, hud, etc. stays here) === -->
+/*****************************************************
+ * === PHASMA-PHONEY v2.9 — MAIN GAME FLOW ===
+ *****************************************************/
+import { game, randomFromArray, allRooms, possibleWeather } from "./state.js";
+import { logToGame, renderHUD, showLoadout, confirmLoadout } from "./ui.js";
+import { preloadAllAudio, stopAllSounds } from "./audioManager.js";
+import { ghostBehaviorTable } from "./ghostBehavior.js";
+import { advanceTurn } from "./events.js";
 
-  <!-- === FOOTER === -->
-  <footer>
-    <div><strong>Phasma‑Phoney v2.9</strong> — Modular Master Build</div>
-  </footer>
+document.addEventListener("DOMContentLoaded", () => {
+  preloadAllAudio();
+  setupTitleScreen();
+});
 
-  <!-- ✅ ALL JS MODULES LOADED AS MODULES -->
-  <script type="module" src="js/state.js"></script>
-  <script type="module" src="js/ui.js"></script>
-  <script type="module" src="js/map.js"></script>
-  <script type="module" src="js/items.js"></script>
-  <script type="module" src="js/audioManager.js"></script>
-  <script type="module" src="js/events.js"></script>
-  <script type="module" src="js/ghostBehavior.js"></script>
-  <script type="module" src="js/main.js"></script>
-</body>
-</html>
+function setupTitleScreen() {
+  const titleScreen = document.getElementById("title-screen");
+  const startBtn = document.getElementById("startButton");
+  startBtn.addEventListener("click", () => {
+    titleScreen.style.opacity = "0";
+    setTimeout(() => {
+      titleScreen.style.display = "none";
+      startNewGame();
+    }, 1000);
+  });
+}
+
+function startNewGame() {
+  Object.assign(game, {
+    currentTurn: 0, sanity: 100, usedCursedItems: {}, roomItems: {},
+    smudgeActive: 0, huntCooldown: 0, placedCrucifix: {}, mimicForm: null,
+    nextMimicShift: 0
+  });
+
+  game.ghost = randomFromArray(Object.keys(ghostBehaviorTable));
+  game.weather = randomFromArray(possibleWeather);
+  game.ghostRoom = randomFromArray(allRooms.filter(r => r !== "Van"));
+
+  logToGame(`You are in the van. The weather is ${game.weather}.`);
+  showLoadout();
+
+  const confirmBtn = document.getElementById("confirm-loadout");
+  confirmBtn.onclick = () => {
+    confirmLoadout();
+    startInvestigation();
+  };
+}
+
+function startInvestigation() {
+  game.playerRoom = "Van";
+  game.currentTurn = 1;
+  renderHUD();
+  logToGame("You are ready to begin investigating.");
+
+  document.getElementById("main-scene").style.display = "block";
+  document.getElementById("narrator-ui").style.display = "flex";
+  advanceTurn();
+}
+
+export function restartGame() {
+  stopAllSounds();
+  document.getElementById("main-scene").style.display = "none";
+  const ts = document.getElementById("title-screen");
+  ts.style.display = "flex";
+  ts.style.opacity = "1";
+}
