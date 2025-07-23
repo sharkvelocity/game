@@ -1,6 +1,16 @@
 /*****************************************************
  * === PHASMA-PHONEY v2.9 — MAIN GAME FLOW (FIXED) ===
  *****************************************************/
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initGame);
+} else {
+  initGame();
+}
+
+function initGame() {
+  preloadAllAudio();
+  setupTitleScreen();
+}
 import { game, randomFromArray, allRooms, possibleWeather } from "./state.js";
 import { logToGame, renderHUD, showLoadout, confirmLoadout, updateBackground } from "./ui.js";
 import { preloadAllAudio, stopAllSounds } from "./audioManager.js";
