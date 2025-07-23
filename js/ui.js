@@ -1,101 +1,101 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — UI.JS (Modular) ===
- * Handles HUD, logs, and loadout screen
+ * === PHASMA-PHONEY v2.9 — UI & HUD MANAGEMENT ===
  *****************************************************/
-import { game } from "./state.js";
+import { game, allRooms } from "./state.js";
+import { logToGame } from "./ui_log.js"; // <- optional, or remove if not using external log file
 
-/* === GAME LOG === */
-export function logToGame(text) {
+// === LOG TO GAME (fallback if no external log file) ===
+export function logToGame(msg) {
   const log = document.getElementById("game-log");
   if (!log) return;
-
   const entry = document.createElement("div");
   entry.className = "log-entry";
-  entry.textContent = text;
+  entry.textContent = msg;
   log.appendChild(entry);
-
   log.scrollTop = log.scrollHeight;
-
-  // Fade older entries
-  const entries = log.querySelectorAll(".log-entry");
-  if (entries.length > 10) {
-    entries[0].classList.add("fade");
-  }
 }
 
-/* === HUD === */
+// === RENDER HUD ===
 export function renderHUD() {
-  const loc = document.getElementById("hud-location");
-  const weath = document.getElementById("hud-weather");
-  const turns = document.getElementById("hud-turns");
-  const sanityBar = document.getElementById("sanity-bar");
-  const temp = document.getElementById("hud-temp");
+  document.getElementById("hud-location").textContent = game.playerRoom;
+  document.getElementById("hud-weather").textContent = game.weather || "--";
+  document.getElementById("hud-turns").textContent = game.currentTurn;
+  document.getElementById("sanity-bar").style.width = `${game.sanity}%`;
 
-  if (!loc) return;
+  // sanity color change
+  if (game.sanity > 60) {
+    document.getElementById("sanity-bar").style.background = "#0f0";
+  } else if (game.sanity > 30) {
+    document.getElementById("sanity-bar").style.background = "#ff0";
+  } else {
+    document.getElementById("sanity-bar").style.background = "#f00";
+  }
 
-  loc.textContent = game.playerRoom || "Van";
-  weath.textContent = game.weather || "--";
-  turns.textContent = game.currentTurn;
-
-  sanityBar.style.width = `${game.sanity}%`;
-  sanityBar.style.background = game.sanity > 60 ? "#0f0" :
-                               game.sanity > 30 ? "#ff0" : "#f00";
-
-  temp.textContent = game.playerRoom === game.ghostRoom ? "Low" : "--°C";
+  const heldItems = game.inventory.length
+    ? game.inventory.join(", ")
+    : "None";
+  document.getElementById("held-items-display").textContent = heldItems;
 }
 
-/* === LOADOUT SCREEN === */
+// === SHOW LOADOUT ===
 export function showLoadout() {
   const loadoutScreen = document.getElementById("loadout-screen");
   const heldList = document.getElementById("held-list");
   const vanList = document.getElementById("van-list");
   const confirmBtn = document.getElementById("confirm-loadout");
 
-  if (!loadoutScreen) return;
   loadoutScreen.style.display = "flex";
   heldList.innerHTML = "";
   vanList.innerHTML = "";
   confirmBtn.disabled = true;
+  confirmBtn.classList.remove("active");
 
-  // Reset temporary selections
-  if (!Array.isArray(game.inventory)) game.inventory = [];
-  game.inventory = [];
-  game.vanStock = [...game.vanStock];
+  const maxHeld = 3;
+  let held = [];
+  let van = [...game.vanStock];
 
-  game.vanStock.forEach(item => {
-    const btn = document.createElement("button");
-    btn.textContent = item;
-    btn.onclick = () => toggleItem(item, btn);
-    vanList.appendChild(btn);
-  });
-
-  function toggleItem(item, btn) {
-    const index = game.inventory.indexOf(item);
-    if (index > -1) {
-      game.inventory.splice(index, 1);
-      btn.style.background = "";
-    } else {
-      if (game.inventory.length >= 3) {
-        logToGame("⚠️ You can only hold 3 items!");
-        return;
-      }
-      game.inventory.push(item);
-      btn.style.background = "#0a0";
-    }
-
-    heldList.innerHTML = game.inventory.map(i => `<div>${i}</div>`).join("") || "None";
-    confirmBtn.disabled = game.inventory.length === 0;
-    confirmBtn.classList.toggle("active", game.inventory.length > 0);
+  function renderLists() {
+    heldList.innerHTML = held
+      .map((item, i) => `<button data-i="${i}" class="item-button selected">${item}</button>`)
+      .join("");
+    vanList.innerHTML = van
+      .map((item, i) => `<button data-i="${i}" class="item-button">${item}</button>`)
+      .join("");
+    confirmBtn.disabled = held.length === 0;
+    confirmBtn.classList.toggle("active", held.length > 0);
   }
+
+  heldList.onclick = (e) => {
+    if (e.target.dataset.i !== undefined) {
+      const i = +e.target.dataset.i;
+      van.push(held[i]);
+      held.splice(i, 1);
+      renderLists();
+    }
+  };
+
+  vanList.onclick = (e) => {
+    if (e.target.dataset.i !== undefined && held.length < maxHeld) {
+      const i = +e.target.dataset.i;
+      held.push(van[i]);
+      van.splice(i, 1);
+      renderLists();
+    }
+  };
+
+  renderLists();
+
+  confirmBtn.onclick = () => {
+    game.inventory = [...held, "Notebook", "Lighter"];
+    game.vanStock = [...van];
+    loadoutScreen.style.display = "none";
+  };
 }
 
-/* === CONFIRM LOADOUT === */
-export function confirmLoadout() {
-  const loadoutScreen = document.getElementById("loadout-screen");
-  if (!loadoutScreen) return;
-
-  game.vanStock = game.vanStock.filter(i => !game.inventory.includes(i));
-  loadoutScreen.style.display = "none";
-
-  logToGame(`You selected: ${game.inventory.join(", ")}`);
+// === UPDATE BACKGROUND ===
+export function updateBackground() {
+  const bg = document.getElementById("background");
+  const visuals = game.playerRoom in allRooms ? game.playerRoom : "Van";
+  const dir = game.playerDirection || "N";
+  bg.style.backgroundImage = `url('images/${visuals}_${dir}.png')`;
 }
