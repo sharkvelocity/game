@@ -26,10 +26,14 @@ function setupTitleScreen() {
   const titleScreen = document.getElementById("title-screen");
   const startBtn = document.getElementById("startButton");
 
-  if (!startBtn) {
-    console.error("❌ Start button not found in DOM!");
-    return;
-  }
+  startBtn.addEventListener("click", () => {
+    titleScreen.style.opacity = "0";
+    setTimeout(() => {
+      titleScreen.style.display = "none";
+      startNewGame();
+    }, 1000);
+  });
+}
 
   startBtn.addEventListener("click", () => {
     titleScreen.style.opacity = "0";
