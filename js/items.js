@@ -1,12 +1,10 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — ITEMS.JS (FINAL FIXED) ===
- * Handles inventory management, item interactions,
- * cursed items, and camera placement for van monitor.
- * ✅ Consumables consumed after use.
- * ✅ Video Camera handheld IR toggle added for orb detection.
+ * === PHASMA-PHONEY v2.9 — ITEMS.JS (FINAL WITH FEATURES) ===
+ * Handles inventory management, consumables, placed items,
+ * cursed items, and camera IR logic.
  *****************************************************/
 
-import { game, allLoadoutItems, cursedItems, getCursedItemCost, gameSettings } from "./state.js";
+import { game, allLoadoutItems, cursedItems, getCursedItemCost, gameSettings, evidenceMap } from "./state.js";
 import { 
   logToGame, renderHUD, updateHeldItemsNotebook, 
   updateNearbyItemsNotebook, showNotebookUpdateBadge 
@@ -15,165 +13,7 @@ import { checkTurnEvents } from "./events.js";
 import { startHunt } from "./ghostBehavior.js";
 
 /***********************
- === OPEN INVENTORY OVERLAY ===
-************************/
-export function openInventoryOverlay() {
-  const existing = document.getElementById("inventory-temp");
-  if (existing) document.body.removeChild(existing);
-
-  const c = document.createElement("div");
-  c.id = "inventory-temp";
-  Object.assign(c.style, {
-    position: "fixed",
-    top: "50%",
-    left: "50%",
-    transform: "translate(-50%,-50%)",
-    background: "#111",
-    padding: "12px",
-    maxHeight: "75%",
-    overflowY: "auto",
-    maxWidth: "92%",
-    zIndex: "3000",
-    border: "1px solid #555",
-    borderRadius: "6px",
-    color: "#eee",
-    textAlign: "center",
-    lineHeight: "1.4"
-  });
-
-  let html = `<h3 style="margin-top:0;color:#0ff;">Inventory</h3>`;
-  const filteredInv = game.inventory.filter(i => i !== "Notebook");
-
-  if (filteredInv.length > 0) {
-    html += `<p><strong>Held Items:</strong></p>`;
-    filteredInv.forEach(i => {
-      html += `
-        <div style="margin-bottom:4px;">
-          <button onclick="inspectItem('${i}')">Inspect: ${i}</button>
-          <button onclick="dropItem('${i}');closeInventory()">Drop: ${i}</button>
-          <button onclick="useItem('${i}');closeInventory()">Use: ${i}</button>
-        </div>`;
-    });
-  } else {
-    html += `<p style="opacity:0.7;">No items held.</p>`;
-  }
-
-  const roomInv = game.roomItems[game.playerRoom] || [];
-  if (roomInv.length > 0) {
-    html += `<p><strong>Items in this Room:</strong></p>`;
-    roomInv.forEach(i => {
-      html += `
-        <div style="margin-bottom:4px;">
-          <button onclick="pickItem('${i}');closeInventory()">Pick up: ${i}</button>
-        </div>`;
-    });
-  }
-
-  html += `<button style="margin-top:10px;" onclick="closeInventory()">Close</button>`;
-  c.innerHTML = html;
-  document.body.appendChild(c);
-
-  window.closeInventory = function () {
-    const t = document.getElementById("inventory-temp");
-    if (t) document.body.removeChild(t);
-    if (gameSettings.autosave) {
-      localStorage.setItem("phasmaPhoneySave", JSON.stringify(game));
-    }
-  };
-}
-
-/***********************
- === INSPECT ITEM ===
-************************/
-export function inspectItem(i) {
-  let desc = cursedItems[i]?.desc || "Standard investigation gear.";
-  switch (i) {
-    case "Crucifix": desc = "Placed to prevent hunts. 2 uses."; break;
-    case "Camera": desc = "Handheld photo camera for evidence shots."; break;
-    case "Video Camera": desc = "Handheld IR toggle for orb detection. Placeable for van monitor."; break;
-    case "UV Light": desc = "Reveals fingerprints or footprints (salt needed)."; break;
-    case "Salt": desc = "Sprinkle to reveal footprints with UV. Consumable."; break;
-    case "Smudge Stick": desc = "Burn to calm the ghost. Consumable."; break;
-    case "Candle": desc = "Prevents Onryo hunts while lit. Consumable."; break;
-    case "Motion Sensor": desc = "Alerts you in van when ghost triggers it."; break;
-  }
-  logToGame(`Inspecting ${i}: ${desc}`);
-}
-
-/***********************
- === DROP ITEM ===
-************************/
-export function dropItem(i) {
-  if (i === "Notebook") {
-    logToGame("The Notebook cannot be dropped.");
-    return;
-  }
-
-  if (game.playerRoom === "Van") {
-    if (!game.vanStock.includes(i)) {
-      game.vanStock.push(i);
-      game.vanStock.sort();
-    }
-    logToGame(`Returned ${i} to van.`);
-  } else {
-    game.roomItems[game.playerRoom] = game.roomItems[game.playerRoom] || [];
-    if (!game.roomItems[game.playerRoom].includes(i)) {
-      game.roomItems[game.playerRoom].push(i);
-    }
-    logToGame(`Dropped ${i} here.`);
-  }
-  game.inventory = game.inventory.filter(x => x !== i);
-
-  game.nearbyItems = [...(game.roomItems[game.playerRoom] || [])];
-  renderHUD();
-  updateHeldItemsNotebook();
-  updateNearbyItemsNotebook();
-  showNotebookUpdateBadge();
-  if (gameSettings.autosave) {
-    localStorage.setItem("phasmaPhoneySave", JSON.stringify(game));
-  }
-}
-
-/***********************
- === PICK UP ITEM ===
-************************/
-export function pickItem(i) {
-  if (i === "Notebook") {
-    logToGame("You always carry the Notebook. It cannot be picked up.");
-    return;
-  }
-
-  if (game.inventory.filter(x => x !== "Notebook" && x !== "Lighter").length >= 3) {
-    logToGame("Max 3 carryable items (Notebook & Lighter excluded).");
-    return;
-  }
-
-  if (cursedItems[i] && i === "Summoning Circle") {
-    logToGame("The circle cannot be moved.");
-    return;
-  }
-
-  game.roomItems[game.playerRoom] =
-    game.roomItems[game.playerRoom].filter(x => x !== i);
-
-  if (!game.inventory.includes(i)) {
-    game.inventory.push(i);
-    game.inventory.sort();
-  }
-  logToGame(`Picked up ${i}.`);
-
-  game.nearbyItems = [...(game.roomItems[game.playerRoom] || [])];
-  renderHUD();
-  updateHeldItemsNotebook();
-  updateNearbyItemsNotebook();
-  showNotebookUpdateBadge();
-  if (gameSettings.autosave) {
-    localStorage.setItem("phasmaPhoneySave", JSON.stringify(game));
-  }
-}
-
-/***********************
- === USE ITEM (CONSUMABLES + IR FIXED) ===
+ === USE ITEM (UPDATED) ===
 ************************/
 export function useItem(i) {
   if (i === "Notebook") {
@@ -182,6 +22,7 @@ export function useItem(i) {
   }
 
   switch (i) {
+    /* === CONSUMABLES (REMOVED FROM INVENTORY ON USE) === */
     case "Smudge Stick":
       if (game.playerRoom === game.ghostRoom) {
         game.smudgeActive = 3;
@@ -189,40 +30,7 @@ export function useItem(i) {
       } else {
         logToGame("You smudge, but nothing happens.");
       }
-      game.inventory = game.inventory.filter(x => x !== i); // ✅ Consumed
-      break;
-
-    case "Camera":
-      logToGame("This is a handheld photo camera. Use it to capture evidence shots.");
-      break;
-
-    case "Video Camera":
-      // ✅ Handheld IR Toggle + Orb Detection
-      if (!game.irActive) {
-        game.irActive = true;
-        logToGame("You turn on the IR on the video camera.");
-        if (
-          game.playerRoom === game.ghostRoom &&
-          ghostProfiles[game.ghost]?.evidence.includes("Ghost Orbs")
-        ) {
-          logToGame("✨ You see faint ghost orbs floating in the air!");
-        } else {
-          logToGame("No ghost orbs detected.");
-        }
-      } else {
-        game.irActive = false;
-        logToGame("You turn off the IR on the video camera.");
-      }
-      break;
-
-    case "Crucifix":
-      if (game.playerRoom !== "Van") {
-        game.placedCrucifix[game.playerRoom] = 2;
-        logToGame("You place the crucifix. It may stop two hunts.");
-        game.inventory = game.inventory.filter(x => x !== i); // ✅ Placed
-      } else {
-        logToGame("Cannot place crucifix in van.");
-      }
+      consumeItem(i);
       break;
 
     case "Salt":
@@ -231,17 +39,8 @@ export function useItem(i) {
         if (!game.roomItems[game.playerRoom].includes("Salt")) {
           game.roomItems[game.playerRoom].push("Salt");
           logToGame("You sprinkle salt on the ground.");
-          game.inventory = game.inventory.filter(x => x !== i); // ✅ Consumed
         }
-      }
-      break;
-
-    case "UV Light":
-      if (game.roomItems[game.playerRoom]?.includes("Footprints")) {
-        logToGame("You see glowing footprints under UV!");
-        game.selectedEvidence.add("Fingerprints");
-      } else {
-        logToGame("No visible prints under UV.");
+        consumeItem(i);
       }
       break;
 
@@ -251,8 +50,19 @@ export function useItem(i) {
         if (!game.roomItems[game.playerRoom].includes("Candle")) {
           game.roomItems[game.playerRoom].push("Candle");
           logToGame("You place and light a candle here.");
-          game.inventory = game.inventory.filter(x => x !== i); // ✅ Consumed
         }
+        consumeItem(i);
+      }
+      break;
+
+    /* === PLACED ITEMS (STAY IN ROOM, NOT RETURNED) === */
+    case "Crucifix":
+      if (game.playerRoom !== "Van") {
+        game.placedCrucifix[game.playerRoom] = 2;
+        logToGame("You place the crucifix. It may stop two hunts.");
+        consumeItem(i); // Crucifix is removed from inventory
+      } else {
+        logToGame("Cannot place crucifix in van.");
       }
       break;
 
@@ -263,9 +73,43 @@ export function useItem(i) {
           game.roomItems[game.playerRoom].push("Motion Sensor");
           logToGame("You place a motion sensor in this room.");
         }
+        consumeItem(i);
       }
       break;
 
+    case "Video Camera":
+      if (game.playerRoom !== "Van") {
+        game.roomItems[game.playerRoom] = game.roomItems[game.playerRoom] || [];
+        if (!game.roomItems[game.playerRoom].includes("Video Camera")) {
+          game.roomItems[game.playerRoom].push("Video Camera");
+        }
+        game.cameraPlacements = game.cameraPlacements || [];
+        if (!game.cameraPlacements.includes(game.playerRoom)) {
+          game.cameraPlacements.push(game.playerRoom);
+        }
+        logToGame(`You place a video camera in ${game.playerRoom}.`);
+        consumeItem(i);
+      } else {
+        logToGame("Cannot place video cameras in the van.");
+      }
+      break;
+
+    /* === CAMERA IR TOGGLE (HELD ONLY) === */
+    case "Camera":
+      toggleIRCamera();
+      break;
+
+    /* === UV LIGHT (EVIDENCE CHECK) === */
+    case "UV Light":
+      if (game.roomItems[game.playerRoom]?.includes("Footprints")) {
+        logToGame("You see glowing footprints under UV!");
+        game.selectedEvidence.add("Fingerprints");
+      } else {
+        logToGame("No visible prints under UV.");
+      }
+      break;
+
+    /* === CURSED ITEMS === */
     default:
       if (cursedItems[i]) handleCursedItem(i);
       else logToGame("You use the " + i + ", but nothing significant occurs.");
@@ -282,3 +126,97 @@ export function useItem(i) {
     localStorage.setItem("phasmaPhoneySave", JSON.stringify(game));
   }
 }
+
+/***********************
+ === CONSUME ITEM (NEW)
+************************/
+function consumeItem(item) {
+  game.inventory = game.inventory.filter(x => x !== item);
+  logToGame(`${item} has been used and is now consumed.`);
+}
+
+/***********************
+ === CAMERA IR TOGGLE (NEW)
+************************/
+function toggleIRCamera() {
+  if (!game.cameraActive) {
+    game.cameraActive = true;
+    logToGame("You switch on the camera IR mode...");
+    checkForOrbs();
+  } else {
+    game.cameraActive = false;
+    logToGame("You turn off the camera IR mode.");
+  }
+}
+
+/***********************
+ === CHECK FOR ORBS (NEW)
+************************/
+function checkForOrbs() {
+  const ghost = game.ghost === "TheMimic" ? "The Mimic" : game.ghost;
+  const hasOrbsEvidence = evidenceMap[ghost]?.includes("Ghost Orbs");
+
+  if (game.playerRoom === game.ghostRoom && (hasOrbsEvidence || game.ghost === "TheMimic")) {
+    logToGame("✨ Orbs float faintly in the air through the IR camera!");
+  } else {
+    logToGame("No orbs detected through the IR camera.");
+  }
+}
+
+/***********************
+ === HANDLE CURSED ITEMS (UNCHANGED)
+************************/
+export function handleCursedItem(i) {
+  if (game.usedCursedItems[i]) {
+    logToGame("The " + i + " is inert now.");
+    return;
+  }
+  logToGame("You use the " + i + "...");
+  game.sanity -= getCursedItemCost(i);
+  if (game.sanity < 0) game.sanity = 0;
+
+  switch (i) {
+    case "Ouija Board":
+      if (Math.random() < 0.2) startHunt();
+      break;
+    case "Tarot Cards":
+      const r = Math.random();
+      if (r < 0.2) logToGame("The Fool — nothing happens.");
+      else if (r < 0.4) logToGame("The Tower — ghost activity spikes!");
+      else if (r < 0.6) {
+        logToGame("The Death card — hunt triggered!");
+        startHunt();
+      } else {
+        logToGame("The Sun — sanity restored.");
+        game.sanity = Math.min(100, game.sanity + 10);
+      }
+      break;
+    case "Music Box":
+    case "Haunted Mirror":
+      if (Math.random() < 0.3) startHunt();
+      break;
+    case "Summoning Circle":
+      startHunt();
+      break;
+    case "Monkey Paw":
+      if (Math.random() < 0.5) startHunt();
+      break;
+  }
+
+  game.usedCursedItems[i] = true;
+  game.nearbyItems = [...(game.roomItems[game.playerRoom] || [])];
+  renderHUD();
+  updateNearbyItemsNotebook();
+  showNotebookUpdateBadge();
+  if (gameSettings.autosave) {
+    localStorage.setItem("phasmaPhoneySave", JSON.stringify(game));
+  }
+}
+
+/***********************
+ ✅ GLOBAL EXPOSURE FOR INLINE BUTTONS
+************************/
+window.inspectItem = inspectItem;
+window.dropItem = dropItem;
+window.pickItem = pickItem;
+window.useItem = useItem;
