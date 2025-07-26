@@ -1,14 +1,15 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — SAVE MANAGER (FINAL) ===
+ * === PHASMA-PHONEY v2.9 — SAVE MANAGER (FINAL FIXED) ===
  * Saves & loads full game state, including notebook,
- * camera placements, and settings.
+ * camera placements, and settings. Modular & safe.
  *****************************************************/
 import { 
   game, allLoadoutItems, gameSettings, resetGame as stateReset 
 } from "./state.js";
 import { 
-  logToGame, renderHUD, updateBackground, showLoadout
-} from "./ui.js";
+  logToGame, renderHUD, updateBackground
+} from "./ui.js"; 
+import { startInvestigation } from "./main.js"; // ✅ Use main flow for restarting investigation
 
 /* === SAVE GAME === */
 export function saveGame(showIndicator = false) {
@@ -77,9 +78,9 @@ export function loadGame() {
   } catch (e) {
     console.error("Load failed:", e);
     logToGame("⚠ Load failed. Starting new game...");
-    localStorage.removeItem("phasmaPhoneySave");
+    clearSave();
     resetGame();
-    showLoadout();
+    startInvestigation(false); // ✅ Fresh start via main game flow
   }
 }
 
