@@ -1,5 +1,5 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — ITEMS.JS (FINAL FIXED) ===
+ * === PHASMA-PHONEY v2.9 — ITEMS.JS (FULLY FIXED) ===
  * Handles inventory management, item interactions,
  * cursed items, and camera placement for van monitor.
  * Notebook is excluded as an item.
@@ -10,8 +10,8 @@ import {
   logToGame, renderHUD, updateHeldItemsNotebook, 
   updateNearbyItemsNotebook, showNotebookUpdateBadge 
 } from "./ui.js";
-import { checkTurnEvents } from "./events.js"; // ✅ FIXED: only from events.js
-import { startHunt } from "./ghostBehavior.js"; // ✅ FIXED: imported from ghostBehavior
+import { checkTurnEvents } from "./events.js";        // ✅ Only imported from events.js now
+import { startHunt } from "./ghostBehavior.js";       // ✅ Correct: startHunt only from ghostBehavior.js
 
 /***********************
  === OPEN INVENTORY OVERLAY ===
@@ -75,7 +75,9 @@ export function openInventoryOverlay() {
   window.closeInventory = function () {
     const t = document.getElementById("inventory-temp");
     if (t) document.body.removeChild(t);
-    if (gameSettings.autosave) localStorage.setItem("phasmaPhoneySave", JSON.stringify(game));
+    if (gameSettings.autosave) {
+      localStorage.setItem("phasmaPhoneySave", JSON.stringify(game));
+    }
   };
 }
 
@@ -113,8 +115,9 @@ export function dropItem(i) {
     logToGame(`Returned ${i} to van.`);
   } else {
     game.roomItems[game.playerRoom] = game.roomItems[game.playerRoom] || [];
-    if (!game.roomItems[game.playerRoom].includes(i))
+    if (!game.roomItems[game.playerRoom].includes(i)) {
       game.roomItems[game.playerRoom].push(i);
+    }
     logToGame(`Dropped ${i} here.`);
   }
   game.inventory = game.inventory.filter(x => x !== i);
@@ -124,7 +127,9 @@ export function dropItem(i) {
   updateHeldItemsNotebook();
   updateNearbyItemsNotebook();
   showNotebookUpdateBadge();
-  if (gameSettings.autosave) localStorage.setItem("phasmaPhoneySave", JSON.stringify(game));
+  if (gameSettings.autosave) {
+    localStorage.setItem("phasmaPhoneySave", JSON.stringify(game));
+  }
 }
 
 /***********************
@@ -160,7 +165,9 @@ export function pickItem(i) {
   updateHeldItemsNotebook();
   updateNearbyItemsNotebook();
   showNotebookUpdateBadge();
-  if (gameSettings.autosave) localStorage.setItem("phasmaPhoneySave", JSON.stringify(game));
+  if (gameSettings.autosave) {
+    localStorage.setItem("phasmaPhoneySave", JSON.stringify(game));
+  }
 }
 
 /***********************
@@ -263,7 +270,9 @@ export function useItem(i) {
   updateNearbyItemsNotebook();
   showNotebookUpdateBadge();
   checkTurnEvents();
-  if (gameSettings.autosave) localStorage.setItem("phasmaPhoneySave", JSON.stringify(game));
+  if (gameSettings.autosave) {
+    localStorage.setItem("phasmaPhoneySave", JSON.stringify(game));
+  }
 }
 
 /***********************
@@ -311,7 +320,9 @@ export function handleCursedItem(i) {
   renderHUD();
   updateNearbyItemsNotebook();
   showNotebookUpdateBadge();
-  if (gameSettings.autosave) localStorage.setItem("phasmaPhoneySave", JSON.stringify(game));
+  if (gameSettings.autosave) {
+    localStorage.setItem("phasmaPhoneySave", JSON.stringify(game));
+  }
 }
 
 /***********************
