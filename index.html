@@ -12,7 +12,7 @@
   <!-- === TITLE SCREEN === -->
   <div id="title-screen">
     <img src="logo.png" alt="Phasma‑Phoney Logo" />
-    <button id="startButton">Start Game</button>
+    <button id="startButton">Start New Game</button>
   </div>
 
   <!-- === MAIN SCENE === -->
@@ -31,6 +31,7 @@
       <div>Temp: <span id="hud-temp">--°C</span></div>
     </div>
 
+    <!-- === HELD INVENTORY HUD === -->
     <div id="inventory-display">
       <div>Held:</div>
       <div id="held-items-display">None</div>
@@ -42,26 +43,41 @@
       <div id="command-buttons"></div>
     </div>
 
-    <!-- === NOTEBOOK === -->
+    <!-- === NOTEBOOK (SLIDE-UP PANEL) === -->
     <div id="notebook">
-      <div id="notebook-header">
-        <button id="notebook-toggle-btn">
-          Notebook <span id="notebook-update-badge" style="display:none;">•</span>
-        </button>
+      <div id="notebook-left">
+        <h4>Ghosts</h4>
+        <ol id="ghost-list"></ol>
+        <h4>Held Items</h4>
+        <ul id="held-items-list"></ul>
+        <h4>Nearby Items</h4>
+        <ul id="nearby-items-list"></ul>
       </div>
-      <div id="ghost-list"></div>
-      <div id="held-items-list"></div>
-      <div id="nearby-items-list"></div>
-      <h4 id="selected-ghost-name">// Ghost name will appear here //</h4>
-      <img id="selected-ghost-image" alt="Ghost visual" />
-      <p id="selected-ghost-details">Select a ghost or item to see details.</p>
-      <ul id="selected-ghost-evidence"></ul>
+      <div id="notebook-right">
+        <div id="selected-ghost-name">// Ghost name will appear here //</div>
+        <div id="ghost-image-container">
+          <img id="selected-ghost-image" alt="Ghost visual" />
+        </div>
+        <p id="selected-ghost-details">Select a ghost or item to see details.</p>
+        <div id="selected-ghost-evidence"></div>
+      </div>
+      <div id="notebook-settings-container">
+        <button id="open-settings-btn">⚙</button>
+      </div>
+    </div>
+
+    <!-- === NOTEBOOK TOGGLE BUTTON === -->
+    <div id="notebook-button-container">
+      <button id="notebook-toggle-btn">
+        📓
+        <span id="notebook-update-badge">!</span>
+      </button>
     </div>
 
     <!-- === SETTINGS PANEL === -->
-    <button id="open-settings-btn">Settings</button>
-    <div id="settings-panel" style="display:none;">
-      <label><input type="checkbox" id="mute-sounds">Mute</label>
+    <div id="settings-panel">
+      <h3>Settings</h3>
+      <label><input type="checkbox" id="mute-sounds">Mute Sounds</label>
       <label><input type="checkbox" id="narrator-voice">Narrator Voice</label>
       <label><input type="checkbox" id="mobile-mode">Mobile Mode</label>
       <label><input type="checkbox" id="autosave-toggle" checked>Autosave</label>
