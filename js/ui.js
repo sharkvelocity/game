@@ -3,16 +3,17 @@
  * Handles HUD, logging, notebook, loadout, and van monitor sync.
  * Uses ui-command events instead of handleCommand.
  *****************************************************/
-import { game, allLoadoutItems, roomVisuals, gameSettings, ghostProfiles } from "./state.js";
+import { game, allLoadoutItems, roomVisuals, gameSettings } from "./state.js";
 import { saveGame } from "./saveManager.js";
 import { playNotebookSound } from "./audioManager.js";
-import { useItem, pickItem } from "./items.js"; // ✅ Needed for notebook item actions
+import { useItem, pickItem } from "./items.js";
 
 /***********************
  === LOGGING & HUD ===
 ************************/
 export function logToGame(msg) {
   const log = document.getElementById("game-log");
+  if (!log) return;
   const e = document.createElement("div");
   e.className = "log-entry";
   e.textContent = msg;
@@ -22,19 +23,26 @@ export function logToGame(msg) {
 }
 
 export function renderHUD() {
-  document.getElementById("hud-location").textContent = game.playerRoom;
-  document.getElementById("hud-weather").textContent = game.weather || "--";
-  document.getElementById("hud-turns").textContent = game.currentTurn;
-  document.getElementById("held-items-display").textContent =
+  const loc = document.getElementById("hud-location");
+  const weather = document.getElementById("hud-weather");
+  const turns = document.getElementById("hud-turns");
+  const held = document.getElementById("held-items-display");
+  const temp = document.getElementById("hud-temp");
+  if (!loc || !weather || !turns || !held || !temp) return;
+
+  loc.textContent = game.playerRoom;
+  weather.textContent = game.weather || "--";
+  turns.textContent = game.currentTurn;
+  held.textContent =
     game.inventory.length ? game.inventory.filter(x => x !== "Notebook").join(", ") : "None";
 
   if (game.inventory.includes("Thermometer") && game.playerRoom !== "Van") {
     const t = game.playerRoom === game.ghostRoom
       ? (Math.random() < 0.3 ? -5 : 2 + Math.random() * 3)
       : 15 + Math.random() * 5;
-    document.getElementById("hud-temp").textContent = t.toFixed(1) + "°C";
+    temp.textContent = t.toFixed(1) + "°C";
   } else {
-    document.getElementById("hud-temp").textContent = "--°C";
+    temp.textContent = "--°C";
   }
   updateSanityBar();
 }
@@ -51,14 +59,15 @@ export function updateBackground() {
   const v = roomVisuals[game.playerRoom] || roomVisuals["Van"];
   const d = game.playerDirection || "N";
   const bg = document.getElementById("background");
-  if (v && v[d]) bg.style.backgroundImage = `url('${v[d]}')`;
+  if (bg && v && v[d]) bg.style.backgroundImage = `url('${v[d]}')`;
 }
 
 /***********************
- === ACTION BUTTONS (UI COMMAND) ===
+ === ACTION BUTTONS (UI COMMANDS) ===
 ************************/
 export function renderActionButtons() {
   const cmd = document.getElementById("command-buttons");
+  if (!cmd) return;
   cmd.innerHTML = `
     <button data-cmd="move">Move</button>
     <button data-cmd="look">Look Around</button>
@@ -68,14 +77,12 @@ export function renderActionButtons() {
   `;
   cmd.onclick = (e) => {
     if (!e.target.dataset.cmd) return;
-    document.dispatchEvent(
-      new CustomEvent("ui-command", { detail: e.target.dataset.cmd })
-    );
+    document.dispatchEvent(new CustomEvent("ui-command", { detail: e.target.dataset.cmd }));
   };
 }
 
 /***********************
- === NOTEBOOK UPDATE BADGE (RESTORED) ===
+ === NOTEBOOK SYSTEM (FULL) ===
 ************************/
 export function showNotebookUpdateBadge() {
   const badge = document.getElementById("notebook-update-badge");
@@ -88,12 +95,44 @@ export function showNotebookUpdateBadge() {
 
 export function clearNotebookUpdateBadge() {
   const badge = document.getElementById("notebook-update-badge");
-  if (!badge) return;
-  badge.style.display = "none";
+  if (badge) badge.style.display = "none";
+}
+
+export function updateHeldItemsNotebook() {
+  const list = document.getElementById("held-items-list");
+  if (!list) return;
+  list.innerHTML = "";
+  const held = game.inventory.filter(i => i !== "Notebook");
+  if (held.length) {
+    held.forEach(item => {
+      const li = document.createElement("li");
+      li.textContent = `• ${item}`;
+      li.addEventListener("click", () => useItem(item));
+      list.appendChild(li);
+    });
+  } else {
+    list.innerHTML = "<li>No items currently held.</li>";
+  }
+}
+
+export function updateNearbyItemsNotebook() {
+  const list = document.getElementById("nearby-items-list");
+  if (!list) return;
+  list.innerHTML = "";
+  if (game.nearbyItems && game.nearbyItems.length) {
+    game.nearbyItems.forEach(item => {
+      const li = document.createElement("li");
+      li.textContent = `• ${item}`;
+      li.addEventListener("click", () => pickItem(item));
+      list.appendChild(li);
+    });
+  } else {
+    list.innerHTML = "<li>No nearby items.</li>";
+  }
 }
 
 /***********************
- === LOADOUT SELECTION (UNCHANGED) ===
+ === LOADOUT SELECTION ===
 ************************/
 let tempHeld = [], tempVan = [];
 export function showLoadout() {
@@ -103,6 +142,7 @@ export function showLoadout() {
   const heldList = document.getElementById("held-list");
   const vanList = document.getElementById("van-list");
   const confirmBtn = document.getElementById("confirm-loadout");
+  if (!heldList || !vanList || !confirmBtn) return;
 
   function renderLoadout() {
     heldList.innerHTML = tempHeld
