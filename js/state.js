@@ -101,7 +101,7 @@ export const game = {
   mimicForm: null,
   nextMimicShift: 0,
   cameraActive: false,
-  cameraPlacements: [],        // ✅ NEW: Tracks camera placement order for van monitor
+  cameraPlacements: [],        // ✅ Tracks camera placement order for van monitor
   huntCooldown: 0,
   smudgeActive: 0,
   placedCrucifix: {},
