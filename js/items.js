@@ -140,4 +140,13 @@ export function handleCursedItem(i) {
   endItemTurn();
 }
 
+/***********************
+ ✅ GLOBAL EXPOSURE FOR INLINE BUTTONS
+************************/
+window.inspectItem = inspectItem;
+window.dropItem = dropItem;
+window.pickItem = pickItem;
 window.useItem = useItem;
+
+export { pickItem, useItem }; // ✅ ADD THIS if missing
+
