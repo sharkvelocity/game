@@ -1,15 +1,20 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — ITEMS.JS (UPDATED WITH NOTEBOOK) ===
+ * === PHASMA-PHONEY v2.9 — ITEMS.JS (FINAL) ===
  * Handles inventory management, item interactions,
- * and cursed item usage. Notebook is excluded as an item.
+ * cursed items, and camera placement for van monitor.
+ * Notebook is excluded as an item.
  *****************************************************/
 
 import { game, allLoadoutItems, cursedItems, getCursedItemCost } from "./state.js";
-import { logToGame, renderHUD, updateHeldItemsNotebook, updateNearbyItemsNotebook, showNotebookUpdateBadge } from "./ui.js";
+import { 
+  logToGame, renderHUD, updateHeldItemsNotebook, updateNearbyItemsNotebook, showNotebookUpdateBadge 
+} from "./ui.js";
 import { checkTurnEvents, saveGame } from "./events.js";
 import { startHunt } from "./events.js";
 
-/* === OPEN INVENTORY OVERLAY === */
+/***********************
+ === OPEN INVENTORY OVERLAY ===
+************************/
 export function openInventoryOverlay() {
   const existing = document.getElementById("inventory-temp");
   if (existing) document.body.removeChild(existing);
@@ -35,7 +40,7 @@ export function openInventoryOverlay() {
   });
 
   let html = `<h3 style="margin-top:0;color:#0ff;">Inventory</h3>`;
-  const filteredInv = game.inventory.filter(i => i !== "Notebook"); /* ✅ Notebook filtered */
+  const filteredInv = game.inventory.filter(i => i !== "Notebook"); // ✅ Notebook excluded
 
   if (filteredInv.length > 0) {
     html += `<p><strong>Held Items:</strong></p>`;
@@ -73,13 +78,15 @@ export function openInventoryOverlay() {
   };
 }
 
-/* === INSPECT ITEM === */
+/***********************
+ === INSPECT ITEM ===
+************************/
 export function inspectItem(i) {
   let desc = cursedItems[i]?.desc || "Standard investigation gear.";
   switch (i) {
     case "Crucifix": desc = "Placed to prevent hunts. 2 uses."; break;
-    case "Camera":
-    case "Video Camera": desc = "Detects orbs via night vision."; break;
+    case "Camera": desc = "Handheld photo camera for evidence shots."; break;
+    case "Video Camera": desc = "Detects orbs when placed and viewed from van monitor."; break;
     case "UV Light": desc = "Reveals fingerprints or footprints (salt needed)."; break;
     case "Salt": desc = "Sprinkle to reveal footprints with UV."; break;
     case "Motion Sensor": desc = "Alerts you in van when ghost triggers it."; break;
@@ -88,10 +95,12 @@ export function inspectItem(i) {
   logToGame(`Inspecting ${i}: ${desc}`);
 }
 
-/* === DROP ITEM === */
+/***********************
+ === DROP ITEM ===
+************************/
 export function dropItem(i) {
   if (i === "Notebook") {
-    logToGame("The Notebook cannot be dropped."); /* ✅ Notebook protection */
+    logToGame("The Notebook cannot be dropped."); // ✅ Notebook protection
     return;
   }
 
@@ -109,16 +118,18 @@ export function dropItem(i) {
   }
   game.inventory = game.inventory.filter(x => x !== i);
   renderHUD();
-  updateHeldItemsNotebook(); /* ✅ Live notebook refresh */
+  updateHeldItemsNotebook();
   updateNearbyItemsNotebook();
   showNotebookUpdateBadge();
   if (gameSettings.autosave) saveGame(true);
 }
 
-/* === PICK UP ITEM === */
+/***********************
+ === PICK UP ITEM ===
+************************/
 export function pickItem(i) {
   if (i === "Notebook") {
-    logToGame("You always carry the Notebook. It cannot be picked up."); /* ✅ Notebook protection */
+    logToGame("You always carry the Notebook. It cannot be picked up."); // ✅ Notebook protection
     return;
   }
 
@@ -141,16 +152,18 @@ export function pickItem(i) {
   }
   logToGame(`Picked up ${i}.`);
   renderHUD();
-  updateHeldItemsNotebook(); /* ✅ Live notebook refresh */
+  updateHeldItemsNotebook();
   updateNearbyItemsNotebook();
   showNotebookUpdateBadge();
   if (gameSettings.autosave) saveGame(true);
 }
 
-/* === USE ITEM === */
+/***********************
+ === USE ITEM ===
+************************/
 export function useItem(i) {
   if (i === "Notebook") {
-    logToGame("You open your Notebook..."); /* ✅ Clarify Notebook can't be used as an item */
+    logToGame("You open your Notebook..."); // ✅ Notebook isn't a usable inventory item
     return;
   }
 
@@ -165,14 +178,20 @@ export function useItem(i) {
       break;
 
     case "Camera":
+      logToGame("This is a handheld photo camera. Use it to capture evidence shots.");
+      break;
+
     case "Video Camera":
       if (game.playerRoom !== "Van") {
-        game.cameraActive = !game.cameraActive;
-        logToGame(game.cameraActive
-          ? "Camera on: watching for orbs."
-          : "Camera off.");
+        game.roomItems[game.playerRoom] = game.roomItems[game.playerRoom] || [];
+        game.roomItems[game.playerRoom].push("Video Camera");
+
+        game.cameraPlacements = game.cameraPlacements || [];
+        game.cameraPlacements.push(game.playerRoom);
+
+        logToGame(`You place a video camera in ${game.playerRoom}.`);
       } else {
-        logToGame("Cannot use cameras in the van.");
+        logToGame("Cannot place video cameras in the van.");
       }
       break;
 
@@ -232,14 +251,16 @@ export function useItem(i) {
 
   game.currentTurn++;
   renderHUD();
-  updateHeldItemsNotebook(); /* ✅ Live notebook refresh */
+  updateHeldItemsNotebook();
   updateNearbyItemsNotebook();
   showNotebookUpdateBadge();
   checkTurnEvents();
   if (gameSettings.autosave) saveGame(true);
 }
 
-/* === HANDLE CURSED ITEMS === */
+/***********************
+ === HANDLE CURSED ITEMS ===
+************************/
 export function handleCursedItem(i) {
   if (game.usedCursedItems[i]) {
     logToGame("The " + i + " is inert now.");
@@ -283,12 +304,14 @@ export function handleCursedItem(i) {
 
   game.usedCursedItems[i] = true;
   renderHUD();
-  updateNearbyItemsNotebook(); /* ✅ Refresh nearby items */
+  updateNearbyItemsNotebook();
   showNotebookUpdateBadge();
   if (gameSettings.autosave) saveGame(true);
 }
 
-/* ✅ GLOBAL EXPOSURE FOR INLINE BUTTONS */
+/***********************
+ ✅ GLOBAL EXPOSURE FOR INLINE BUTTONS
+************************/
 window.inspectItem = inspectItem;
 window.dropItem = dropItem;
 window.pickItem = pickItem;
