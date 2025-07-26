@@ -1,12 +1,12 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — UI MODULE (FINAL FIXED) ===
+ * === PHASMA-PHONEY v2.9 — UI MODULE (FINAL FULLY UPDATED) ===
  * Handles HUD, logging, notebook, loadout, and van monitor sync.
- * Uses ui-command events instead of handleCommand.
+ * Reflects camera IR status, and uses ui-command events.
  *****************************************************/
-import { game, allLoadoutItems, roomVisuals, gameSettings, ghostProfiles } from "./state.js";
+import { game, allLoadoutItems, roomVisuals, gameSettings, ghostProfiles, evidenceMap } from "./state.js";
 import { saveGame } from "./saveManager.js";
 import { playNotebookSound } from "./audioManager.js";
-import { useItem, pickItem } from "./items.js"; // ✅ Needed for notebook item actions
+import { useItem, pickItem } from "./items.js"; // ✅ Notebook item actions
 
 /***********************
  === LOGGING & HUD ===
@@ -22,12 +22,17 @@ export function logToGame(msg) {
 }
 
 export function renderHUD() {
+  // === Location, Weather, Turn ===
   document.getElementById("hud-location").textContent = game.playerRoom;
   document.getElementById("hud-weather").textContent = game.weather || "--";
   document.getElementById("hud-turns").textContent = game.currentTurn;
-  document.getElementById("held-items-display").textContent =
-    game.inventory.length ? game.inventory.filter(x => x !== "Notebook").join(", ") : "None";
 
+  // === Held Items + IR Camera Status ===
+  let heldDisplay = game.inventory.filter(x => x !== "Notebook").join(", ") || "None";
+  if (game.cameraActive) heldDisplay += " [IR ACTIVE]";
+  document.getElementById("held-items-display").textContent = heldDisplay;
+
+  // === Temperature Reading ===
   if (game.inventory.includes("Thermometer") && game.playerRoom !== "Van") {
     const t = game.playerRoom === game.ghostRoom
       ? (Math.random() < 0.3 ? -5 : 2 + Math.random() * 3)
@@ -36,6 +41,18 @@ export function renderHUD() {
   } else {
     document.getElementById("hud-temp").textContent = "--°C";
   }
+
+  // === Orbs Indicator when IR Camera is Active ===
+  const orbIndicator = document.getElementById("orb-indicator");
+  if (orbIndicator) {
+    if (game.cameraActive && shouldShowOrbs()) {
+      orbIndicator.style.display = "block";
+      orbIndicator.textContent = "✨ Orbs visible on IR";
+    } else {
+      orbIndicator.style.display = "none";
+    }
+  }
+
   updateSanityBar();
 }
 
@@ -55,6 +72,15 @@ export function updateBackground() {
 }
 
 /***********************
+ === ORB CHECK FOR HUD (MATCHES items.js) ===
+************************/
+function shouldShowOrbs() {
+  const ghost = game.ghost === "TheMimic" ? "The Mimic" : game.ghost;
+  const hasOrbsEvidence = evidenceMap[ghost]?.includes("Ghost Orbs");
+  return game.playerRoom === game.ghostRoom && (hasOrbsEvidence || game.ghost === "TheMimic");
+}
+
+/***********************
  === ACTION BUTTONS (FIXED FOR UI COMMANDS) ===
 ************************/
 export function renderActionButtons() {
@@ -66,18 +92,14 @@ export function renderActionButtons() {
     <button data-cmd="guess">Ghost Guess</button>
     <button data-cmd="van">Return to Van</button>
   `;
-
-  // ✅ Dispatch `ui-command` for modular event handling
   cmd.onclick = (e) => {
     if (!e.target.dataset.cmd) return;
-    document.dispatchEvent(
-      new CustomEvent("ui-command", { detail: e.target.dataset.cmd })
-    );
+    document.dispatchEvent(new CustomEvent("ui-command", { detail: e.target.dataset.cmd }));
   };
 }
 
 /***********************
- === LOADOUT SELECTION (RE-EXPORTED) ===
+ === LOADOUT SELECTION (FIXED & SYNCED) ===
 ************************/
 let tempHeld = [], tempVan = [];
 export function showLoadout() {
@@ -105,13 +127,15 @@ export function showLoadout() {
       logToGame("⚠️ Max 3 items (Notebook & Lighter excluded).");
       return;
     }
-    tempHeld.push(item);
-    tempVan = tempVan.filter(v => v !== item);
-    renderLoadout();
+    if (!tempHeld.includes(item)) {
+      tempHeld.push(item);
+      tempVan = tempVan.filter(v => v !== item);
+      renderLoadout();
+    }
   };
 
   window.removeHeldItem = function (item) {
-    tempVan.push(item);
+    if (!tempVan.includes(item)) tempVan.push(item);
     tempHeld = tempHeld.filter(h => h !== item);
     renderLoadout();
   };
@@ -128,5 +152,6 @@ export function showLoadout() {
     game.vanStock = [...tempVan];
     document.getElementById("loadout-screen").style.display = "none";
     if (gameSettings.autosave) saveGame(true);
+    renderHUD(); // ✅ Immediately update HUD
   };
 }
