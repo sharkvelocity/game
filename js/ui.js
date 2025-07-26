@@ -6,7 +6,7 @@
 import { game, allLoadoutItems, roomVisuals, gameSettings, ghostProfiles } from "./state.js";
 import { saveGame } from "./saveManager.js";
 import { playNotebookSound } from "./audioManager.js";
-import { useItem, pickItem } from "./items.js"; 
+import { useItem, pickItem } from "./items.js"; // ✅ Needed for notebook item actions
 
 /***********************
  === LOGGING & HUD ===
@@ -55,7 +55,7 @@ export function updateBackground() {
 }
 
 /***********************
- === ACTION BUTTONS (UI COMMANDS)
+ === ACTION BUTTONS (UI COMMAND) ===
 ************************/
 export function renderActionButtons() {
   const cmd = document.getElementById("command-buttons");
@@ -68,12 +68,32 @@ export function renderActionButtons() {
   `;
   cmd.onclick = (e) => {
     if (!e.target.dataset.cmd) return;
-    document.dispatchEvent(new CustomEvent("ui-command", { detail: e.target.dataset.cmd }));
+    document.dispatchEvent(
+      new CustomEvent("ui-command", { detail: e.target.dataset.cmd })
+    );
   };
 }
 
 /***********************
- === LOADOUT SELECTION
+ === NOTEBOOK UPDATE BADGE (RESTORED) ===
+************************/
+export function showNotebookUpdateBadge() {
+  const badge = document.getElementById("notebook-update-badge");
+  const btn = document.getElementById("notebook-toggle-btn");
+  if (!badge || !btn) return;
+  badge.style.display = "inline";
+  btn.classList.add("shake");
+  setTimeout(() => btn.classList.remove("shake"), 400);
+}
+
+export function clearNotebookUpdateBadge() {
+  const badge = document.getElementById("notebook-update-badge");
+  if (!badge) return;
+  badge.style.display = "none";
+}
+
+/***********************
+ === LOADOUT SELECTION (UNCHANGED) ===
 ************************/
 let tempHeld = [], tempVan = [];
 export function showLoadout() {
