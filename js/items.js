@@ -216,4 +216,4 @@ window.dropItem = dropItem;
 window.pickItem = pickItem;
 window.useItem = useItem;
 
-export { inspectItem, dropItem, pickItem, useItem, handleCursedItem };
+export { inspectItem, dropItem, pickItem, useItem };
