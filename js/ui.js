@@ -62,13 +62,12 @@ export function renderActionButtons() {
     <button data-cmd="inventory">Inventory</button>
     <button data-cmd="guess">Ghost Guess</button>
     <button data-cmd="van">Return to Van</button>
-    <button data-cmd="save">Save Game</button>
-    <button data-cmd="load">Load Game</button>
   `;
   cmd.onclick = (e) => {
     if (e.target.dataset.cmd) handleCommand(e.target.dataset.cmd);
   };
 }
+
 
 /***********************
  === LOADOUT SELECTION ===
