@@ -1,5 +1,5 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.6 — GLOBAL STYLES ===
+ * === PHASMA-PHONEY v2.9 — GLOBAL STYLES (UPDATED WITH NOTEBOOK) ===
  * Dark horror-themed UI, responsive & mobile-friendly
  *****************************************************/
 
@@ -205,6 +205,7 @@ footer {
   #loadout-screen h2 { font-size:18px; }
   button { font-size:12px; padding:4px 8px; }
 }
+
 /* === FIX: Initial Visibility === */
 #main-scene {
   display: none; /* Hidden until startInvestigation() */
@@ -212,4 +213,204 @@ footer {
 
 #narrator-ui {
   display: none; /* Hidden until investigation starts */
+}
+
+/***********************
+ === NOTEBOOK MODULE (SLIDE SYSTEM, NEW) ===
+************************/
+#notebook {
+  position: fixed;
+  bottom: -100%;
+  left: 0;
+  width: 100%;
+  height: 60%;
+  background: rgba(255,255,255,0.1);
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  font-family: "Cursive", serif;
+  color: #222;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  padding: 10px;
+  box-shadow: 0 -4px 10px rgba(0,0,0,0.5);
+  transition: bottom 0.25s ease-out;
+  z-index: 2000;
+}
+
+#notebook.open {
+  bottom: 0;
+}
+
+#notebook-left {
+  width: 45%;
+  background: rgba(255,255,255,0.3);
+  border-radius: 8px;
+  padding: 10px;
+  overflow-y: auto;
+}
+
+#notebook-left ol, #held-items-list, #nearby-items-list {
+  list-style: none;
+  padding-left: 10px;
+  font-size: 0.85em;
+}
+
+#notebook-left li {
+  cursor: pointer;
+  color: #0044cc;
+  margin-bottom: 6px;
+  text-decoration: underline;
+}
+#notebook-left li:hover { color: #002288; }
+
+.cursed-item {
+  color: #4b0082;
+  font-weight: bold;
+}
+.cursed-item:hover {
+  color: #360060;
+}
+
+#notebook-right {
+  width: 50%;
+  text-align: center;
+  background: rgba(255,255,255,0.2);
+  border-radius: 8px;
+  padding: 10px;
+  overflow-y: auto;
+}
+
+#selected-ghost-name {
+  font-size: 1.2em;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+#ghost-image-container {
+  width: 100%;
+  max-height: 250px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+#selected-ghost-image {
+  max-width: 100%;
+  max-height: 250px;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+#selected-ghost-evidence button {
+  display: inline-block;
+  background: #f4ecd8;
+  border: 1px solid #b9a67c;
+  border-radius: 6px;
+  font-family: "Cursive", serif;
+  font-size: 0.9em;
+  padding: 4px 8px;
+  margin: 4px;
+  cursor: pointer;
+  color: #4a3b1e;
+  box-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+#selected-ghost-evidence button:hover {
+  background: #e3d6b8;
+  transform: scale(1.05);
+}
+#selected-ghost-evidence button:active {
+  background: #d7caa7;
+  transform: scale(0.97);
+}
+
+/* === SETTINGS PANEL === */
+#notebook-settings-container {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+#open-settings-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #f4ecd8;
+  border: 1px solid #b9a67c;
+  font-size: 1.2em;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+#open-settings-btn:hover { background: #e3d6b8; }
+
+#settings-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #f4ecd8;
+  border: 2px solid #b9a67c;
+  padding: 12px;
+  width: 220px;
+  border-radius: 8px;
+  z-index: 4000;
+  display: none;
+  box-shadow: 0 0 8px rgba(0,0,0,0.3);
+}
+#settings-panel h3 {
+  margin-top: 0;
+  font-family: "Cursive", serif;
+  text-align: center;
+}
+#settings-panel label {
+  font-size: 0.9em;
+  font-family: monospace;
+  display: block;
+  margin-bottom: 6px;
+}
+
+/* === NOTEBOOK FAILSAFE BUTTON === */
+#notebook-button-container {
+  position: fixed;
+  bottom: 12px;
+  right: 12px;
+  z-index: 3000;
+}
+#notebook-toggle-btn {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #f4ecd8;
+  border: 2px solid #b9a67c;
+  font-size: 1.5em;
+  cursor: pointer;
+  box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+  transition: background 0.2s ease;
+}
+#notebook-toggle-btn:hover { background: #e3d6b8; }
+#notebook-update-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #b30000;
+  color: white;
+  font-size: 0.7em;
+  font-weight: bold;
+  padding: 2px 5px;
+  border-radius: 50%;
+  display: none;
+}
+
+/* === BUTTON SHAKE ANIMATION === */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  50% { transform: translateX(3px); }
+  75% { transform: translateX(-3px); }
+}
+#notebook-toggle-btn.shake {
+  animation: shake 0.4s ease;
 }
