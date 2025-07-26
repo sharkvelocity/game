@@ -1,7 +1,7 @@
 /*****************************************************
  * === PHASMA-PHONEY v2.9 — MAIN GAME FLOW (FINAL FIXED) ===
  * Fully integrated with Notebook, Settings & Resume.
- * Listens for UI command events instead of handleCommand.
+ * Auto-transitions to loadout after title screen click.
  *****************************************************/
 import { 
   game, randomFromArray, allRooms, possibleWeather, gameSettings, resetGame 
@@ -32,35 +32,27 @@ function initGame() {
 }
 
 /***********************
- === TITLE SCREEN ===
+ === TITLE SCREEN (UPDATED) ===
 ************************/
 function setupTitleScreen() {
   const titleScreen = document.getElementById("title-screen");
   const startBtn = document.getElementById("startButton");
-  if (!startBtn) { console.error("❌ Start button not found!"); return; }
+  if (!startBtn) {
+    console.error("❌ Start button not found!");
+    return;
+  }
+
   startBtn.disabled = false;
   startBtn.onclick = () => {
+    console.log("✅ Start button clicked — transitioning to Loadout...");
     startBtn.disabled = true;
     titleScreen.style.opacity = "0";
+
     setTimeout(() => {
       titleScreen.style.display = "none";
-      promptContinueGame();
-    }, 1000);
+      startNewGame(); // ✅ Directly start a new game and show loadout
+    }, 800);
   };
-}
-
-/***********************
- === CONTINUE OR START NEW ===
-************************/
-function promptContinueGame() {
-  const savedState = localStorage.getItem("phasmaPhoneySave");
-  if (savedState && confirm("Would you like to continue where you left off?")) {
-    loadGame();
-    logToGame("Resuming your previous investigation...");
-    startInvestigation(true);
-  } else {
-    startNewGame();
-  }
 }
 
 /***********************
@@ -73,11 +65,14 @@ function startNewGame() {
     weather: randomFromArray(possibleWeather),
     ghostRoom: randomFromArray(allRooms.filter(r => r !== "Van"))
   });
+
   logToGame(`You are in the van. The weather is ${game.weather}.`);
   showLoadout();
+
   clearNotebookDetails();
   clearNotebookUpdateBadge();
   populateGhostNotebook();
+
   const confirmBtn = document.getElementById("confirm-loadout");
   confirmBtn.onclick = null;
   confirmBtn.onclick = () => {
@@ -97,11 +92,14 @@ export function startInvestigation(isResume = false) {
   } else {
     logToGame("Investigation resumed.");
   }
+
   renderHUD();
   updateBackground();
+
   document.getElementById("loadout-screen").style.display = "none";
   document.getElementById("main-scene").style.display = "block";
   document.getElementById("narrator-ui").style.display = "flex";
+
   advanceTurn();
 }
 
@@ -111,12 +109,15 @@ export function startInvestigation(isResume = false) {
 export function restartGame() {
   stopAllSounds();
   resetGame();
+
   document.getElementById("main-scene").style.display = "none";
   document.getElementById("narrator-ui").style.display = "none";
   document.getElementById("loadout-screen").style.display = "none";
+
   const ts = document.getElementById("title-screen");
   ts.style.display = "flex";
   ts.style.opacity = "1";
+
   clearNotebookDetails();
   clearNotebookUpdateBadge();
 }
