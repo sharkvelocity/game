@@ -1,12 +1,12 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — UI MODULE (FINAL FULLY UPDATED) ===
+ * === PHASMA-PHONEY v2.9 — UI MODULE (FINAL FIXED) ===
  * Handles HUD, logging, notebook, loadout, and van monitor sync.
  * Uses ui-command events instead of handleCommand.
  *****************************************************/
 import { game, allLoadoutItems, roomVisuals, gameSettings, ghostProfiles } from "./state.js";
 import { saveGame } from "./saveManager.js";
 import { playNotebookSound } from "./audioManager.js";
-import { useItem, pickItem } from "./items.js"; // ✅ Needed for notebook item actions
+import { useItem, pickItem } from "./items.js"; 
 
 /***********************
  === LOGGING & HUD ===
@@ -36,12 +36,6 @@ export function renderHUD() {
   } else {
     document.getElementById("hud-temp").textContent = "--°C";
   }
-
-  const cameraStatus = document.getElementById("hud-camera");
-  if (cameraStatus) {
-    cameraStatus.textContent = game.cameraActive ? "IR: ON" : "IR: OFF";
-  }
-
   updateSanityBar();
 }
 
@@ -61,7 +55,7 @@ export function updateBackground() {
 }
 
 /***********************
- === ACTION BUTTONS (UI COMMANDS) ===
+ === ACTION BUTTONS (UI COMMANDS)
 ************************/
 export function renderActionButtons() {
   const cmd = document.getElementById("command-buttons");
@@ -74,14 +68,12 @@ export function renderActionButtons() {
   `;
   cmd.onclick = (e) => {
     if (!e.target.dataset.cmd) return;
-    document.dispatchEvent(
-      new CustomEvent("ui-command", { detail: e.target.dataset.cmd })
-    );
+    document.dispatchEvent(new CustomEvent("ui-command", { detail: e.target.dataset.cmd }));
   };
 }
 
 /***********************
- === LOADOUT SELECTION ===
+ === LOADOUT SELECTION
 ************************/
 let tempHeld = [], tempVan = [];
 export function showLoadout() {
