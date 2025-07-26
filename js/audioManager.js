@@ -1,9 +1,12 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — AUDIO MANAGER (SAFE) ===
+ * === PHASMA-PHONEY v2.9 — AUDIO MANAGER (UPDATED WITH NOTEBOOK) ===
  * Handles optional audio playback, skipping any
  * missing or failed-to-load files to prevent 404 errors.
  *****************************************************/
 
+import { gameSettings } from "./state.js";
+
+/* === AUDIO LIBRARY === */
 export const audioFiles = {
   ambient: [
     "audio/ambient_wind_creaks.ogg",
@@ -46,14 +49,18 @@ export const audioFiles = {
     "audio/success_chime.ogg",
     "audio/fail_distort.ogg",
     "audio/game_over_hit.ogg"
+  ],
+  notebook: [ /* ✅ NEW: Notebook sounds */
+    "audio/notebook_rustle_open.ogg",
+    "audio/notebook_rustle_close.ogg"
   ]
 };
 
 let loadedAudio = {};
 
-/**
- * Preloads all audio, but gracefully skips files that fail to load.
- */
+/***********************
+ === PRELOAD AUDIO ===
+************************/
 export function preloadAllAudio() {
   Object.keys(audioFiles).forEach(category => {
     audioFiles[category].forEach(file => {
@@ -73,12 +80,17 @@ export function preloadAllAudio() {
   });
 }
 
+/***********************
+ === PLAY AUDIO (RESPECT SETTINGS) ===
+************************/
 /**
  * Plays an audio file if it’s loaded and safe.
+ * Respects mute toggle from gameSettings.
  * @param {string} file - The file path to play.
  * @param {boolean} loop - Whether the sound should loop.
  */
 export function playAudio(file, loop = false) {
+  if (gameSettings.muteSounds) return; /* ✅ Mute toggle */
   if (!loadedAudio[file]) {
     console.warn(`⚠️ Audio not available: ${file}`);
     return;
@@ -90,12 +102,27 @@ export function playAudio(file, loop = false) {
   });
 }
 
-/**
- * Stops all currently playing audio by pausing all loaded instances.
- */
+/***********************
+ === STOP ALL AUDIO ===
+************************/
 export function stopAllSounds() {
   Object.values(loadedAudio).forEach(audio => {
     audio.pause();
     audio.currentTime = 0;
   });
+}
+
+/***********************
+ === NOTEBOOK RUSTLE SOUNDS (NEW) ===
+************************/
+/**
+ * Plays notebook rustle sounds for open/close.
+ * @param {"open"|"close"} action
+ */
+export function playNotebookSound(action) {
+  if (gameSettings.muteSounds) return; /* ✅ Respects mute */
+  const file = action === "open"
+    ? "audio/notebook_rustle_open.ogg"
+    : "audio/notebook_rustle_close.ogg";
+  playAudio(file);
 }
