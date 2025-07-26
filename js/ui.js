@@ -3,15 +3,6 @@
  * Handles HUD, logging, notebook, loadout, and van monitor sync.
  * Uses ui-command events instead of handleCommand.
  *****************************************************/
-import { game, allLoadoutItems, roomVisuals, gameSettings } from "./state.js";
-import { saveGame } from "./saveManager.js";
-import { playNotebookSound } from "./audioManager.js";
-import { useItem, pickItem } from "./items.js";
-/*****************************************************
- * === PHASMA-PHONEY v2.9 — UI MODULE (FINAL FIXED) ===
- * Handles HUD, logging, notebook, loadout, and van monitor sync.
- * Uses ui-command events instead of handleCommand.
- *****************************************************/
 import { game, allLoadoutItems, roomVisuals, gameSettings, ghostProfiles } from "./state.js";
 import { saveGame } from "./saveManager.js";
 import { playNotebookSound } from "./audioManager.js";
