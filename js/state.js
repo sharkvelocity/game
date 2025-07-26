@@ -1,5 +1,5 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — STATE.JS (FINAL) ===
+ * === PHASMA-PHONEY v2.9 — STATE.JS (FINAL FULLY FIXED) ===
  * Holds all game constants, core state, and utilities.
  *****************************************************/
 
@@ -10,6 +10,9 @@ export const allLoadoutItems = [
   "Smudge Stick", "Salt", "Parabolic Microphone", "Motion Sensor",
   "Sound Sensor", "Candle"
 ];
+
+// === CONSUMABLE ITEMS (Auto-removed on use) ===
+export const consumableItems = ["Smudge Stick", "Salt", "Candle"];
 
 // === CURSED ITEMS ===
 export const cursedItems = {
@@ -56,6 +59,11 @@ export const ghostProfiles = {
   Thaye: { evidence: ["Ghost Writing", "Orbs", "D.O.T.S Projector"], behavior: "Very active early, weaker over time." },
   Succubus: { evidence: ["Spirit Box", "Ghost Writing", "Fingerprints"], behavior: "Drains sanity faster if alone; active at night." }
 };
+
+// === EVIDENCE QUICK MAP (FOR ORBS, ETC.) ===
+export const evidenceMap = Object.fromEntries(
+  Object.entries(ghostProfiles).map(([ghost, data]) => [ghost, data.evidence])
+);
 
 // === ROOMS & VISUALS ===
 export const roomVisuals = {
