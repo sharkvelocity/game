@@ -1,12 +1,12 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — GHOSTBEHAVIOR.JS ===
+ * === PHASMA-PHONEY v2.9 — GHOSTBEHAVIOR.JS (FIXED) ===
  * Handles ghost behaviors, hunts, mimic shifts,
  * and ambient events. Fully safe with missing audio.
  *****************************************************/
 
 import { game, ghostProfiles, randomFromArray } from "./state.js";
-import { logToGame, updateSanityBar, renderHUD } from "./ui.js";
-import { safePlaySound } from "./audioManager.js";
+import { logToGame, updateSanityBar } from "./ui.js";
+import { playAudio } from "./audioManager.js"; // ✅ FIX: use playAudio instead of safePlaySound
 
 // === MIMIC LOGIC ===
 export function assignMimicForm() {
@@ -25,13 +25,13 @@ export function advanceTurn() {
     assignMimicForm();
   }
 
-  // === Sanity Drain ===
+  // === Sanity Drain & Ambient Cues ===
   if (game.playerRoom === game.ghostRoom) {
     game.sanity -= 3 + Math.random() * 3;
     const ghostType = (game.ghost === "TheMimic" ? game.mimicForm : game.ghost);
     if (game.currentTurn % 2 === 0 && Math.random() < 0.3) {
       logToGame("[Ambient] " + ghostProfiles[ghostType].behavior);
-      safePlaySound("ghost_whisper1");
+      playAudio("audio/ghost_whisper1.ogg"); // ✅ FIXED
     }
   } else {
     game.sanity -= 1;
@@ -43,10 +43,10 @@ export function advanceTurn() {
     if (Math.random() < 0.25) {
       if (game.playerRoom === "Van") {
         logToGame("[Van Monitor] Motion detected in " + r + "!");
-        safePlaySound("console_key1");
+        playAudio("audio/monitor_boot.ogg"); // ✅ replaced with valid file
       } else if (game.playerRoom === r) {
         logToGame("You hear the motion sensor *beep* nearby.");
-        safePlaySound("console_key1");
+        playAudio("audio/monitor_boot.ogg");
       }
     }
   });
@@ -65,7 +65,7 @@ export function attemptHunt() {
 
 export function startHunt() {
   logToGame("💀 The ghost is hunting!");
-  safePlaySound("hunt_start_rumble");
+  playAudio("audio/hunt_start_rumble.ogg");
 
   if (game.playerRoom === game.ghostRoom) {
     if (game.placedCrucifix && game.placedCrucifix[game.playerRoom] > 0) {
@@ -76,7 +76,7 @@ export function startHunt() {
       } else {
         logToGame(`The crucifix burns, stopping the hunt. (${game.placedCrucifix[game.playerRoom]} uses left)`);
       }
-      safePlaySound("crucifix_burn");
+      playAudio("audio/crucifix_burn.ogg");
     } else {
       setTimeout(playerDeath, 1500);
     }
@@ -92,7 +92,7 @@ export function startHunt() {
 
 export function playerDeath() {
   logToGame("💀 The ghost finds you. Everything goes cold...");
-  safePlaySound("player_death_choke");
+  playAudio("audio/player_death_choke.ogg");
   setTimeout(() => {
     alert("You died.");
     window.location.reload();
