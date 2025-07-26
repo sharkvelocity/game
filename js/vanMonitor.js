@@ -1,15 +1,19 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — VAN MONITOR MODULE ===
- * Boot animation, camera grid, orb animation
+ * === PHASMA-PHONEY v2.9 — VAN MONITOR MODULE (FINAL) ===
+ * Dynamic camera feeds, boot animation, orb animation,
+ * and notebook update integration.
  *****************************************************/
 
 import { game } from "./state.js";
-import { logToGame } from "./ui.js";
+import { logToGame, showNotebookUpdateBadge } from "./ui.js";
 import { ghostProfiles, roomVisuals } from "./state.js";
 
 let vanMonitorBooted = false;
 let vanMonitorInterval = null;
 
+/***********************
+ === OPEN & CLOSE MONITOR ===
+************************/
 export function openVanMonitor() {
   if (document.getElementById("van-monitor")) return;
   const monitor = document.createElement("div");
@@ -39,6 +43,9 @@ export function closeVanMonitor() {
   if (vanMonitorInterval) clearInterval(vanMonitorInterval);
 }
 
+/***********************
+ === BOOT SEQUENCE ===
+************************/
 function runVanBootSequence(monitor) {
   monitor.innerHTML = `
     <img src="logo.png" alt="Logo" style="max-width:200px;margin-bottom:20px;opacity:0.9;">
@@ -59,6 +66,7 @@ function runVanBootSequence(monitor) {
   const bootBar = document.getElementById("boot-bar");
 
   function addLine() {
+    if (!document.getElementById("van-monitor")) return; // ✅ Stop if closed
     if (i < lines.length) {
       bootText.innerHTML += `<div>${lines[i++]}</div>`;
       progress += 100 / lines.length;
@@ -72,6 +80,7 @@ function runVanBootSequence(monitor) {
 }
 
 function showLogin(monitor) {
+  if (!document.getElementById("van-monitor")) return; // ✅ Stop if closed
   monitor.innerHTML = `
     <div style="background:#111;padding:20px;border:2px solid #0f0;width:300px;text-align:left;">
       <h3 style="color:#0f0;text-align:center;">System Login</h3>
@@ -81,6 +90,7 @@ function showLogin(monitor) {
   const username = "sharkvelocity", password = "********";
   let step = 0;
   function typeLogin() {
+    if (!document.getElementById("van-monitor")) return; // ✅ Stop if closed
     if (step === 0) {
       out.innerHTML += `<div>Username: <span id="user-type"></span></div>`;
       autoType("user-type", username, () => { step = 1; setTimeout(typeLogin, 500); });
@@ -88,6 +98,7 @@ function showLogin(monitor) {
       out.innerHTML += `<div>Password: <span id="pass-type"></span></div>`;
       autoType("pass-type", password, () => {
         setTimeout(() => {
+          if (!document.getElementById("van-monitor")) return;
           out.innerHTML += `<div>Access Granted.</div>`;
           setTimeout(() => renderCameraGrid(monitor), 800);
         }, 400);
@@ -101,32 +112,42 @@ function autoType(elId, text, cb, delay = 100) {
   const el = document.getElementById(elId);
   let i = 0;
   function t() {
+    if (!document.getElementById("van-monitor")) return; // ✅ Stop if closed
     if (i < text.length) { el.textContent += text[i++]; setTimeout(t, delay); }
     else if (cb) cb();
   }
   t();
 }
 
+/***********************
+ === CAMERA FEEDS (DYNAMIC) ===
+************************/
 function generateCameraFeeds() {
-  const rooms = Object.keys(roomVisuals).filter(r => r !== "Van");
-  return rooms.slice(0, 4).map(r => {
-    const hasCamera = (game.roomItems[r] || []).includes("Video Camera");
+  const activeFeeds = game.cameraPlacements.slice(-4); // ✅ Last 4 placed cameras
+  if (activeFeeds.length === 0) {
+    return `<p style="color:#0f0;opacity:0.7;">No cameras placed.</p>`;
+  }
+
+  return activeFeeds.map((room, idx) => {
+    const hasCamera = (game.roomItems[room] || []).includes("Video Camera");
     let imgSrc = "nosignal.gif", label = "NO SIGNAL";
+
     if (hasCamera) {
-      imgSrc = roomVisuals[r].N;
-      label = `${r} — ACTIVE`;
-      if (r === game.ghostRoom) {
-        if (game.ghost === "TheMimic" || game.mimicForm === "TheMimic") {
-          label = `${r} — FAKE ORBS DETECTED`;
+      imgSrc = roomVisuals[room].N;
+      label = `${room} — ACTIVE`;
+      if (room === game.ghostRoom) {
+        if (game.ghost === "TheMimic") {
+          label = `${room} — FAKE ORBS DETECTED`;
         } else if (ghostProfiles[game.ghost].evidence.includes("Orbs")) {
-          label = `${r} — ORBS DETECTED`;
+          label = `${room} — ORBS DETECTED`;
         }
       }
     }
+
     return `
       <div class="camera-feed" style="position:relative;border:1px solid #0f0;overflow:hidden;">
         <img src="${imgSrc}" style="width:100%;height:100%;object-fit:cover;">
-        <canvas id="camera-orbs-${r}" style="position:absolute;top:0;left:0;width:100%;height:100%;"></canvas>
+        <canvas id="camera-orbs-${room}-${idx}" style="position:absolute;top:0;left:0;width:100%;height:100%;"></canvas>
         <div style="position:absolute;bottom:0;width:100%;text-align:center;font-size:11px;background:rgba(0,0,0,0.5);color:#0f0;">
           ${label}</div>
       </div>`;
@@ -141,12 +162,19 @@ function renderCameraGrid(monitor) {
     </div>
     <button style="margin-top:12px;background:#111;color:#0f0;border:1px solid #0f0;"
       onclick="import('./vanMonitor.js').then(m=>m.closeVanMonitor())">Close Monitor</button>`;
+
   if (vanMonitorInterval) clearInterval(vanMonitorInterval);
   vanMonitorInterval = setInterval(() => animateAllCameraOrbs(), 1000);
+
+  // ✅ Notify notebook of monitor update (orb evidence discovered, etc.)
+  showNotebookUpdateBadge();
 }
 
-function drawCameraOrbs(room) {
-  const canvas = document.getElementById(`camera-orbs-${room}`);
+/***********************
+ === ORB ANIMATION ===
+************************/
+function drawCameraOrbs(room, idx) {
+  const canvas = document.getElementById(`camera-orbs-${room}-${idx}`);
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
   canvas.width = canvas.offsetWidth;
@@ -157,7 +185,7 @@ function drawCameraOrbs(room) {
     (game.roomItems[room] || []).includes("Video Camera") &&
     (room === game.ghostRoom &&
       (ghostProfiles[game.ghost].evidence.includes("Orbs") ||
-        game.ghost === "TheMimic" || game.mimicForm === "TheMimic"));
+        game.ghost === "TheMimic"));
 
   if (!active) return;
   for (let i = 0; i < 6; i++) {
@@ -169,6 +197,6 @@ function drawCameraOrbs(room) {
 }
 
 function animateAllCameraOrbs() {
-  const rooms = Object.keys(roomVisuals).filter(r => r !== "Van");
-  rooms.slice(0, 4).forEach(r => drawCameraOrbs(r));
+  const activeFeeds = game.cameraPlacements.slice(-4);
+  activeFeeds.forEach((room, idx) => drawCameraOrbs(room, idx));
 }
