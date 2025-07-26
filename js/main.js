@@ -1,7 +1,6 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — MAIN GAME FLOW (FINAL FIXED) ===
- * Fully integrated with Notebook, Settings & Resume.
- * Modular, exports `startInvestigation` for saveManager.
+ * === PHASMA-PHONEY v2.9 — MAIN GAME FLOW (FINAL FULLY UPDATED) ===
+ * Fully integrated with Notebook, Settings, IR toggle, and Resume.
  *****************************************************/
 import { 
   game, randomFromArray, allRooms, possibleWeather, gameSettings, resetGame 
@@ -44,7 +43,6 @@ function setupTitleScreen() {
   }
 
   startBtn.disabled = false;
-
   startBtn.onclick = () => {
     startBtn.disabled = true;
     titleScreen.style.opacity = "0";
@@ -81,7 +79,8 @@ function startNewGame() {
   Object.assign(game, {
     ghost: randomFromArray(Object.keys(ghostBehaviorTable)),
     weather: randomFromArray(possibleWeather),
-    ghostRoom: randomFromArray(allRooms.filter(r => r !== "Van"))
+    ghostRoom: randomFromArray(allRooms.filter(r => r !== "Van")),
+    cameraActive: false // ✅ Ensure IR toggle off on new game
   });
 
   logToGame(`You are in the van. The weather is ${game.weather}.`);
@@ -145,14 +144,14 @@ export function restartGame() {
 }
 
 /***********************
- === UI COMMAND LISTENER ===
+ === UI COMMAND LISTENER
 ************************/
 function setupUICommandListener() {
   document.addEventListener("ui-command", (e) => {
     const cmd = e.detail;
     switch (cmd) {
       case "move":
-        logToGame("You look for a path to move... (movement UI coming soon)");
+        logToGame("You look for a path to move...");
         break;
       case "look":
         logToGame("You look around carefully...");
