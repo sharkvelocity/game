@@ -1,5 +1,5 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — MAIN GAME FLOW (FINAL) ===
+ * === PHASMA-PHONEY v2.9 — MAIN GAME FLOW (FINAL FIXED) ===
  * Fully integrated with Notebook, Settings & Resume.
  *****************************************************/
 import { 
@@ -17,7 +17,6 @@ import { loadGame } from "./saveManager.js";
 /***********************
  === INITIALIZATION ===
 ************************/
-// ✅ Ensure initialization works on GitHub Pages too
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", initGame);
 } else {
@@ -25,7 +24,7 @@ if (document.readyState === "loading") {
 }
 
 function initGame() {
-  if (gameSettings.preloadDependencies) preloadAllAudio(); // ✅ Respects preload setting
+  if (gameSettings.preloadDependencies) preloadAllAudio();
   setupTitleScreen();
 }
 
@@ -41,14 +40,16 @@ function setupTitleScreen() {
     return;
   }
 
-  startBtn.addEventListener("click", () => {
+  startBtn.disabled = false; // ✅ Re-enable in case of restart
+
+  startBtn.onclick = () => {
     startBtn.disabled = true; // ✅ Prevent double-click spam
     titleScreen.style.opacity = "0";
     setTimeout(() => {
       titleScreen.style.display = "none";
-      promptContinueGame(); // ✅ Ask to continue or start fresh
+      promptContinueGame();
     }, 1000);
-  });
+  };
 }
 
 /***********************
@@ -72,7 +73,7 @@ function promptContinueGame() {
  === START NEW GAME ===
 ************************/
 function startNewGame() {
-  resetGame(); // ✅ Full clean reset of game state
+  resetGame();
 
   Object.assign(game, {
     ghost: randomFromArray(Object.keys(ghostBehaviorTable)),
@@ -83,13 +84,12 @@ function startNewGame() {
   logToGame(`You are in the van. The weather is ${game.weather}.`);
   showLoadout();
 
-  // ✅ Reset notebook UI
   clearNotebookDetails();
   clearNotebookUpdateBadge();
   populateGhostNotebook();
 
   const confirmBtn = document.getElementById("confirm-loadout");
-  confirmBtn.onclick = null; // ✅ Ensure no duplicate event handlers
+  confirmBtn.onclick = null; // ✅ Clear previous handlers
   confirmBtn.onclick = () => {
     confirmLoadout();
     startInvestigation();
@@ -113,7 +113,9 @@ export function startInvestigation(isResume = false) {
 
   const scene = document.getElementById("main-scene");
   const narrator = document.getElementById("narrator-ui");
+  const loadout = document.getElementById("loadout-screen");
 
+  if (loadout) loadout.style.display = "none";
   if (scene) scene.style.display = "block";
   if (narrator) narrator.style.display = "flex";
 
@@ -125,9 +127,11 @@ export function startInvestigation(isResume = false) {
 ************************/
 export function restartGame() {
   stopAllSounds();
-  resetGame(); // ✅ Full reset on restart
+  resetGame();
 
   document.getElementById("main-scene").style.display = "none";
+  document.getElementById("narrator-ui").style.display = "none";
+  document.getElementById("loadout-screen").style.display = "none";
 
   const ts = document.getElementById("title-screen");
   ts.style.display = "flex";
