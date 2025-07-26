@@ -1,12 +1,21 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — MAIN GAME FLOW (MODULAR) ===
+ * === PHASMA-PHONEY v2.9 — MAIN GAME FLOW (FINAL) ===
+ * Fully integrated with Notebook & Settings.
  *****************************************************/
-import { game, randomFromArray, allRooms, possibleWeather } from "./state.js";
-import { logToGame, renderHUD, showLoadout, confirmLoadout, updateBackground } from "./ui.js";
+import { 
+  game, randomFromArray, allRooms, possibleWeather, gameSettings, resetGame 
+} from "./state.js";
+import { 
+  logToGame, renderHUD, showLoadout, confirmLoadout, updateBackground,
+  clearNotebookDetails, populateGhostNotebook, clearNotebookUpdateBadge
+} from "./ui.js";
 import { preloadAllAudio, stopAllSounds } from "./audioManager.js";
 import { ghostBehaviorTable } from "./ghostBehavior.js";
 import { advanceTurn } from "./events.js";
 
+/***********************
+ === INITIALIZATION ===
+************************/
 // ✅ Ensure initialization works on GitHub Pages too
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", initGame);
@@ -15,11 +24,13 @@ if (document.readyState === "loading") {
 }
 
 function initGame() {
-  preloadAllAudio(); // Safe — missing files don't break anything
+  if (gameSettings.preloadDependencies) preloadAllAudio(); // ✅ Respects preload setting
   setupTitleScreen();
 }
 
-// === TITLE SCREEN ===
+/***********************
+ === TITLE SCREEN ===
+************************/
 function setupTitleScreen() {
   const titleScreen = document.getElementById("title-screen");
   const startBtn = document.getElementById("startButton");
@@ -30,6 +41,7 @@ function setupTitleScreen() {
   }
 
   startBtn.addEventListener("click", () => {
+    startBtn.disabled = true; // ✅ Prevent double-click spam
     titleScreen.style.opacity = "0";
     setTimeout(() => {
       titleScreen.style.display = "none";
@@ -38,38 +50,41 @@ function setupTitleScreen() {
   });
 }
 
-// === START A NEW GAME ===
+/***********************
+ === START NEW GAME ===
+************************/
 function startNewGame() {
-  Object.assign(game, {
-    currentTurn: 0,
-    sanity: 100,
-    usedCursedItems: {},
-    roomItems: {},
-    smudgeActive: 0,
-    huntCooldown: 0,
-    placedCrucifix: {},
-    mimicForm: null,
-    nextMimicShift: 0
-  });
+  resetGame(); // ✅ Full clean reset of game state
 
-  game.ghost = randomFromArray(Object.keys(ghostBehaviorTable));
-  game.weather = randomFromArray(possibleWeather);
-  game.ghostRoom = randomFromArray(allRooms.filter(r => r !== "Van"));
+  Object.assign(game, {
+    ghost: randomFromArray(Object.keys(ghostBehaviorTable)),
+    weather: randomFromArray(possibleWeather),
+    ghostRoom: randomFromArray(allRooms.filter(r => r !== "Van"))
+  });
 
   logToGame(`You are in the van. The weather is ${game.weather}.`);
   showLoadout();
 
+  // ✅ Reset notebook UI
+  clearNotebookDetails();
+  clearNotebookUpdateBadge();
+  populateGhostNotebook();
+
   const confirmBtn = document.getElementById("confirm-loadout");
+  confirmBtn.onclick = null; // ✅ Ensure no duplicate event handlers
   confirmBtn.onclick = () => {
     confirmLoadout();
     startInvestigation();
   };
 }
 
-// === START INVESTIGATION ===
+/***********************
+ === START INVESTIGATION ===
+************************/
 function startInvestigation() {
   game.playerRoom = "Van";
   game.currentTurn = 1;
+
   renderHUD();
   updateBackground();
   logToGame("You are ready to begin investigating.");
@@ -83,11 +98,19 @@ function startInvestigation() {
   advanceTurn();
 }
 
-// === RESTART GAME ===
+/***********************
+ === RESTART GAME ===
+************************/
 export function restartGame() {
   stopAllSounds();
+  resetGame(); // ✅ Full reset on restart
+
   document.getElementById("main-scene").style.display = "none";
+
   const ts = document.getElementById("title-screen");
   ts.style.display = "flex";
   ts.style.opacity = "1";
+
+  clearNotebookDetails();
+  clearNotebookUpdateBadge();
 }
