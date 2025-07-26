@@ -33,9 +33,9 @@ export function saveGame(showIndicator = false) {
       placedCrucifix: game.placedCrucifix,
       roomItems: game.roomItems,
       usedCursedItems: game.usedCursedItems,
-      nearbyItems: game.nearbyItems || [], // ✅ Notebook
+      nearbyItems: game.nearbyItems || [],       // ✅ Notebook integration
       cameraPlacements: game.cameraPlacements || [], // ✅ Van monitor cameras
-      settings: { ...gameSettings } // ✅ Save current settings
+      settings: { ...gameSettings }             // ✅ Save current settings
     };
     localStorage.setItem("phasmaPhoneySave", JSON.stringify(saveData));
     if (showIndicator) showSaveIndicator();
@@ -60,8 +60,8 @@ export function loadGame() {
     game.placedCrucifix = s.placedCrucifix || {};
     game.roomItems = s.roomItems || {};
     game.usedCursedItems = s.usedCursedItems || {};
-    game.nearbyItems = s.nearbyItems || []; // ✅ Notebook
-    game.cameraPlacements = s.cameraPlacements || []; // ✅ Van monitor
+    game.nearbyItems = s.nearbyItems || [];          // ✅ Notebook restored
+    game.cameraPlacements = s.cameraPlacements || []; // ✅ Van monitor restored
 
     if (s.settings) Object.assign(gameSettings, s.settings);
 
@@ -72,7 +72,7 @@ export function loadGame() {
 
     renderHUD();
     updateBackground();
-    saveGame(); // ✅ Immediate autosave refresh
+    saveGame(); // ✅ Refresh autosave immediately
     logToGame("📂 Game loaded. Resuming investigation...");
   } catch (e) {
     console.error("Load failed:", e);
@@ -89,9 +89,9 @@ export function clearSave() {
   logToGame("🗑️ Save data cleared.");
 }
 
-/* === RESET GAME (USES STATE.JS) === */
+/* === RESET GAME (USES STATE.JS RESET) === */
 export function resetGame() {
-  stateReset(); // ✅ Use the proper state.js reset logic
+  stateReset(); // ✅ Fully reset via state.js
   renderHUD();
   updateBackground();
 }
