@@ -1,16 +1,15 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — EVENTS.JS (FINAL UPDATED) ===
- * Turn events, ambient ghost cues, mimic shift,
- * cursed items, hunt logic, and orb detection.
+ * === PHASMA-PHONEY v2.9 — EVENTS (FINAL FIXED) ===
+ * Safe audio, notebook integration, mimic shift,
+ * and turn events. Fully synced with ghostBehavior.js.
  *****************************************************/
-
 import { game, randomFromArray, cursedItems, ghostProfiles } from "./state.js";
 import {
   logToGame, updateSanityBar, updateHeldItemsNotebook,
   updateNearbyItemsNotebook, showNotebookUpdateBadge
 } from "./ui.js";
 import { playAudio } from "./audioManager.js";
-import { startHunt, assignMimicForm } from "./ghostBehavior.js"; 
+import { startHunt, assignMimicForm } from "./ghostBehavior.js";
 
 /***********************
  === TURN ADVANCEMENT ===
@@ -46,9 +45,6 @@ export function advanceTurn() {
     if (Math.random() < 0.4) playAudio(randomFromArray(ghostSounds));
   }
 
-  // === IR CAMERA ORB DETECTION ===
-  detectOrbsWithCamera();
-
   // === Ambient Environmental Sounds ===
   if (Math.random() < 0.2) {
     const randomAmbient = [
@@ -63,28 +59,10 @@ export function advanceTurn() {
   // ✅ Auto-refresh notebook each turn
   updateHeldItemsNotebook();
   updateNearbyItemsNotebook();
+  showNotebookUpdateBadge();
 
   // === Hunt Attempt ===
   attemptHunt();
-}
-
-/***********************
- === ORB DETECTION (NEW)
-************************/
-function detectOrbsWithCamera() {
-  const ghost = game.ghost === "TheMimic" ? "TheMimic" : game.ghost;
-  const orbEvidence = ghost === "TheMimic" || ghostProfiles[ghost]?.evidence?.includes("Orbs");
-
-  if (!orbEvidence) return;
-
-  const hasCameraPlaced = game.cameraPlacements?.includes(game.playerRoom);
-  const hasCameraHeld = game.inventory.includes("Video Camera");
-
-  if ((hasCameraPlaced || hasCameraHeld) && game.playerRoom === game.ghostRoom) {
-    if (Math.random() < 0.7) {
-      logToGame("✨ You notice glowing orbs floating in the air through the IR camera!");
-    }
-  }
 }
 
 /***********************
@@ -111,20 +89,16 @@ export function attemptHunt() {
 ************************/
 export function discoverCursedItemsInRoom(roomName = game.playerRoom) {
   if (!game.roomItems[roomName]) game.roomItems[roomName] = [];
-
   const undiscovered = Object.keys(cursedItems)
     .filter(ci => !game.roomItems[roomName].includes(ci));
-
   if (undiscovered.length === 0) {
     logToGame("You search but find nothing unusual.");
     return;
   }
-
   if (Math.random() < 0.3) {
     const foundItem = randomFromArray(undiscovered);
     game.roomItems[roomName].push(foundItem);
     logToGame(`You found a cursed item: ${foundItem}!`);
-
     game.nearbyItems = [...(game.roomItems[game.playerRoom] || [])];
     updateNearbyItemsNotebook();
     showNotebookUpdateBadge();
