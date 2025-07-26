@@ -1,6 +1,7 @@
 /*****************************************************
  * === PHASMA-PHONEY v2.9 — MAIN GAME FLOW (FINAL FIXED) ===
  * Fully integrated with Notebook, Settings & Resume.
+ * Now listens for UI command events instead of direct handleCommand calls.
  *****************************************************/
 import { 
   game, randomFromArray, allRooms, possibleWeather, gameSettings, resetGame 
@@ -13,6 +14,7 @@ import { preloadAllAudio, stopAllSounds } from "./audioManager.js";
 import { ghostBehaviorTable } from "./ghostBehavior.js";
 import { advanceTurn } from "./events.js";
 import { loadGame } from "./saveManager.js";
+import { openInventoryOverlay } from "./items.js"; // ✅ Needed for Inventory UI
 
 /***********************
  === INITIALIZATION ===
@@ -26,6 +28,7 @@ if (document.readyState === "loading") {
 function initGame() {
   if (gameSettings.preloadDependencies) preloadAllAudio();
   setupTitleScreen();
+  setupUICommandListener(); // ✅ NEW: Hook UI command events
 }
 
 /***********************
@@ -40,10 +43,10 @@ function setupTitleScreen() {
     return;
   }
 
-  startBtn.disabled = false; // ✅ Re-enable in case of restart
+  startBtn.disabled = false; 
 
   startBtn.onclick = () => {
-    startBtn.disabled = true; // ✅ Prevent double-click spam
+    startBtn.disabled = true; 
     titleScreen.style.opacity = "0";
     setTimeout(() => {
       titleScreen.style.display = "none";
@@ -89,7 +92,7 @@ function startNewGame() {
   populateGhostNotebook();
 
   const confirmBtn = document.getElementById("confirm-loadout");
-  confirmBtn.onclick = null; // ✅ Clear previous handlers
+  confirmBtn.onclick = null;
   confirmBtn.onclick = () => {
     confirmLoadout();
     startInvestigation();
@@ -139,4 +142,41 @@ export function restartGame() {
 
   clearNotebookDetails();
   clearNotebookUpdateBadge();
+}
+
+/***********************
+ === UI COMMAND LISTENER (NEW)
+************************/
+function setupUICommandListener() {
+  document.addEventListener("ui-command", (e) => {
+    const cmd = e.detail;
+    switch (cmd) {
+      case "move":
+        logToGame("You look for a path to move... (movement UI coming soon)");
+        break;
+      case "look":
+        logToGame("You look around carefully...");
+        advanceTurn();
+        break;
+      case "inventory":
+        openInventoryOverlay();
+        break;
+      case "guess":
+        logToGame("You consider making a ghost guess...");
+        break;
+      case "van":
+        if (game.playerRoom !== "Van") {
+          logToGame("You return to the van.");
+          game.playerRoom = "Van";
+          advanceTurn();
+          renderHUD();
+          updateBackground();
+        } else {
+          logToGame("You are already in the van.");
+        }
+        break;
+      default:
+        logToGame(`⚠️ Unknown command: ${cmd}`);
+    }
+  });
 }
