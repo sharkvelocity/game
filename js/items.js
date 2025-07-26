@@ -9,8 +9,7 @@ import { game, allLoadoutItems, cursedItems, getCursedItemCost } from "./state.j
 import { 
   logToGame, renderHUD, updateHeldItemsNotebook, updateNearbyItemsNotebook, showNotebookUpdateBadge 
 } from "./ui.js";
-import { checkTurnEvents, saveGame } from "./events.js";
-import { startHunt } from "./events.js";
+import { checkTurnEvents, startHunt, saveGame } from "./events.js"; // ✅ FIXED combined import
 
 /***********************
  === OPEN INVENTORY OVERLAY ===
@@ -100,7 +99,7 @@ export function inspectItem(i) {
 ************************/
 export function dropItem(i) {
   if (i === "Notebook") {
-    logToGame("The Notebook cannot be dropped."); // ✅ Notebook protection
+    logToGame("The Notebook cannot be dropped."); 
     return;
   }
 
@@ -118,7 +117,6 @@ export function dropItem(i) {
   }
   game.inventory = game.inventory.filter(x => x !== i);
 
-  // ✅ Sync Notebook
   game.nearbyItems = [...(game.roomItems[game.playerRoom] || [])];
   renderHUD();
   updateHeldItemsNotebook();
@@ -132,7 +130,7 @@ export function dropItem(i) {
 ************************/
 export function pickItem(i) {
   if (i === "Notebook") {
-    logToGame("You always carry the Notebook. It cannot be picked up."); // ✅ Notebook protection
+    logToGame("You always carry the Notebook. It cannot be picked up.");
     return;
   }
 
@@ -155,7 +153,6 @@ export function pickItem(i) {
   }
   logToGame(`Picked up ${i}.`);
 
-  // ✅ Sync Notebook
   game.nearbyItems = [...(game.roomItems[game.playerRoom] || [])];
   renderHUD();
   updateHeldItemsNotebook();
@@ -169,7 +166,7 @@ export function pickItem(i) {
 ************************/
 export function useItem(i) {
   if (i === "Notebook") {
-    logToGame("You open your Notebook..."); // ✅ Notebook isn't a usable inventory item
+    logToGame("You open your Notebook...");
     return;
   }
 
@@ -196,7 +193,7 @@ export function useItem(i) {
 
         game.cameraPlacements = game.cameraPlacements || [];
         if (!game.cameraPlacements.includes(game.playerRoom)) {
-          game.cameraPlacements.push(game.playerRoom); // ✅ Prevent duplicate spam
+          game.cameraPlacements.push(game.playerRoom);
         }
 
         logToGame(`You place a video camera in ${game.playerRoom}.`);
@@ -260,14 +257,12 @@ export function useItem(i) {
   }
 
   game.currentTurn++;
-
-  // ✅ Sync Notebook
   game.nearbyItems = [...(game.roomItems[game.playerRoom] || [])];
   renderHUD();
   updateHeldItemsNotebook();
   updateNearbyItemsNotebook();
   showNotebookUpdateBadge();
-  checkTurnEvents();
+  checkTurnEvents(); // ✅ Ensures events progress correctly
   if (gameSettings.autosave) saveGame(true);
 }
 
@@ -316,8 +311,6 @@ export function handleCursedItem(i) {
   }
 
   game.usedCursedItems[i] = true;
-
-  // ✅ Sync Notebook
   game.nearbyItems = [...(game.roomItems[game.playerRoom] || [])];
   renderHUD();
   updateNearbyItemsNotebook();
