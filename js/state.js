@@ -1,5 +1,5 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — STATE.JS (UPDATED WITH NOTEBOOK) ===
+ * === PHASMA-PHONEY v2.9 — STATE.JS (FINAL) ===
  * Holds all game constants, core state, and utilities.
  *****************************************************/
 
@@ -101,15 +101,16 @@ export const game = {
   mimicForm: null,
   nextMimicShift: 0,
   cameraActive: false,
+  cameraPlacements: [],        // ✅ NEW: Tracks camera placement order for van monitor
   huntCooldown: 0,
   smudgeActive: 0,
   placedCrucifix: {},
   roomItems: {},
   usedCursedItems: {},
-  nearbyItems: [] /* ✅ Added: nearby items cache for notebook */
+  nearbyItems: []               // ✅ Notebook nearby item cache
 };
 
-// === GAME SETTINGS (NEW, NOTEBOOK INTEGRATION) ===
+// === GAME SETTINGS ===
 export let gameSettings = {
   muteSounds: false,
   narratorVoice: false,
@@ -136,10 +137,12 @@ export function resetGame() {
   game.weather = null;
   game.mimicForm = null;
   game.nextMimicShift = 0;
+  game.cameraActive = false;
+  game.cameraPlacements = [];   // ✅ Reset camera order each game
   game.huntCooldown = 0;
   game.smudgeActive = 0;
   game.placedCrucifix = {};
   game.roomItems = {};
   game.usedCursedItems = {};
-  game.nearbyItems = []; /* ✅ Reset nearby items on new game */
+  game.nearbyItems = [];        // ✅ Reset nearby items each game
 }
