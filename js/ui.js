@@ -1,10 +1,10 @@
 /*****************************************************
  * === PHASMA-PHONEY v2.9 — UI MODULE (FINAL FIXED) ===
  * Handles HUD, logging, notebook, and van monitor sync.
+ * Now uses ui-command events instead of handleCommand.
  *****************************************************/
 import { game, allLoadoutItems, roomVisuals, gameSettings, ghostProfiles } from "./state.js";
 import { saveGame } from "./saveManager.js";
-// ❌ REMOVED: import { handleCommand } from "./events.js";
 import { playNotebookSound } from "./audioManager.js";
 import { useItem, pickItem } from "./items.js"; // ✅ Needed for notebook item actions
 
@@ -55,7 +55,7 @@ export function updateBackground() {
 }
 
 /***********************
- === ACTION BUTTONS (FIXED) ===
+ === ACTION BUTTONS (FULLY FIXED) ===
 ************************/
 export function renderActionButtons() {
   const cmd = document.getElementById("command-buttons");
@@ -66,12 +66,12 @@ export function renderActionButtons() {
     <button data-cmd="guess">Ghost Guess</button>
     <button data-cmd="van">Return to Van</button>
   `;
+
+  // ✅ FIX: No direct handleCommand call; dispatches ui-command instead
   cmd.onclick = (e) => {
     if (!e.target.dataset.cmd) return;
-    const action = e.target.dataset.cmd;
-    document.dispatchEvent(new CustomEvent("ui-command", { detail: action }));
+    document.dispatchEvent(
+      new CustomEvent("ui-command", { detail: e.target.dataset.cmd })
+    );
   };
 }
-// ✅ FIX: Replaced direct call to handleCommand with a dispatch event.
-// Main game flow now listens for `ui-command`.
-
