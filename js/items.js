@@ -1,13 +1,9 @@
 /*****************************************************
  * === PHASMA-PHONEY v2.9 — ITEMS.JS (FINAL FULLY UPDATED) ===
- * Handles inventory management, item interactions,
- * cursed items, and camera placement for van monitor.
- * Consumables are consumed; IR camera toggle added.
+ * Handles inventory, consumables, IR camera toggle,
+ * cursed items, and placed items.
  *****************************************************/
-
-import { 
-  game, allLoadoutItems, cursedItems, getCursedItemCost, gameSettings, ghostProfiles 
-} from "./state.js";
+import { game, allLoadoutItems, cursedItems, getCursedItemCost, gameSettings, ghostProfiles } from "./state.js";
 import { 
   logToGame, renderHUD, updateHeldItemsNotebook, 
   updateNearbyItemsNotebook, showNotebookUpdateBadge 
@@ -26,20 +22,15 @@ export function openInventoryOverlay() {
   c.id = "inventory-temp";
   Object.assign(c.style, {
     position: "fixed",
-    top: "50%",
-    left: "50%",
+    top: "50%", left: "50%",
     transform: "translate(-50%,-50%)",
     background: "#111",
     padding: "12px",
-    maxHeight: "75%",
+    maxHeight: "75%", maxWidth: "92%",
     overflowY: "auto",
-    maxWidth: "92%",
-    zIndex: "3000",
-    border: "1px solid #555",
-    borderRadius: "6px",
-    color: "#eee",
-    textAlign: "center",
-    lineHeight: "1.4"
+    zIndex: "3000", border: "1px solid #555",
+    borderRadius: "6px", color: "#eee",
+    textAlign: "center", lineHeight: "1.4"
   });
 
   let html = `<h3 style="margin-top:0;color:#0ff;">Inventory</h3>`;
@@ -77,9 +68,7 @@ export function openInventoryOverlay() {
   window.closeInventory = function () {
     const t = document.getElementById("inventory-temp");
     if (t) document.body.removeChild(t);
-    if (gameSettings.autosave) {
-      localStorage.setItem("phasmaPhoneySave", JSON.stringify(game));
-    }
+    if (gameSettings.autosave) localStorage.setItem("phasmaPhoneySave", JSON.stringify(game));
   };
 }
 
@@ -90,14 +79,12 @@ export function inspectItem(i) {
   let desc = cursedItems[i]?.desc || "Standard investigation gear.";
   switch (i) {
     case "Crucifix": desc = "Placed to prevent hunts. 2 uses."; break;
-    case "Camera": desc = "Handheld photo camera for evidence shots."; break;
-    case "Video Camera": 
-      desc = "Toggle IR to detect orbs on camera (if ghost has Orbs evidence)."; 
-      break;
+    case "Camera": desc = "Handheld photo camera; toggle IR to view orbs."; break;
+    case "Video Camera": desc = "Detects orbs when placed and viewed from van monitor."; break;
     case "UV Light": desc = "Reveals fingerprints or footprints (salt needed)."; break;
-    case "Salt": desc = "Sprinkle to reveal footprints with UV."; break;
+    case "Salt": desc = "Sprinkle to reveal footprints with UV (consumable)."; break;
     case "Motion Sensor": desc = "Alerts you in van when ghost triggers it."; break;
-    case "Candle": desc = "Prevents Onryo hunts while lit."; break;
+    case "Candle": desc = "Prevents Onryo hunts while lit (consumable)."; break;
   }
   logToGame(`Inspecting ${i}: ${desc}`);
 }
@@ -110,7 +97,6 @@ export function dropItem(i) {
     logToGame("The Notebook cannot be dropped.");
     return;
   }
-
   if (game.playerRoom === "Van") {
     if (!game.vanStock.includes(i)) {
       game.vanStock.push(i);
@@ -119,21 +105,12 @@ export function dropItem(i) {
     logToGame(`Returned ${i} to van.`);
   } else {
     game.roomItems[game.playerRoom] = game.roomItems[game.playerRoom] || [];
-    if (!game.roomItems[game.playerRoom].includes(i)) {
+    if (!game.roomItems[game.playerRoom].includes(i))
       game.roomItems[game.playerRoom].push(i);
-    }
     logToGame(`Dropped ${i} here.`);
   }
   game.inventory = game.inventory.filter(x => x !== i);
-
-  game.nearbyItems = [...(game.roomItems[game.playerRoom] || [])];
-  renderHUD();
-  updateHeldItemsNotebook();
-  updateNearbyItemsNotebook();
-  showNotebookUpdateBadge();
-  if (gameSettings.autosave) {
-    localStorage.setItem("phasmaPhoneySave", JSON.stringify(game));
-  }
+  syncItems();
 }
 
 /***********************
@@ -141,41 +118,26 @@ export function dropItem(i) {
 ************************/
 export function pickItem(i) {
   if (i === "Notebook") {
-    logToGame("You always carry the Notebook. It cannot be picked up.");
+    logToGame("You always carry the Notebook.");
     return;
   }
-
   if (game.inventory.filter(x => x !== "Notebook" && x !== "Lighter").length >= 3) {
     logToGame("Max 3 carryable items (Notebook & Lighter excluded).");
     return;
   }
-
   if (cursedItems[i] && i === "Summoning Circle") {
     logToGame("The circle cannot be moved.");
     return;
   }
-
   game.roomItems[game.playerRoom] =
     game.roomItems[game.playerRoom].filter(x => x !== i);
-
-  if (!game.inventory.includes(i)) {
-    game.inventory.push(i);
-    game.inventory.sort();
-  }
+  if (!game.inventory.includes(i)) game.inventory.push(i);
   logToGame(`Picked up ${i}.`);
-
-  game.nearbyItems = [...(game.roomItems[game.playerRoom] || [])];
-  renderHUD();
-  updateHeldItemsNotebook();
-  updateNearbyItemsNotebook();
-  showNotebookUpdateBadge();
-  if (gameSettings.autosave) {
-    localStorage.setItem("phasmaPhoneySave", JSON.stringify(game));
-  }
+  syncItems();
 }
 
 /***********************
- === USE ITEM (UPDATED WITH CONSUMABLES & IR CAMERA) ===
+ === USE ITEM ===
 ************************/
 export function useItem(i) {
   if (i === "Notebook") {
@@ -195,24 +157,21 @@ export function useItem(i) {
       break;
 
     case "Camera":
-      logToGame("This is a handheld photo camera. Use it to capture evidence shots.");
+      toggleCameraIR();
       break;
 
     case "Video Camera":
-      if (game.cameraActive) {
-        game.cameraActive = false;
-        logToGame("You turn OFF the IR on your video camera.");
-      } else {
-        game.cameraActive = true;
-        if (
-          game.playerRoom === game.ghostRoom &&
-          (ghostProfiles[game.ghost]?.evidence.includes("Orbs") ||
-            game.ghost === "TheMimic")
-        ) {
-          logToGame("✨ Orbs flicker faintly in the air through your IR camera!");
-        } else {
-          logToGame("No orbs visible through the IR.");
+      if (game.playerRoom !== "Van") {
+        game.roomItems[game.playerRoom] = game.roomItems[game.playerRoom] || [];
+        if (!game.roomItems[game.playerRoom].includes("Video Camera")) {
+          game.roomItems[game.playerRoom].push("Video Camera");
+          game.cameraPlacements = game.cameraPlacements || [];
+          if (!game.cameraPlacements.includes(game.playerRoom))
+            game.cameraPlacements.push(game.playerRoom);
+          logToGame(`You place a video camera in ${game.playerRoom}.`);
         }
+      } else {
+        logToGame("Cannot place video cameras in the van.");
       }
       break;
 
@@ -220,7 +179,7 @@ export function useItem(i) {
       if (game.playerRoom !== "Van") {
         game.placedCrucifix[game.playerRoom] = 2;
         logToGame("You place the crucifix. It may stop two hunts.");
-        game.inventory = game.inventory.filter(x => x !== i);
+        consumeItem(i);
       } else {
         logToGame("Cannot place crucifix in van.");
       }
@@ -228,13 +187,12 @@ export function useItem(i) {
 
     case "Salt":
       if (game.playerRoom !== "Van") {
+        logToGame("You sprinkle salt on the ground.");
         game.roomItems[game.playerRoom] = game.roomItems[game.playerRoom] || [];
-        if (!game.roomItems[game.playerRoom].includes("Salt")) {
+        if (!game.roomItems[game.playerRoom].includes("Salt"))
           game.roomItems[game.playerRoom].push("Salt");
-          logToGame("You sprinkle salt on the ground.");
-        }
-        consumeItem(i);
       }
+      consumeItem(i);
       break;
 
     case "UV Light":
@@ -248,39 +206,52 @@ export function useItem(i) {
 
     case "Candle":
       if (game.playerRoom !== "Van") {
+        logToGame("You place and light a candle here.");
         game.roomItems[game.playerRoom] = game.roomItems[game.playerRoom] || [];
-        if (!game.roomItems[game.playerRoom].includes("Candle")) {
+        if (!game.roomItems[game.playerRoom].includes("Candle"))
           game.roomItems[game.playerRoom].push("Candle");
-          logToGame("You place and light a candle here.");
-        }
-        consumeItem(i);
       }
+      consumeItem(i);
       break;
 
     case "Motion Sensor":
       if (game.playerRoom !== "Van") {
+        logToGame("You place a motion sensor in this room.");
         game.roomItems[game.playerRoom] = game.roomItems[game.playerRoom] || [];
-        if (!game.roomItems[game.playerRoom].includes("Motion Sensor")) {
+        if (!game.roomItems[game.playerRoom].includes("Motion Sensor"))
           game.roomItems[game.playerRoom].push("Motion Sensor");
-          logToGame("You place a motion sensor in this room.");
-        }
       }
+      consumeItem(i);
       break;
 
     default:
       if (cursedItems[i]) handleCursedItem(i);
-      else logToGame("You use the " + i + ", but nothing significant occurs.");
+      else logToGame(`You use the ${i}, but nothing significant occurs.`);
   }
 
   game.currentTurn++;
-  game.nearbyItems = [...(game.roomItems[game.playerRoom] || [])];
-  renderHUD();
-  updateHeldItemsNotebook();
-  updateNearbyItemsNotebook();
-  showNotebookUpdateBadge();
+  syncItems();
   checkTurnEvents();
-  if (gameSettings.autosave) {
-    localStorage.setItem("phasmaPhoneySave", JSON.stringify(game));
+}
+
+/***********************
+ === TOGGLE CAMERA IR (NEW)
+************************/
+function toggleCameraIR() {
+  game.cameraActive = !game.cameraActive;
+  if (game.cameraActive) {
+    logToGame("📷 IR Camera ON: Scanning for orbs...");
+    const ghost = game.ghost === "TheMimic" ? "TheMimic" : game.ghost;
+    const validEvidence = ghostProfiles[ghost].evidence.includes("Orbs");
+    const inGhostRoom = game.playerRoom === game.ghostRoom;
+    if (inGhostRoom && (validEvidence || ghost === "TheMimic")) {
+      logToGame("✨ You see ghost orbs floating in the air!");
+      game.selectedEvidence.add("Orbs");
+    } else {
+      logToGame("No orbs detected.");
+    }
+  } else {
+    logToGame("📷 IR Camera OFF.");
   }
 }
 
@@ -289,57 +260,52 @@ export function useItem(i) {
 ************************/
 export function handleCursedItem(i) {
   if (game.usedCursedItems[i]) {
-    logToGame("The " + i + " is inert now.");
+    logToGame(`The ${i} is inert now.`);
     return;
   }
-  logToGame("You use the " + i + "...");
+  logToGame(`You use the ${i}...`);
   game.sanity -= getCursedItemCost(i);
   if (game.sanity < 0) game.sanity = 0;
 
   switch (i) {
-    case "Ouija Board":
-      if (Math.random() < 0.2) startHunt();
-      break;
+    case "Ouija Board": if (Math.random() < 0.2) startHunt(); break;
     case "Tarot Cards":
       const r = Math.random();
       if (r < 0.2) logToGame("The Fool — nothing happens.");
       else if (r < 0.4) logToGame("The Tower — ghost activity spikes!");
-      else if (r < 0.6) {
-        logToGame("The Death card — hunt triggered!");
-        startHunt();
-      } else {
-        logToGame("The Sun — sanity restored.");
-        game.sanity = Math.min(100, game.sanity + 10);
-      }
+      else if (r < 0.6) { logToGame("The Death card — hunt triggered!"); startHunt(); }
+      else { logToGame("The Sun — sanity restored."); game.sanity = Math.min(100, game.sanity + 10); }
       break;
     case "Music Box":
-    case "Haunted Mirror":
-      if (Math.random() < 0.3) startHunt();
-      break;
-    case "Summoning Circle":
-      startHunt();
-      break;
-    case "Monkey Paw":
-      if (Math.random() < 0.5) startHunt();
-      break;
+    case "Haunted Mirror": if (Math.random() < 0.3) startHunt(); break;
+    case "Summoning Circle": startHunt(); break;
+    case "Monkey Paw": if (Math.random() < 0.5) startHunt(); break;
   }
 
   game.usedCursedItems[i] = true;
-  game.nearbyItems = [...(game.roomItems[game.playerRoom] || [])];
-  renderHUD();
-  updateNearbyItemsNotebook();
-  showNotebookUpdateBadge();
-  if (gameSettings.autosave) {
-    localStorage.setItem("phasmaPhoneySave", JSON.stringify(game));
+  syncItems();
+}
+
+/***********************
+ === CONSUME ITEM (NEW)
+************************/
+function consumeItem(i) {
+  if (game.inventory.includes(i)) {
+    game.inventory = game.inventory.filter(x => x !== i);
+    logToGame(`The ${i} has been consumed.`);
   }
 }
 
 /***********************
- ✅ CONSUME ITEM HELPER
+ === SYNC NOTEBOOK / HUD
 ************************/
-function consumeItem(item) {
-  game.inventory = game.inventory.filter(x => x !== item);
-  logToGame(`${item} was consumed.`);
+function syncItems() {
+  game.nearbyItems = [...(game.roomItems[game.playerRoom] || [])];
+  renderHUD();
+  updateHeldItemsNotebook();
+  updateNearbyItemsNotebook();
+  showNotebookUpdateBadge();
+  if (gameSettings.autosave) localStorage.setItem("phasmaPhoneySave", JSON.stringify(game));
 }
 
 /***********************
