@@ -1,6 +1,6 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — GLOBAL STYLES (UPDATED WITH NOTEBOOK) ===
- * Dark horror-themed UI, responsive & mobile-friendly
+ * === PHASMA-PHONEY v2.9 — GLOBAL STYLES (FINAL) ===
+ * Updated for full HUD, Notebook, Settings & Resume.
  *****************************************************/
 
 /* === GLOBAL RESET & BASICS === */
@@ -56,8 +56,8 @@ h2, h3 {
 }
 
 @keyframes pulse {
-  0% {opacity:0.6; transform:scale(0.98);}
-  100% {opacity:1; transform:scale(1);}
+  0% { opacity:0.6; transform:scale(0.98); }
+  100% { opacity:1; transform:scale(1); }
 }
 
 /* === HUD === */
@@ -72,7 +72,7 @@ h2, h3 {
   max-width: 200px;
 }
 
-#sanity-container {
+#sanity-bar-container {
   width: 100%;
   height: 12px;
   background: #333;
@@ -88,15 +88,27 @@ h2, h3 {
   transition: width 0.3s ease, background 0.3s ease;
 }
 
+#inventory-display {
+  position: absolute;
+  top: 10px;
+  left: 230px;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid #555;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 14px;
+  max-width: 180px;
+}
+
 /* === BACKGROUND SCENE === */
-.scene-layer {
+#background, #lightning, #fog-layer, #orbCanvas {
   position: absolute;
   top: 0; left: 0;
   width: 100vw; height: 100vh;
   background-size: cover;
   background-position: center;
-  transition: background-image 0.5s ease-in-out;
   z-index: -1;
+  transition: background-image 0.5s ease-in-out;
 }
 
 /* === NARRATOR UI === */
@@ -136,24 +148,6 @@ h2, h3 {
   text-align: center;
 }
 
-/* === OVERLAYS === */
-.overlay {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100vw; height: 100vh;
-  background: rgba(0,0,0,0.85);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 900;
-}
-
-.overlay button {
-  min-width: 120px;
-  margin: 5px 0;
-}
-
 /* === LOADOUT SCREEN === */
 #loadout-screen {
   position: fixed;
@@ -167,14 +161,12 @@ h2, h3 {
   color:#eee;
   z-index:950;
 }
-
-.loadout-container {
+#loadout-container {
   display:flex;
   justify-content:space-between;
   width:80%;
   max-width:600px;
 }
-
 #held-list, #van-list {
   display:flex;
   flex-direction:column;
@@ -198,26 +190,7 @@ footer {
   border-top:1px solid #333;
 }
 
-/* === RESPONSIVE ADJUSTMENTS === */
-@media (max-width: 768px) {
-  #hud { font-size:12px; max-width:150px; }
-  #narrator-ui { width:260px; }
-  #loadout-screen h2 { font-size:18px; }
-  button { font-size:12px; padding:4px 8px; }
-}
-
-/* === FIX: Initial Visibility === */
-#main-scene {
-  display: none; /* Hidden until startInvestigation() */
-}
-
-#narrator-ui {
-  display: none; /* Hidden until investigation starts */
-}
-
-/***********************
- === NOTEBOOK MODULE (SLIDE SYSTEM, NEW) ===
-************************/
+/* === NOTEBOOK (SLIDE-UP PANEL) === */
 #notebook {
   position: fixed;
   bottom: -100%;
@@ -237,10 +210,7 @@ footer {
   transition: bottom 0.25s ease-out;
   z-index: 2000;
 }
-
-#notebook.open {
-  bottom: 0;
-}
+#notebook.open { bottom: 0; }
 
 #notebook-left {
   width: 45%;
@@ -249,13 +219,6 @@ footer {
   padding: 10px;
   overflow-y: auto;
 }
-
-#notebook-left ol, #held-items-list, #nearby-items-list {
-  list-style: none;
-  padding-left: 10px;
-  font-size: 0.85em;
-}
-
 #notebook-left li {
   cursor: pointer;
   color: #0044cc;
@@ -263,14 +226,7 @@ footer {
   text-decoration: underline;
 }
 #notebook-left li:hover { color: #002288; }
-
-.cursed-item {
-  color: #4b0082;
-  font-weight: bold;
-}
-.cursed-item:hover {
-  color: #360060;
-}
+.cursed-item { color: #4b0082; font-weight: bold; }
 
 #notebook-right {
   width: 50%;
@@ -280,12 +236,7 @@ footer {
   padding: 10px;
   overflow-y: auto;
 }
-
-#selected-ghost-name {
-  font-size: 1.2em;
-  font-weight: bold;
-  margin-bottom: 8px;
-}
+#selected-ghost-name { font-size: 1.2em; font-weight: bold; margin-bottom: 8px; }
 
 #ghost-image-container {
   width: 100%;
@@ -296,16 +247,13 @@ footer {
   overflow: hidden;
   margin-bottom: 10px;
 }
-
 #selected-ghost-image {
   max-width: 100%;
   max-height: 250px;
   object-fit: contain;
   border-radius: 4px;
 }
-
 #selected-ghost-evidence button {
-  display: inline-block;
   background: #f4ecd8;
   border: 1px solid #b9a67c;
   border-radius: 6px;
@@ -316,35 +264,38 @@ footer {
   cursor: pointer;
   color: #4a3b1e;
   box-shadow: 1px 1px 2px rgba(0,0,0,0.2);
-  transition: background 0.2s ease, transform 0.1s ease;
 }
-#selected-ghost-evidence button:hover {
-  background: #e3d6b8;
-  transform: scale(1.05);
+#selected-ghost-evidence button:hover { background: #e3d6b8; transform: scale(1.05); }
+
+/* === NOTEBOOK BUTTON & BADGE === */
+#notebook-button-container {
+  position: fixed;
+  bottom: 12px;
+  right: 12px;
+  z-index: 3000;
 }
-#selected-ghost-evidence button:active {
-  background: #d7caa7;
-  transform: scale(0.97);
+#notebook-toggle-btn {
+  position: relative;
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: #f4ecd8;
+  border: 2px solid #b9a67c;
+  font-size: 1.5em;
+  cursor: pointer;
+}
+#notebook-update-badge {
+  position: absolute;
+  top: -5px; right: -5px;
+  background: #b30000;
+  color: white;
+  font-size: 0.7em;
+  font-weight: bold;
+  padding: 2px 5px;
+  border-radius: 50%;
+  display: none;
 }
 
 /* === SETTINGS PANEL === */
-#notebook-settings-container {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-}
-#open-settings-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #f4ecd8;
-  border: 1px solid #b9a67c;
-  font-size: 1.2em;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-#open-settings-btn:hover { background: #e3d6b8; }
-
 #settings-panel {
   position: fixed;
   top: 50%;
@@ -359,58 +310,12 @@ footer {
   display: none;
   box-shadow: 0 0 8px rgba(0,0,0,0.3);
 }
-#settings-panel h3 {
-  margin-top: 0;
-  font-family: "Cursive", serif;
-  text-align: center;
-}
-#settings-panel label {
-  font-size: 0.9em;
-  font-family: monospace;
-  display: block;
-  margin-bottom: 6px;
-}
 
-/* === NOTEBOOK FAILSAFE BUTTON === */
-#notebook-button-container {
-  position: fixed;
-  bottom: 12px;
-  right: 12px;
-  z-index: 3000;
-}
-#notebook-toggle-btn {
-  position: relative;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: #f4ecd8;
-  border: 2px solid #b9a67c;
-  font-size: 1.5em;
-  cursor: pointer;
-  box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
-  transition: background 0.2s ease;
-}
-#notebook-toggle-btn:hover { background: #e3d6b8; }
-#notebook-update-badge {
-  position: absolute;
-  top: -5px;
-  right: -5px;
-  background: #b30000;
-  color: white;
-  font-size: 0.7em;
-  font-weight: bold;
-  padding: 2px 5px;
-  border-radius: 50%;
-  display: none;
-}
-
-/* === BUTTON SHAKE ANIMATION === */
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-3px); }
-  50% { transform: translateX(3px); }
-  75% { transform: translateX(-3px); }
-}
-#notebook-toggle-btn.shake {
-  animation: shake 0.4s ease;
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+  #hud { font-size:12px; max-width:150px; }
+  #inventory-display { left: 180px; font-size:12px; }
+  #narrator-ui { width:260px; }
+  #notebook { height: 65%; font-size: 0.9em; }
+  button { font-size:12px; padding:4px 8px; }
 }
