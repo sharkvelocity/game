@@ -1,5 +1,5 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — ITEMS.JS (FINAL) ===
+ * === PHASMA-PHONEY v2.9 — ITEMS.JS (FINAL UPDATED) ===
  * Handles inventory management, item interactions,
  * cursed items, and camera placement for van monitor.
  * Notebook is excluded as an item.
@@ -117,6 +117,9 @@ export function dropItem(i) {
     logToGame(`Dropped ${i} here.`);
   }
   game.inventory = game.inventory.filter(x => x !== i);
+
+  // ✅ Sync Notebook
+  game.nearbyItems = [...(game.roomItems[game.playerRoom] || [])];
   renderHUD();
   updateHeldItemsNotebook();
   updateNearbyItemsNotebook();
@@ -151,6 +154,9 @@ export function pickItem(i) {
     game.inventory.sort();
   }
   logToGame(`Picked up ${i}.`);
+
+  // ✅ Sync Notebook
+  game.nearbyItems = [...(game.roomItems[game.playerRoom] || [])];
   renderHUD();
   updateHeldItemsNotebook();
   updateNearbyItemsNotebook();
@@ -184,10 +190,14 @@ export function useItem(i) {
     case "Video Camera":
       if (game.playerRoom !== "Van") {
         game.roomItems[game.playerRoom] = game.roomItems[game.playerRoom] || [];
-        game.roomItems[game.playerRoom].push("Video Camera");
+        if (!game.roomItems[game.playerRoom].includes("Video Camera")) {
+          game.roomItems[game.playerRoom].push("Video Camera");
+        }
 
         game.cameraPlacements = game.cameraPlacements || [];
-        game.cameraPlacements.push(game.playerRoom);
+        if (!game.cameraPlacements.includes(game.playerRoom)) {
+          game.cameraPlacements.push(game.playerRoom); // ✅ Prevent duplicate spam
+        }
 
         logToGame(`You place a video camera in ${game.playerRoom}.`);
       } else {
@@ -250,6 +260,9 @@ export function useItem(i) {
   }
 
   game.currentTurn++;
+
+  // ✅ Sync Notebook
+  game.nearbyItems = [...(game.roomItems[game.playerRoom] || [])];
   renderHUD();
   updateHeldItemsNotebook();
   updateNearbyItemsNotebook();
@@ -303,6 +316,9 @@ export function handleCursedItem(i) {
   }
 
   game.usedCursedItems[i] = true;
+
+  // ✅ Sync Notebook
+  game.nearbyItems = [...(game.roomItems[game.playerRoom] || [])];
   renderHUD();
   updateNearbyItemsNotebook();
   showNotebookUpdateBadge();
