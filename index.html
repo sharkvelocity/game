@@ -12,8 +12,7 @@
   <!-- === TITLE SCREEN === -->
   <div id="title-screen">
     <img src="logo.png" alt="Phasma‑Phoney Logo" />
-    <button id="startButton">Start New Game</button>
-    <button id="loadGameButton">Load Game</button>
+    <button id="startButton">Start Game</button>
   </div>
 
   <!-- === MAIN SCENE === -->
@@ -41,6 +40,32 @@
     <div id="narrator-ui" style="display:none;">
       <div id="game-log"></div>
       <div id="command-buttons"></div>
+    </div>
+
+    <!-- === NOTEBOOK === -->
+    <div id="notebook">
+      <div id="notebook-header">
+        <button id="notebook-toggle-btn">
+          Notebook <span id="notebook-update-badge" style="display:none;">•</span>
+        </button>
+      </div>
+      <div id="ghost-list"></div>
+      <div id="held-items-list"></div>
+      <div id="nearby-items-list"></div>
+      <h4 id="selected-ghost-name">// Ghost name will appear here //</h4>
+      <img id="selected-ghost-image" alt="Ghost visual" />
+      <p id="selected-ghost-details">Select a ghost or item to see details.</p>
+      <ul id="selected-ghost-evidence"></ul>
+    </div>
+
+    <!-- === SETTINGS PANEL === -->
+    <button id="open-settings-btn">Settings</button>
+    <div id="settings-panel" style="display:none;">
+      <label><input type="checkbox" id="mute-sounds">Mute</label>
+      <label><input type="checkbox" id="narrator-voice">Narrator Voice</label>
+      <label><input type="checkbox" id="mobile-mode">Mobile Mode</label>
+      <label><input type="checkbox" id="autosave-toggle" checked>Autosave</label>
+      <label><input type="checkbox" id="preload-dependencies">Preload Assets</label>
     </div>
   </div>
 
