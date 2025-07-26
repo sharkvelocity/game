@@ -1,6 +1,7 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — MAIN GAME FLOW (FINAL FULLY UPDATED) ===
- * Fully integrated with Notebook, Settings, IR toggle, and Resume.
+ * === PHASMA-PHONEY v2.9 — MAIN GAME FLOW (FINAL FIXED) ===
+ * Fully integrated with Notebook, Settings & Resume.
+ * Listens for UI command events instead of handleCommand.
  *****************************************************/
 import { 
   game, randomFromArray, allRooms, possibleWeather, gameSettings, resetGame 
@@ -36,12 +37,7 @@ function initGame() {
 function setupTitleScreen() {
   const titleScreen = document.getElementById("title-screen");
   const startBtn = document.getElementById("startButton");
-
-  if (!startBtn) {
-    console.error("❌ Start button not found!");
-    return;
-  }
-
+  if (!startBtn) { console.error("❌ Start button not found!"); return; }
   startBtn.disabled = false;
   startBtn.onclick = () => {
     startBtn.disabled = true;
@@ -58,16 +54,13 @@ function setupTitleScreen() {
 ************************/
 function promptContinueGame() {
   const savedState = localStorage.getItem("phasmaPhoneySave");
-  if (savedState) {
-    const continueGame = confirm("Would you like to continue where you left off?");
-    if (continueGame) {
-      loadGame();
-      logToGame("Resuming your previous investigation...");
-      startInvestigation(true);
-      return;
-    }
+  if (savedState && confirm("Would you like to continue where you left off?")) {
+    loadGame();
+    logToGame("Resuming your previous investigation...");
+    startInvestigation(true);
+  } else {
+    startNewGame();
   }
-  startNewGame();
 }
 
 /***********************
@@ -75,21 +68,16 @@ function promptContinueGame() {
 ************************/
 function startNewGame() {
   resetGame();
-
   Object.assign(game, {
     ghost: randomFromArray(Object.keys(ghostBehaviorTable)),
     weather: randomFromArray(possibleWeather),
-    ghostRoom: randomFromArray(allRooms.filter(r => r !== "Van")),
-    cameraActive: false // ✅ Ensure IR toggle off on new game
+    ghostRoom: randomFromArray(allRooms.filter(r => r !== "Van"))
   });
-
   logToGame(`You are in the van. The weather is ${game.weather}.`);
   showLoadout();
-
   clearNotebookDetails();
   clearNotebookUpdateBadge();
   populateGhostNotebook();
-
   const confirmBtn = document.getElementById("confirm-loadout");
   confirmBtn.onclick = null;
   confirmBtn.onclick = () => {
@@ -109,18 +97,11 @@ export function startInvestigation(isResume = false) {
   } else {
     logToGame("Investigation resumed.");
   }
-
   renderHUD();
   updateBackground();
-
-  const scene = document.getElementById("main-scene");
-  const narrator = document.getElementById("narrator-ui");
-  const loadout = document.getElementById("loadout-screen");
-
-  if (loadout) loadout.style.display = "none";
-  if (scene) scene.style.display = "block";
-  if (narrator) narrator.style.display = "flex";
-
+  document.getElementById("loadout-screen").style.display = "none";
+  document.getElementById("main-scene").style.display = "block";
+  document.getElementById("narrator-ui").style.display = "flex";
   advanceTurn();
 }
 
@@ -130,15 +111,12 @@ export function startInvestigation(isResume = false) {
 export function restartGame() {
   stopAllSounds();
   resetGame();
-
   document.getElementById("main-scene").style.display = "none";
   document.getElementById("narrator-ui").style.display = "none";
   document.getElementById("loadout-screen").style.display = "none";
-
   const ts = document.getElementById("title-screen");
   ts.style.display = "flex";
   ts.style.opacity = "1";
-
   clearNotebookDetails();
   clearNotebookUpdateBadge();
 }
@@ -151,7 +129,7 @@ function setupUICommandListener() {
     const cmd = e.detail;
     switch (cmd) {
       case "move":
-        logToGame("You look for a path to move...");
+        logToGame("You look for a path to move... (movement UI coming soon)");
         break;
       case "look":
         logToGame("You look around carefully...");
