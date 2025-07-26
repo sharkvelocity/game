@@ -1,7 +1,7 @@
 /*****************************************************
  * === PHASMA-PHONEY v2.9 — MAIN GAME FLOW (FINAL FIXED) ===
  * Fully integrated with Notebook, Settings & Resume.
- * Now listens for UI command events instead of direct handleCommand calls.
+ * Modular, exports `startInvestigation` for saveManager.
  *****************************************************/
 import { 
   game, randomFromArray, allRooms, possibleWeather, gameSettings, resetGame 
@@ -14,7 +14,7 @@ import { preloadAllAudio, stopAllSounds } from "./audioManager.js";
 import { ghostBehaviorTable } from "./ghostBehavior.js";
 import { advanceTurn } from "./events.js";
 import { loadGame } from "./saveManager.js";
-import { openInventoryOverlay } from "./items.js"; // ✅ Needed for Inventory UI
+import { openInventoryOverlay } from "./items.js";
 
 /***********************
  === INITIALIZATION ===
@@ -28,7 +28,7 @@ if (document.readyState === "loading") {
 function initGame() {
   if (gameSettings.preloadDependencies) preloadAllAudio();
   setupTitleScreen();
-  setupUICommandListener(); // ✅ NEW: Hook UI command events
+  setupUICommandListener();
 }
 
 /***********************
@@ -43,10 +43,10 @@ function setupTitleScreen() {
     return;
   }
 
-  startBtn.disabled = false; 
+  startBtn.disabled = false;
 
   startBtn.onclick = () => {
-    startBtn.disabled = true; 
+    startBtn.disabled = true;
     titleScreen.style.opacity = "0";
     setTimeout(() => {
       titleScreen.style.display = "none";
@@ -145,7 +145,7 @@ export function restartGame() {
 }
 
 /***********************
- === UI COMMAND LISTENER (NEW)
+ === UI COMMAND LISTENER ===
 ************************/
 function setupUICommandListener() {
   document.addEventListener("ui-command", (e) => {
