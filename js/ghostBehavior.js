@@ -1,14 +1,16 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — GHOSTBEHAVIOR.JS (FINAL FIXED) ===
- * Handles ghost behaviors, hunts, mimic shifts,
- * and ambient events. Fully safe with missing audio.
+ * === PHASMA-PHONEY v2.9 — GHOSTBEHAVIOR.JS (CLEANED FINAL) ===
+ * Handles only ghost-specific logic: mimic shifts,
+ * hunts, and death. Turn flow is managed in events.js.
  *****************************************************/
 
 import { game, ghostProfiles, randomFromArray } from "./state.js";
-import { logToGame, updateSanityBar } from "./ui.js";
-import { playAudio } from "./audioManager.js"; // ✅ FIXED: using correct export
+import { logToGame } from "./ui.js";
+import { playAudio } from "./audioManager.js"; // ✅ Correct export
 
-// === MIMIC LOGIC ===
+/***********************
+ === MIMIC LOGIC ===
+************************/
 export function assignMimicForm() {
   const ghostList = Object.keys(ghostProfiles).filter(g => g !== "TheMimic");
   game.mimicForm = randomFromArray(ghostList);
@@ -16,51 +18,21 @@ export function assignMimicForm() {
   logToGame("The Mimic shifts its behavior...");
 }
 
-// === ADVANCE TURN ===
-export function advanceTurn() {
-  game.currentTurn++;
-
-  // === Mimic Behavior Shift ===
-  if (game.ghost === "TheMimic" && game.currentTurn >= game.nextMimicShift) {
-    assignMimicForm();
-  }
-
-  // === Sanity Drain & Ambient Cues ===
-  if (game.playerRoom === game.ghostRoom) {
-    game.sanity -= 3 + Math.random() * 3;
-    const ghostType = game.ghost === "TheMimic" ? game.mimicForm : game.ghost;
-    if (game.currentTurn % 2 === 0 && Math.random() < 0.3) {
-      logToGame("[Ambient] " + ghostProfiles[ghostType].behavior);
-      playAudio("audio/ghost_whisper1.ogg");
-    }
-  } else {
-    game.sanity -= 1;
-  }
-
-  // === Motion Sensor Alerts ===
-  Object.keys(game.roomItems).forEach(r => {
-    if (!game.roomItems[r]?.includes("Motion Sensor")) return;
-    if (Math.random() < 0.25) {
-      if (game.playerRoom === "Van") {
-        logToGame("[Van Monitor] Motion detected in " + r + "!");
-        playAudio("audio/monitor_boot.ogg");
-      } else if (game.playerRoom === r) {
-        logToGame("You hear the motion sensor *beep* nearby.");
-        playAudio("audio/monitor_boot.ogg");
-      }
-    }
-  });
-
-  game.sanity = Math.max(0, game.sanity);
-  updateSanityBar();
-  attemptHunt();
-}
-
-// === HUNT SYSTEM ===
+/***********************
+ === HUNT SYSTEM ===
+************************/
 export function attemptHunt() {
-  if (game.smudgeActive > 0) { game.smudgeActive--; return; }
-  if (game.huntCooldown > 0) { game.huntCooldown--; return; }
-  if (game.sanity < 30 && Math.random() < 0.25) startHunt();
+  if (game.smudgeActive > 0) {
+    game.smudgeActive--;
+    return;
+  }
+  if (game.huntCooldown > 0) {
+    game.huntCooldown--;
+    return;
+  }
+  if (game.sanity < 30 && Math.random() < 0.25) {
+    startHunt();
+  }
 }
 
 export function startHunt() {
