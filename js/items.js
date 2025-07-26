@@ -10,7 +10,8 @@ import {
   logToGame, renderHUD, updateHeldItemsNotebook, 
   updateNearbyItemsNotebook, showNotebookUpdateBadge 
 } from "./ui.js";
-import { checkTurnEvents, startHunt } from "./events.js";
+import { checkTurnEvents } from "./events.js"; // ✅ FIXED: only from events.js
+import { startHunt } from "./ghostBehavior.js"; // ✅ FIXED: imported from ghostBehavior
 
 /***********************
  === OPEN INVENTORY OVERLAY ===
