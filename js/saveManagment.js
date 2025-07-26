@@ -1,10 +1,18 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — SAVE MANAGER MODULE ===
+ * === PHASMA-PHONEY v2.9 — SAVE MANAGER (FINAL) ===
+ * Saves & loads full game state, including notebook,
+ * camera placements, and settings.
  *****************************************************/
-import { game, allLoadoutItems } from "./state.js";
-import { logToGame, renderHUD, updateBackground, showLoadout } from "./ui.js";
+import { 
+  game, allLoadoutItems, gameSettings, resetGame as stateReset 
+} from "./state.js";
+import { 
+  logToGame, renderHUD, updateBackground, showLoadout
+} from "./ui.js";
 
+/* === SAVE GAME === */
 export function saveGame(showIndicator = false) {
+  if (!gameSettings.autosave) return; // ✅ Respect autosave toggle
   try {
     const saveData = {
       ghost: game.ghost,
@@ -24,7 +32,10 @@ export function saveGame(showIndicator = false) {
       smudgeActive: game.smudgeActive,
       placedCrucifix: game.placedCrucifix,
       roomItems: game.roomItems,
-      usedCursedItems: game.usedCursedItems
+      usedCursedItems: game.usedCursedItems,
+      nearbyItems: game.nearbyItems || [], // ✅ Notebook
+      cameraPlacements: game.cameraPlacements || [], // ✅ Van monitor cameras
+      settings: { ...gameSettings } // ✅ Save current settings
     };
     localStorage.setItem("phasmaPhoneySave", JSON.stringify(saveData));
     if (showIndicator) showSaveIndicator();
@@ -34,6 +45,7 @@ export function saveGame(showIndicator = false) {
   }
 }
 
+/* === LOAD GAME === */
 export function loadGame() {
   const data = localStorage.getItem("phasmaPhoneySave");
   if (!data) {
@@ -43,10 +55,15 @@ export function loadGame() {
   try {
     const s = JSON.parse(data);
     Object.assign(game, s);
+
     game.selectedEvidence = new Set(s.selectedEvidence || []);
     game.placedCrucifix = s.placedCrucifix || {};
     game.roomItems = s.roomItems || {};
     game.usedCursedItems = s.usedCursedItems || {};
+    game.nearbyItems = s.nearbyItems || []; // ✅ Notebook
+    game.cameraPlacements = s.cameraPlacements || []; // ✅ Van monitor
+
+    if (s.settings) Object.assign(gameSettings, s.settings);
 
     document.getElementById("title-screen").style.display = "none";
     document.getElementById("loadout-screen").style.display = "none";
@@ -55,7 +72,7 @@ export function loadGame() {
 
     renderHUD();
     updateBackground();
-    saveGame();
+    saveGame(); // ✅ Immediate autosave refresh
     logToGame("📂 Game loaded. Resuming investigation...");
   } catch (e) {
     console.error("Load failed:", e);
@@ -66,24 +83,20 @@ export function loadGame() {
   }
 }
 
+/* === CLEAR SAVE === */
 export function clearSave() {
   localStorage.removeItem("phasmaPhoneySave");
   logToGame("🗑️ Save data cleared.");
 }
 
+/* === RESET GAME (USES STATE.JS) === */
 export function resetGame() {
-  Object.assign(game, {
-    ghost: null, ghostRoom: null, playerRoom: "Van", playerDirection: "N",
-    inventory: [], vanStock: [...allLoadoutItems],
-    selectedEvidence: new Set(), currentTurn: 0, sanity: 100,
-    weather: null, mimicForm: null, nextMimicShift: 0,
-    cameraActive: false, huntCooldown: 0, smudgeActive: 0,
-    placedCrucifix: {}, roomItems: {}, usedCursedItems: {}
-  });
+  stateReset(); // ✅ Use the proper state.js reset logic
   renderHUD();
   updateBackground();
 }
 
+/* === SAVE INDICATOR === */
 function showSaveIndicator() {
   const ind = document.getElementById("save-indicator");
   if (!ind) return;
