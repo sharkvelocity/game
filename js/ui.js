@@ -186,3 +186,23 @@ export function showLoadout() {
     if (gameSettings.autosave) saveGame(true);
   };
 }
+/***********************
+ === NOTEBOOK EXTRA (NEWLY FIXED) ===
+************************/
+export function clearNotebookDetails() {
+  const heldList = document.getElementById("held-items-list");
+  const nearbyList = document.getElementById("nearby-items-list");
+  if (heldList) heldList.innerHTML = "<li>No items currently held.</li>";
+  if (nearbyList) nearbyList.innerHTML = "<li>No nearby items.</li>";
+}
+
+export function populateGhostNotebook() {
+  const ghostList = document.getElementById("ghost-notebook-list");
+  if (!ghostList) return;
+  ghostList.innerHTML = "";
+  Object.entries(ghostProfiles).forEach(([ghost, data]) => {
+    const li = document.createElement("li");
+    li.textContent = `${ghost} — Evidence: ${data.evidence.join(", ")}`;
+    ghostList.appendChild(li);
+  });
+}
