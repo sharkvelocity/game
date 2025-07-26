@@ -1,15 +1,16 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — ITEMS.JS (FINAL UPDATED) ===
+ * === PHASMA-PHONEY v2.9 — ITEMS.JS (FINAL FIXED) ===
  * Handles inventory management, item interactions,
  * cursed items, and camera placement for van monitor.
  * Notebook is excluded as an item.
  *****************************************************/
 
-import { game, allLoadoutItems, cursedItems, getCursedItemCost } from "./state.js";
+import { game, allLoadoutItems, cursedItems, getCursedItemCost, gameSettings } from "./state.js";
 import { 
-  logToGame, renderHUD, updateHeldItemsNotebook, updateNearbyItemsNotebook, showNotebookUpdateBadge 
+  logToGame, renderHUD, updateHeldItemsNotebook, 
+  updateNearbyItemsNotebook, showNotebookUpdateBadge 
 } from "./ui.js";
-import { checkTurnEvents, startHunt, saveGame } from "./events.js"; // ✅ FIXED combined import
+import { checkTurnEvents, startHunt } from "./events.js";
 
 /***********************
  === OPEN INVENTORY OVERLAY ===
@@ -39,7 +40,7 @@ export function openInventoryOverlay() {
   });
 
   let html = `<h3 style="margin-top:0;color:#0ff;">Inventory</h3>`;
-  const filteredInv = game.inventory.filter(i => i !== "Notebook"); // ✅ Notebook excluded
+  const filteredInv = game.inventory.filter(i => i !== "Notebook");
 
   if (filteredInv.length > 0) {
     html += `<p><strong>Held Items:</strong></p>`;
@@ -73,7 +74,7 @@ export function openInventoryOverlay() {
   window.closeInventory = function () {
     const t = document.getElementById("inventory-temp");
     if (t) document.body.removeChild(t);
-    if (gameSettings.autosave) saveGame(true);
+    if (gameSettings.autosave) localStorage.setItem("phasmaPhoneySave", JSON.stringify(game));
   };
 }
 
@@ -99,7 +100,7 @@ export function inspectItem(i) {
 ************************/
 export function dropItem(i) {
   if (i === "Notebook") {
-    logToGame("The Notebook cannot be dropped."); 
+    logToGame("The Notebook cannot be dropped.");
     return;
   }
 
@@ -122,7 +123,7 @@ export function dropItem(i) {
   updateHeldItemsNotebook();
   updateNearbyItemsNotebook();
   showNotebookUpdateBadge();
-  if (gameSettings.autosave) saveGame(true);
+  if (gameSettings.autosave) localStorage.setItem("phasmaPhoneySave", JSON.stringify(game));
 }
 
 /***********************
@@ -158,7 +159,7 @@ export function pickItem(i) {
   updateHeldItemsNotebook();
   updateNearbyItemsNotebook();
   showNotebookUpdateBadge();
-  if (gameSettings.autosave) saveGame(true);
+  if (gameSettings.autosave) localStorage.setItem("phasmaPhoneySave", JSON.stringify(game));
 }
 
 /***********************
@@ -190,12 +191,10 @@ export function useItem(i) {
         if (!game.roomItems[game.playerRoom].includes("Video Camera")) {
           game.roomItems[game.playerRoom].push("Video Camera");
         }
-
         game.cameraPlacements = game.cameraPlacements || [];
         if (!game.cameraPlacements.includes(game.playerRoom)) {
           game.cameraPlacements.push(game.playerRoom);
         }
-
         logToGame(`You place a video camera in ${game.playerRoom}.`);
       } else {
         logToGame("Cannot place video cameras in the van.");
@@ -262,8 +261,8 @@ export function useItem(i) {
   updateHeldItemsNotebook();
   updateNearbyItemsNotebook();
   showNotebookUpdateBadge();
-  checkTurnEvents(); // ✅ Ensures events progress correctly
-  if (gameSettings.autosave) saveGame(true);
+  checkTurnEvents();
+  if (gameSettings.autosave) localStorage.setItem("phasmaPhoneySave", JSON.stringify(game));
 }
 
 /***********************
@@ -282,7 +281,6 @@ export function handleCursedItem(i) {
     case "Ouija Board":
       if (Math.random() < 0.2) startHunt();
       break;
-
     case "Tarot Cards":
       const r = Math.random();
       if (r < 0.2) logToGame("The Fool — nothing happens.");
@@ -295,16 +293,13 @@ export function handleCursedItem(i) {
         game.sanity = Math.min(100, game.sanity + 10);
       }
       break;
-
     case "Music Box":
     case "Haunted Mirror":
       if (Math.random() < 0.3) startHunt();
       break;
-
     case "Summoning Circle":
       startHunt();
       break;
-
     case "Monkey Paw":
       if (Math.random() < 0.5) startHunt();
       break;
@@ -315,7 +310,7 @@ export function handleCursedItem(i) {
   renderHUD();
   updateNearbyItemsNotebook();
   showNotebookUpdateBadge();
-  if (gameSettings.autosave) saveGame(true);
+  if (gameSettings.autosave) localStorage.setItem("phasmaPhoneySave", JSON.stringify(game));
 }
 
 /***********************
