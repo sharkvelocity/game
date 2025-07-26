@@ -1,5 +1,5 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — STATE.JS ===
+ * === PHASMA-PHONEY v2.9 — STATE.JS (UPDATED WITH NOTEBOOK) ===
  * Holds all game constants, core state, and utilities.
  *****************************************************/
 
@@ -105,7 +105,17 @@ export const game = {
   smudgeActive: 0,
   placedCrucifix: {},
   roomItems: {},
-  usedCursedItems: {}
+  usedCursedItems: {},
+  nearbyItems: [] /* ✅ Added: nearby items cache for notebook */
+};
+
+// === GAME SETTINGS (NEW, NOTEBOOK INTEGRATION) ===
+export let gameSettings = {
+  muteSounds: false,
+  narratorVoice: false,
+  mobileMode: false,
+  autosave: true,
+  preloadDependencies: false
 };
 
 // === UTILITIES ===
@@ -131,4 +141,5 @@ export function resetGame() {
   game.placedCrucifix = {};
   game.roomItems = {};
   game.usedCursedItems = {};
+  game.nearbyItems = []; /* ✅ Reset nearby items on new game */
 }
