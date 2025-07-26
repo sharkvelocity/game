@@ -12,6 +12,71 @@ import { checkTurnEvents } from "./events.js";
 import { startHunt } from "./ghostBehavior.js";
 
 /***********************
+ === PICK UP ITEM ===
+************************/
+export function pickItem(i) {
+  if (i === "Notebook") {
+    logToGame("You always carry the Notebook.");
+    return;
+  }
+  if (game.inventory.filter(x => x !== "Notebook" && x !== "Lighter").length >= 3) {
+    logToGame("Max 3 carryable items (Notebook & Lighter excluded).");
+    return;
+  }
+  if (cursedItems[i] && i === "Summoning Circle") {
+    logToGame("The circle cannot be moved.");
+    return;
+  }
+
+  game.roomItems[game.playerRoom] =
+    (game.roomItems[game.playerRoom] || []).filter(x => x !== i);
+
+  if (!game.inventory.includes(i)) {
+    game.inventory.push(i);
+    game.inventory.sort();
+  }
+  logToGame(`Picked up ${i}.`);
+  endItemTurn();
+}
+
+/***********************
+ === DROP ITEM ===
+************************/
+export function dropItem(i) {
+  if (i === "Notebook") {
+    logToGame("The Notebook cannot be dropped.");
+    return;
+  }
+  if (game.playerRoom === "Van") {
+    if (!game.vanStock.includes(i)) game.vanStock.push(i);
+    logToGame(`Returned ${i} to the van.`);
+  } else {
+    game.roomItems[game.playerRoom] = game.roomItems[game.playerRoom] || [];
+    if (!game.roomItems[game.playerRoom].includes(i)) game.roomItems[game.playerRoom].push(i);
+    logToGame(`Dropped ${i} here.`);
+  }
+  game.inventory = game.inventory.filter(x => x !== i);
+  endItemTurn();
+}
+
+/***********************
+ === INSPECT ITEM ===
+************************/
+export function inspectItem(i) {
+  let desc = cursedItems[i]?.desc || "Standard investigation gear.";
+  switch (i) {
+    case "Crucifix": desc = "Placed to prevent hunts. 2 uses."; break;
+    case "Camera": desc = "Switch to IR to spot orbs in ghost room."; break;
+    case "Video Camera": desc = "Place and view orbs from van monitor."; break;
+    case "UV Light": desc = "Reveals fingerprints or footprints."; break;
+    case "Salt": desc = "Sprinkle to reveal footprints."; break;
+    case "Candle": desc = "Prevents Onryo hunts while lit."; break;
+    case "Motion Sensor": desc = "Triggers alerts in van."; break;
+  }
+  logToGame(`Inspecting ${i}: ${desc}`);
+}
+
+/***********************
  === USE ITEM (UPDATED)
 ************************/
 export function useItem(i) {
@@ -100,6 +165,9 @@ export function useItem(i) {
   endItemTurn();
 }
 
+/***********************
+ === HELPERS
+************************/
 function consumeItem(i) {
   game.inventory = game.inventory.filter(x => x !== i);
 }
@@ -141,12 +209,11 @@ export function handleCursedItem(i) {
 }
 
 /***********************
- ✅ GLOBAL EXPOSURE FOR INLINE BUTTONS
+ ✅ GLOBAL + ES6 EXPORTS
 ************************/
 window.inspectItem = inspectItem;
 window.dropItem = dropItem;
 window.pickItem = pickItem;
 window.useItem = useItem;
 
-export { pickItem, useItem }; // ✅ ADD THIS if missing
-
+export { inspectItem, dropItem, pickItem, useItem, handleCursedItem };
