@@ -1,14 +1,14 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — EVENTS (FIXED & COMPLETE) ===
+ * === PHASMA-PHONEY v2.9 — EVENTS (FINAL FIXED) ===
  * Safe audio, notebook integration, and turn events.
  *****************************************************/
-import { game, randomFromArray, cursedItems } from "./state.js";
+import { game, randomFromArray, cursedItems, ghostProfiles } from "./state.js";
 import { 
   logToGame, updateSanityBar, updateHeldItemsNotebook, 
   updateNearbyItemsNotebook, showNotebookUpdateBadge 
 } from "./ui.js";
 import { playAudio } from "./audioManager.js";
-import { ghostBehaviorTable, startHunt } from "./ghostBehavior.js";
+import { startHunt } from "./ghostBehavior.js"; // ✅ Only valid import now
 
 /***********************
  === TURN ADVANCEMENT ===
@@ -28,7 +28,7 @@ export function advanceTurn() {
   // === Ambient Ghost Cues ===
   if (game.playerRoom === game.ghostRoom && Math.random() < 0.3) {
     const ghost = game.ghost === "TheMimic" ? game.mimicForm : game.ghost;
-    const behaviorHint = ghostBehaviorTable[ghost] || "The air feels heavy...";
+    const behaviorHint = ghostProfiles[ghost]?.behavior || "The air feels heavy...";
     logToGame(`[Ambient] ${behaviorHint}`);
 
     const ghostSounds = [
@@ -105,9 +105,8 @@ export function discoverCursedItemsInRoom(roomName = game.playerRoom) {
 }
 
 /***********************
- ✅ CHECK TURN EVENTS (FIXED EXPORT)
+ ✅ CHECK TURN EVENTS (EXPORTED)
 ************************/
 export function checkTurnEvents() {
-  // Called after item usage or room changes to progress time
   advanceTurn();
 }
