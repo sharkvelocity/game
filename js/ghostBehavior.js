@@ -1,75 +1,99 @@
-/*****************************************************
- * === PHASMA-PHONEY v2.9 — GHOST BEHAVIOR MODULE (FINAL FIXED) ===
- * Handles ghost-specific behaviors, mimic logic, and hunt patterns.
- * Exports ghostBehaviorTable for main game flow initialization.
+/***************************************************** 
+ * === PHASMA-PHONEY v2.9 — GHOSTBEHAVIOR.JS (FINAL FIXED) ===
+ * Handles ghost-specific logic: mimic shifts, hunts, and death.
+ * Turn flow (advanceTurn) is handled in events.js.
  *****************************************************/
-import { game, ghostProfiles } from "./state.js";
+
+import { game, ghostProfiles, randomFromArray } from "./state.js";
 import { logToGame } from "./ui.js";
-import { startHunt } from "./events.js";
+import { playAudio } from "./audioManager.js";
 
 /***********************
- === GHOST BEHAVIOR TABLE
+ === GHOST BEHAVIOR TABLE (EXPORT FOR MAIN.JS) ===
 ************************/
 export const ghostBehaviorTable = Object.entries(ghostProfiles).reduce((table, [name, data]) => {
   table[name] = {
     evidence: data.evidence,
-    behavior: data.behavior,
+    behavior: data.behavior
   };
   return table;
 }, {});
 
 /***********************
- === GHOST BEHAVIOR LOGIC
+ === MIMIC LOGIC ===
 ************************/
-export function handleGhostBehavior() {
-  const ghost = game.ghost;
-  if (!ghost || !ghostProfiles[ghost]) return;
-
-  switch (ghost) {
-    case "TheMimic":
-      handleMimicBehavior();
-      break;
-
-    case "Yurei":
-      if (game.smudgeActive > 0) {
-        logToGame("The Yurei seems trapped in its room for now...");
-      }
-      break;
-
-    default:
-      // Generic behavior logging (optional for future expansions)
-      break;
-  }
+export function assignMimicForm() {
+  const ghostList = Object.keys(ghostProfiles).filter(g => g !== "TheMimic");
+  game.mimicForm = randomFromArray(ghostList);
+  game.nextMimicShift = game.currentTurn + 3 + Math.floor(Math.random() * 4);
+  logToGame(`The Mimic shifts... now acting like a ${game.mimicForm}.`);
 }
 
 /***********************
- === MIMIC BEHAVIOR
+ === HUNT SYSTEM ===
 ************************/
-function handleMimicBehavior() {
-  if (game.currentTurn >= game.nextMimicShift) {
-    const otherGhosts = Object.keys(ghostProfiles).filter(g => g !== "TheMimic");
-    game.mimicForm = otherGhosts[Math.floor(Math.random() * otherGhosts.length)];
-    game.nextMimicShift = game.currentTurn + (3 + Math.floor(Math.random() * 4));
-    logToGame(`The Mimic shifts... it now behaves like a ${game.mimicForm}.`);
+export function attemptHunt() {
+  // ✅ Smudge sticks delay hunts
+  if (game.smudgeActive > 0) {
+    game.smudgeActive--;
+    return;
   }
-}
 
-/***********************
- === HUNT TRIGGERS (BEHAVIOR BASED)
-************************/
-export function checkGhostAggression() {
-  if (game.huntCooldown > 0) return; // respect cooldown
+  // ✅ Hunt cooldown check
+  if (game.huntCooldown > 0) {
+    game.huntCooldown--;
+    return;
+  }
 
-  const ghost = game.ghost;
-  const sanity = game.sanity;
+  // ✅ Aggression based on sanity + ghost type
   let huntChance = 0;
-
-  switch (ghost) {
-    case "Demon": huntChance = sanity < 80 ? 0.3 : 0.1; break;
-    case "Revenant": huntChance = sanity < 50 ? 0.2 : 0.05; break;
-    case "Succubus": huntChance = sanity < 60 ? 0.25 : 0.1; break;
-    default: huntChance = sanity < 40 ? 0.15 : 0.05;
+  switch (game.ghost) {
+    case "Demon": huntChance = game.sanity < 80 ? 0.25 : 0.1; break;
+    case "Succubus": huntChance = game.sanity < 60 ? 0.25 : 0.1; break;
+    case "Revenant": huntChance = game.sanity < 50 ? 0.2 : 0.05; break;
+    default: huntChance = game.sanity < 30 ? 0.25 : 0.05;
   }
 
   if (Math.random() < huntChance) startHunt();
+}
+
+export function startHunt() {
+  logToGame("💀 The ghost is hunting!");
+  playAudio("audio/hunt_start_rumble.ogg");
+
+  if (game.playerRoom === game.ghostRoom) {
+    // ✅ Crucifix defense
+    if (game.placedCrucifix && game.placedCrucifix[game.playerRoom] > 0) {
+      game.placedCrucifix[game.playerRoom]--;
+      if (game.placedCrucifix[game.playerRoom] === 0) {
+        delete game.placedCrucifix[game.playerRoom];
+        logToGame("The crucifix has burned away completely.");
+      } else {
+        logToGame(`The crucifix burns, stopping the hunt. (${game.placedCrucifix[game.playerRoom]} uses left)`);
+      }
+      playAudio("audio/crucifix_burn.ogg");
+    } else {
+      setTimeout(playerDeath, 1500);
+    }
+  } else {
+    logToGame("You survived the hunt...");
+  }
+
+  // ✅ Set cooldown after hunt
+  const aggressiveGhosts = ["Demon", "Oni", "Raiju", "Moroi", "Succubus"];
+  game.huntCooldown = aggressiveGhosts.includes(game.ghost)
+    ? 3 + Math.floor(Math.random() * 2)
+    : 5 + Math.floor(Math.random() * 3);
+}
+
+/***********************
+ === PLAYER DEATH ===
+************************/
+export function playerDeath() {
+  logToGame("💀 The ghost finds you. Everything goes cold...");
+  playAudio("audio/player_death_choke.ogg");
+  setTimeout(() => {
+    alert("You died.");
+    window.location.reload();
+  }, 800);
 }
