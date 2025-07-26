@@ -1,11 +1,14 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — EVENTS (SAFE AUDIO) ===
+ * === PHASMA-PHONEY v2.9 — EVENTS (SAFE AUDIO, NOTEBOOK INTEGRATION) ===
  *****************************************************/
-import { game, randomFromArray } from "./state.js";
-import { logToGame, updateSanityBar } from "./ui.js";
+import { game, randomFromArray, cursedItems } from "./state.js";
+import { logToGame, updateSanityBar, updateHeldItemsNotebook, updateNearbyItemsNotebook, showNotebookUpdateBadge } from "./ui.js";
 import { playAudio } from "./audioManager.js";
 import { ghostBehaviorTable, startHunt } from "./ghostBehavior.js";
 
+/***********************
+ === TURN ADVANCEMENT ===
+************************/
 export function advanceTurn() {
   game.currentTurn++;
 
@@ -43,10 +46,17 @@ export function advanceTurn() {
     playAudio(randomFromArray(randomAmbient));
   }
 
+  // ✅ === Notebook Auto-Refresh After Each Turn ===
+  updateHeldItemsNotebook();
+  updateNearbyItemsNotebook();
+
   // === Hunt Attempt ===
   attemptHunt();
 }
 
+/***********************
+ === HUNT ATTEMPTS ===
+************************/
 function attemptHunt() {
   if (game.smudgeActive > 0) {
     game.smudgeActive--;
@@ -60,5 +70,33 @@ function attemptHunt() {
     logToGame("💀 The ghost is starting a hunt!");
     playAudio("audio/hunt_start_rumble.ogg");
     startHunt();
+  }
+}
+
+/***********************
+ === CURSED ITEM DISCOVERY (NEW) ===
+************************/
+export function discoverCursedItemsInRoom(roomName = game.playerRoom) {
+  if (!game.roomItems[roomName]) game.roomItems[roomName] = [];
+
+  // Already discovered or nothing to add
+  const discovered = Object.keys(cursedItems).filter(ci => !game.roomItems[roomName].includes(ci));
+  if (discovered.length === 0) {
+    logToGame("You search but find nothing unusual.");
+    return;
+  }
+
+  // 30% chance to find a random cursed item
+  if (Math.random() < 0.3) {
+    const foundItem = randomFromArray(discovered);
+    game.roomItems[roomName].push(foundItem);
+    logToGame(`You found a cursed item: ${foundItem}!`);
+    game.nearbyItems = [...(game.roomItems[game.playerRoom] || [])];
+
+    // ✅ Refresh Notebook with Update Badge
+    updateNearbyItemsNotebook();
+    showNotebookUpdateBadge();
+  } else {
+    logToGame("You search but find nothing unusual.");
   }
 }
