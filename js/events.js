@@ -1,6 +1,7 @@
 /*****************************************************
  * === PHASMA-PHONEY v2.9 — EVENTS (FINAL FIXED) ===
- * Safe audio, notebook integration, and turn events.
+ * Safe audio, notebook integration, mimic shift,
+ * and turn events. Fully synced with ghostBehavior.js.
  *****************************************************/
 import { game, randomFromArray, cursedItems, ghostProfiles } from "./state.js";
 import { 
@@ -8,13 +9,18 @@ import {
   updateNearbyItemsNotebook, showNotebookUpdateBadge 
 } from "./ui.js";
 import { playAudio } from "./audioManager.js";
-import { startHunt } from "./ghostBehavior.js"; // ✅ Only valid import now
+import { startHunt, assignMimicForm } from "./ghostBehavior.js"; // ✅ mimic shift integrated
 
 /***********************
  === TURN ADVANCEMENT ===
 ************************/
 export function advanceTurn() {
   game.currentTurn++;
+
+  // === Mimic Behavior Shift ===
+  if (game.ghost === "TheMimic" && game.currentTurn >= game.nextMimicShift) {
+    assignMimicForm();
+  }
 
   // === Sanity Drain ===
   if (game.playerRoom === game.ghostRoom) {
