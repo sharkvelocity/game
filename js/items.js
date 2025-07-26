@@ -1,11 +1,11 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — ITEMS.JS (FINAL) ===
+ * === PHASMA-PHONEY v2.9 — ITEMS.JS (UPDATED WITH NOTEBOOK) ===
  * Handles inventory management, item interactions,
- * and cursed item usage.
+ * and cursed item usage. Notebook is excluded as an item.
  *****************************************************/
 
 import { game, allLoadoutItems, cursedItems, getCursedItemCost } from "./state.js";
-import { logToGame, renderHUD } from "./ui.js";
+import { logToGame, renderHUD, updateHeldItemsNotebook, updateNearbyItemsNotebook, showNotebookUpdateBadge } from "./ui.js";
 import { checkTurnEvents, saveGame } from "./events.js";
 import { startHunt } from "./events.js";
 
@@ -35,9 +35,11 @@ export function openInventoryOverlay() {
   });
 
   let html = `<h3 style="margin-top:0;color:#0ff;">Inventory</h3>`;
-  if (game.inventory.length > 0) {
+  const filteredInv = game.inventory.filter(i => i !== "Notebook"); /* ✅ Notebook filtered */
+
+  if (filteredInv.length > 0) {
     html += `<p><strong>Held Items:</strong></p>`;
-    game.inventory.forEach(i => {
+    filteredInv.forEach(i => {
       html += `
         <div style="margin-bottom:4px;">
           <button onclick="inspectItem('${i}')">Inspect: ${i}</button>
@@ -67,7 +69,7 @@ export function openInventoryOverlay() {
   window.closeInventory = function () {
     const t = document.getElementById("inventory-temp");
     if (t) document.body.removeChild(t);
-    saveGame(true);
+    if (gameSettings.autosave) saveGame(true);
   };
 }
 
@@ -88,6 +90,11 @@ export function inspectItem(i) {
 
 /* === DROP ITEM === */
 export function dropItem(i) {
+  if (i === "Notebook") {
+    logToGame("The Notebook cannot be dropped."); /* ✅ Notebook protection */
+    return;
+  }
+
   if (game.playerRoom === "Van") {
     if (!game.vanStock.includes(i)) {
       game.vanStock.push(i);
@@ -102,32 +109,51 @@ export function dropItem(i) {
   }
   game.inventory = game.inventory.filter(x => x !== i);
   renderHUD();
-  saveGame(true);
+  updateHeldItemsNotebook(); /* ✅ Live notebook refresh */
+  updateNearbyItemsNotebook();
+  showNotebookUpdateBadge();
+  if (gameSettings.autosave) saveGame(true);
 }
 
 /* === PICK UP ITEM === */
 export function pickItem(i) {
-  if (game.inventory.length >= 3) {
-    logToGame("Max 3 items.");
+  if (i === "Notebook") {
+    logToGame("You always carry the Notebook. It cannot be picked up."); /* ✅ Notebook protection */
     return;
   }
+
+  if (game.inventory.filter(x => x !== "Notebook" && x !== "Lighter").length >= 3) {
+    logToGame("Max 3 carryable items (Notebook & Lighter excluded).");
+    return;
+  }
+
   if (cursedItems[i] && i === "Summoning Circle") {
     logToGame("The circle cannot be moved.");
     return;
   }
+
   game.roomItems[game.playerRoom] =
     game.roomItems[game.playerRoom].filter(x => x !== i);
+
   if (!game.inventory.includes(i)) {
     game.inventory.push(i);
     game.inventory.sort();
   }
   logToGame(`Picked up ${i}.`);
   renderHUD();
-  saveGame(true);
+  updateHeldItemsNotebook(); /* ✅ Live notebook refresh */
+  updateNearbyItemsNotebook();
+  showNotebookUpdateBadge();
+  if (gameSettings.autosave) saveGame(true);
 }
 
 /* === USE ITEM === */
 export function useItem(i) {
+  if (i === "Notebook") {
+    logToGame("You open your Notebook..."); /* ✅ Clarify Notebook can't be used as an item */
+    return;
+  }
+
   switch (i) {
     case "Smudge Stick":
       if (game.playerRoom === game.ghostRoom) {
@@ -206,8 +232,11 @@ export function useItem(i) {
 
   game.currentTurn++;
   renderHUD();
+  updateHeldItemsNotebook(); /* ✅ Live notebook refresh */
+  updateNearbyItemsNotebook();
+  showNotebookUpdateBadge();
   checkTurnEvents();
-  saveGame(true);
+  if (gameSettings.autosave) saveGame(true);
 }
 
 /* === HANDLE CURSED ITEMS === */
@@ -254,7 +283,9 @@ export function handleCursedItem(i) {
 
   game.usedCursedItems[i] = true;
   renderHUD();
-  saveGame(true);
+  updateNearbyItemsNotebook(); /* ✅ Refresh nearby items */
+  showNotebookUpdateBadge();
+  if (gameSettings.autosave) saveGame(true);
 }
 
 /* ✅ GLOBAL EXPOSURE FOR INLINE BUTTONS */
