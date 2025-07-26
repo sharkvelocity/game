@@ -1,8 +1,12 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — EVENTS (SAFE AUDIO, NOTEBOOK INTEGRATION) ===
+ * === PHASMA-PHONEY v2.9 — EVENTS (FIXED & COMPLETE) ===
+ * Safe audio, notebook integration, and turn events.
  *****************************************************/
 import { game, randomFromArray, cursedItems } from "./state.js";
-import { logToGame, updateSanityBar, updateHeldItemsNotebook, updateNearbyItemsNotebook, showNotebookUpdateBadge } from "./ui.js";
+import { 
+  logToGame, updateSanityBar, updateHeldItemsNotebook, 
+  updateNearbyItemsNotebook, showNotebookUpdateBadge 
+} from "./ui.js";
 import { playAudio } from "./audioManager.js";
 import { ghostBehaviorTable, startHunt } from "./ghostBehavior.js";
 
@@ -46,7 +50,7 @@ export function advanceTurn() {
     playAudio(randomFromArray(randomAmbient));
   }
 
-  // ✅ === Notebook Auto-Refresh After Each Turn ===
+  // ✅ Auto-refresh notebook each turn
   updateHeldItemsNotebook();
   updateNearbyItemsNotebook();
 
@@ -57,7 +61,7 @@ export function advanceTurn() {
 /***********************
  === HUNT ATTEMPTS ===
 ************************/
-function attemptHunt() {
+export function attemptHunt() {
   if (game.smudgeActive > 0) {
     game.smudgeActive--;
     return;
@@ -74,29 +78,36 @@ function attemptHunt() {
 }
 
 /***********************
- === CURSED ITEM DISCOVERY (NEW) ===
+ === CURSED ITEM DISCOVERY ===
 ************************/
 export function discoverCursedItemsInRoom(roomName = game.playerRoom) {
   if (!game.roomItems[roomName]) game.roomItems[roomName] = [];
 
-  // Already discovered or nothing to add
-  const discovered = Object.keys(cursedItems).filter(ci => !game.roomItems[roomName].includes(ci));
-  if (discovered.length === 0) {
+  const undiscovered = Object.keys(cursedItems)
+    .filter(ci => !game.roomItems[roomName].includes(ci));
+
+  if (undiscovered.length === 0) {
     logToGame("You search but find nothing unusual.");
     return;
   }
 
-  // 30% chance to find a random cursed item
   if (Math.random() < 0.3) {
-    const foundItem = randomFromArray(discovered);
+    const foundItem = randomFromArray(undiscovered);
     game.roomItems[roomName].push(foundItem);
     logToGame(`You found a cursed item: ${foundItem}!`);
-    game.nearbyItems = [...(game.roomItems[game.playerRoom] || [])];
 
-    // ✅ Refresh Notebook with Update Badge
+    game.nearbyItems = [...(game.roomItems[game.playerRoom] || [])];
     updateNearbyItemsNotebook();
     showNotebookUpdateBadge();
   } else {
     logToGame("You search but find nothing unusual.");
   }
+}
+
+/***********************
+ ✅ CHECK TURN EVENTS (FIXED EXPORT)
+************************/
+export function checkTurnEvents() {
+  // Called after item usage or room changes to progress time
+  advanceTurn();
 }
