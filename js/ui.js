@@ -1,10 +1,12 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — UI MODULE (UPDATED WITH NOTEBOOK) ===
+ * === PHASMA-PHONEY v2.9 — UI MODULE (FINAL) ===
+ * Handles HUD, logging, notebook, and van monitor sync.
  *****************************************************/
-import { game, allLoadoutItems, roomVisuals, gameSettings } from "./state.js";
+import { game, allLoadoutItems, roomVisuals, gameSettings, ghostProfiles } from "./state.js";
 import { saveGame } from "./saveManager.js";
 import { handleCommand } from "./events.js";
-import { playNotebookSound } from "./audioManager.js"; // New: rustle sounds
+import { playNotebookSound } from "./audioManager.js";
+import { useItem, pickItem } from "./items.js"; // ✅ Needed for notebook item actions
 
 /***********************
  === LOGGING & HUD ===
@@ -129,11 +131,8 @@ export function showLoadout() {
 }
 
 /***********************
- === NOTEBOOK MODULE (SLIDE SYSTEM, NEW) ===
+ === NOTEBOOK SYSTEM ===
 ************************/
-let isDraggingNotebook = false, dragStartY = 0, currentBottom = -100;
-let notebookUpdateFlag = false;
-
 export function openNotebook() {
   const notebook = document.getElementById("notebook");
   notebook.classList.add("open");
@@ -163,7 +162,6 @@ function clearNotebookDetails() {
 }
 
 export function showNotebookUpdateBadge() {
-  notebookUpdateFlag = true;
   const badge = document.getElementById("notebook-update-badge");
   const btn = document.getElementById("notebook-toggle-btn");
   badge.style.display = "inline";
@@ -172,15 +170,13 @@ export function showNotebookUpdateBadge() {
 }
 
 export function clearNotebookUpdateBadge() {
-  notebookUpdateFlag = false;
   document.getElementById("notebook-update-badge").style.display = "none";
 }
 
-/* === GHOSTS, ITEMS, AND NEARBY ITEMS === */
 export function populateGhostNotebook() {
   const listContainer = document.getElementById("ghost-list");
   listContainer.innerHTML = "";
-  Object.keys(game.ghostProfiles).forEach((ghostName, index) => {
+  Object.keys(ghostProfiles).forEach((ghostName, index) => {
     const li = document.createElement("li");
     li.textContent = `${index + 1}. ${ghostName}`;
     li.addEventListener("click", () => showGhostDetails(ghostName));
@@ -215,7 +211,7 @@ export function updateNearbyItemsNotebook() {
     game.nearbyItems.forEach(item => {
       const li = document.createElement("li");
       li.textContent = `• ${item}`;
-      if (isCursedItem(item)) li.classList.add("cursed-item");
+      if (isCursedItem(item)) li.style.color = "darkpurple";
       li.addEventListener("click", () => showItemDetails(item, "nearby"));
       nearbyList.appendChild(li);
     });
@@ -227,7 +223,7 @@ export function updateNearbyItemsNotebook() {
 }
 
 function showGhostDetails(ghostName) {
-  const ghost = game.ghostProfiles[ghostName];
+  const ghost = ghostProfiles[ghostName];
   document.getElementById("selected-ghost-name").textContent = ghostName;
   document.getElementById("selected-ghost-image").src = `img/${ghostName.replace(/\s+/g, '')}.png`;
   document.getElementById("selected-ghost-details").textContent = ghost.behavior || "No details available.";
@@ -241,10 +237,9 @@ function showGhostDetails(ghostName) {
 }
 
 function showItemDetails(itemName, source) {
-  const itemData = game.itemData[itemName] || { description: "No details available." };
   document.getElementById("selected-ghost-name").textContent = itemName;
   document.getElementById("selected-ghost-image").src = "";
-  document.getElementById("selected-ghost-details").textContent = itemData.description;
+  document.getElementById("selected-ghost-details").textContent = "Investigation tool.";
   const evidenceList = document.getElementById("selected-ghost-evidence");
   evidenceList.innerHTML = "";
   const actions = getItemActions(itemName, source);
@@ -259,19 +254,16 @@ function showItemDetails(itemName, source) {
 function getItemActions(itemName, source) {
   const actions = [];
   if (source === "held" && itemName !== "Notebook") {
-    actions.push({ label: "Place Item", callback: () => placeItemInRoom(itemName) });
-    if (game.itemData[itemName]?.usable) {
-      actions.push({ label: "Use Item", callback: () => useItemAction(itemName) });
-    }
+    actions.push({ label: "Place Item", callback: () => useItem(itemName) });
+    actions.push({ label: "Use Item", callback: () => useItem(itemName) });
   } else if (source === "nearby") {
-    actions.push({ label: "Pick Up", callback: () => pickUpItem(itemName) });
+    actions.push({ label: "Pick Up", callback: () => pickItem(itemName) });
   }
   return actions;
 }
 
 function isCursedItem(itemName) {
-  const cursed = ["Music Box", "Voodoo Doll", "Ouija Board", "Haunted Mirror", "Tarot Cards"];
-  return cursed.includes(itemName);
+  return ["Music Box", "Voodoo Doll", "Ouija Board", "Haunted Mirror", "Tarot Cards", "Summoning Circle"].includes(itemName);
 }
 
 /* === SETTINGS PANEL === */
