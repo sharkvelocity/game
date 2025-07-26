@@ -1,5 +1,5 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — AUDIO MANAGER (UPDATED WITH NOTEBOOK) ===
+ * === PHASMA-PHONEY v2.9 — AUDIO MANAGER (UPDATED WITH SAFEPLAY) ===
  * Handles optional audio playback, skipping any
  * missing or failed-to-load files to prevent 404 errors.
  *****************************************************/
@@ -50,7 +50,7 @@ export const audioFiles = {
     "audio/fail_distort.ogg",
     "audio/game_over_hit.ogg"
   ],
-  notebook: [ /* ✅ NEW: Notebook sounds */
+  notebook: [
     "audio/notebook_rustle_open.ogg",
     "audio/notebook_rustle_close.ogg"
   ]
@@ -83,14 +83,8 @@ export function preloadAllAudio() {
 /***********************
  === PLAY AUDIO (RESPECT SETTINGS) ===
 ************************/
-/**
- * Plays an audio file if it’s loaded and safe.
- * Respects mute toggle from gameSettings.
- * @param {string} file - The file path to play.
- * @param {boolean} loop - Whether the sound should loop.
- */
 export function playAudio(file, loop = false) {
-  if (gameSettings.muteSounds) return; /* ✅ Mute toggle */
+  if (gameSettings.muteSounds) return;
   if (!loadedAudio[file]) {
     console.warn(`⚠️ Audio not available: ${file}`);
     return;
@@ -113,16 +107,23 @@ export function stopAllSounds() {
 }
 
 /***********************
- === NOTEBOOK RUSTLE SOUNDS (NEW) ===
+ === NOTEBOOK RUSTLE SOUNDS ===
 ************************/
-/**
- * Plays notebook rustle sounds for open/close.
- * @param {"open"|"close"} action
- */
 export function playNotebookSound(action) {
-  if (gameSettings.muteSounds) return; /* ✅ Respects mute */
+  if (gameSettings.muteSounds) return;
   const file = action === "open"
     ? "audio/notebook_rustle_open.ogg"
     : "audio/notebook_rustle_close.ogg";
   playAudio(file);
+}
+
+/***********************
+ === SAFE SOUND WRAPPER (LEGACY COMPAT) ===
+************************/
+export function safePlaySound(file) {
+  try {
+    playAudio(file);
+  } catch (e) {
+    console.warn(`⚠️ safePlaySound failed for: ${file}`, e);
+  }
 }
