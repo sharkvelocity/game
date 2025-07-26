@@ -1,29 +1,46 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — MAP & MOVEMENT ===
+ * === PHASMA-PHONEY v2.9 — MAP & MOVEMENT (FINAL) ===
+ * Updated for compass-based movement, turn logic,
+ * van-return handling, and synced with HUD & background.
  *****************************************************/
-import { game } from "./state.js";
-import { logToGame, renderHUD } from "./ui.js";
+import { game, mapConnections } from "./state.js";
+import { logToGame, renderHUD, updateBackground } from "./ui.js";
+import { checkTurnEvents } from "./events.js";
 
-export const mapConnections = {
-  Van: ["Foyer"],
-  Foyer: ["Van", "LivingRoom", "Kitchen", "Bathroom"],
-  LivingRoom: ["Foyer", "DiningRoom", "Garage", "KidsBedroom", "MasterBedroom"],
-  Kitchen: ["Foyer", "DiningRoom", "Basement"],
-  DiningRoom: ["Kitchen", "LivingRoom"],
-  Basement: ["Kitchen"],
-  Garage: ["LivingRoom"],
-  Bathroom: ["Foyer"],
-  KidsBedroom: ["LivingRoom"],
-  MasterBedroom: ["LivingRoom"]
-};
-
-export function moveToRoom(r) {
-  if (game.playerRoom === r) {
-    logToGame("You are already in " + r + ".");
+/***********************
+ === MOVE TO ROOM ===
+************************/
+export function moveToRoom(room) {
+  if (game.playerRoom === room) {
+    logToGame(`You are already in ${room}.`);
     return;
   }
-  game.playerRoom = r;
+
+  const available = mapConnections[game.playerRoom] || [];
+  if (!available.includes(room)) {
+    logToGame(`You cannot move directly to ${room} from here.`);
+    return;
+  }
+
+  game.playerRoom = room;
   game.currentTurn++;
-  logToGame("You move to " + r + ".");
+
+  if (room === "Van") {
+    logToGame("You return to the van to regroup.");
+  } else {
+    logToGame(`You move to ${room}.`);
+  }
+
   renderHUD();
+  updateBackground();
+  checkTurnEvents();
+}
+
+/***********************
+ === LIST AVAILABLE PATHS (OPTIONAL) ===
+************************/
+export function listAvailablePaths() {
+  const paths = mapConnections[game.playerRoom] || [];
+  logToGame(`Paths from ${game.playerRoom}: ${paths.join(", ")}`);
+  return paths;
 }
