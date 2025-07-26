@@ -1,12 +1,12 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — GHOSTBEHAVIOR.JS (FIXED) ===
+ * === PHASMA-PHONEY v2.9 — GHOSTBEHAVIOR.JS (FINAL FIXED) ===
  * Handles ghost behaviors, hunts, mimic shifts,
  * and ambient events. Fully safe with missing audio.
  *****************************************************/
 
 import { game, ghostProfiles, randomFromArray } from "./state.js";
 import { logToGame, updateSanityBar } from "./ui.js";
-import { playAudio } from "./audioManager.js"; // ✅ FIX: use playAudio instead of safePlaySound
+import { playAudio } from "./audioManager.js"; // ✅ FIXED: using correct export
 
 // === MIMIC LOGIC ===
 export function assignMimicForm() {
@@ -28,10 +28,10 @@ export function advanceTurn() {
   // === Sanity Drain & Ambient Cues ===
   if (game.playerRoom === game.ghostRoom) {
     game.sanity -= 3 + Math.random() * 3;
-    const ghostType = (game.ghost === "TheMimic" ? game.mimicForm : game.ghost);
+    const ghostType = game.ghost === "TheMimic" ? game.mimicForm : game.ghost;
     if (game.currentTurn % 2 === 0 && Math.random() < 0.3) {
       logToGame("[Ambient] " + ghostProfiles[ghostType].behavior);
-      playAudio("audio/ghost_whisper1.ogg"); // ✅ FIXED
+      playAudio("audio/ghost_whisper1.ogg");
     }
   } else {
     game.sanity -= 1;
@@ -43,7 +43,7 @@ export function advanceTurn() {
     if (Math.random() < 0.25) {
       if (game.playerRoom === "Van") {
         logToGame("[Van Monitor] Motion detected in " + r + "!");
-        playAudio("audio/monitor_boot.ogg"); // ✅ replaced with valid file
+        playAudio("audio/monitor_boot.ogg");
       } else if (game.playerRoom === r) {
         logToGame("You hear the motion sensor *beep* nearby.");
         playAudio("audio/monitor_boot.ogg");
