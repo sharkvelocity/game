@@ -1,6 +1,6 @@
 /*****************************************************
  * === PHASMA-PHONEY v2.9 — MAIN GAME FLOW (FINAL) ===
- * Fully integrated with Notebook & Settings.
+ * Fully integrated with Notebook, Settings & Resume.
  *****************************************************/
 import { 
   game, randomFromArray, allRooms, possibleWeather, gameSettings, resetGame 
@@ -12,6 +12,7 @@ import {
 import { preloadAllAudio, stopAllSounds } from "./audioManager.js";
 import { ghostBehaviorTable } from "./ghostBehavior.js";
 import { advanceTurn } from "./events.js";
+import { loadGame } from "./saveManager.js";
 
 /***********************
  === INITIALIZATION ===
@@ -45,9 +46,26 @@ function setupTitleScreen() {
     titleScreen.style.opacity = "0";
     setTimeout(() => {
       titleScreen.style.display = "none";
-      startNewGame();
+      promptContinueGame(); // ✅ Ask to continue or start fresh
     }, 1000);
   });
+}
+
+/***********************
+ === CONTINUE OR START NEW ===
+************************/
+function promptContinueGame() {
+  const savedState = localStorage.getItem("phasmaPhoneySave");
+  if (savedState) {
+    const continueGame = confirm("Would you like to continue where you left off?");
+    if (continueGame) {
+      loadGame();
+      logToGame("Resuming your previous investigation...");
+      startInvestigation(true);
+      return;
+    }
+  }
+  startNewGame();
 }
 
 /***********************
@@ -81,13 +99,17 @@ function startNewGame() {
 /***********************
  === START INVESTIGATION ===
 ************************/
-function startInvestigation() {
-  game.playerRoom = "Van";
-  game.currentTurn = 1;
+export function startInvestigation(isResume = false) {
+  if (!isResume) {
+    game.playerRoom = "Van";
+    game.currentTurn = 1;
+    logToGame("You are ready to begin investigating.");
+  } else {
+    logToGame("Investigation resumed.");
+  }
 
   renderHUD();
   updateBackground();
-  logToGame("You are ready to begin investigating.");
 
   const scene = document.getElementById("main-scene");
   const narrator = document.getElementById("narrator-ui");
