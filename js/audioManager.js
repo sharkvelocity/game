@@ -1,7 +1,7 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — AUDIO MANAGER (MP3 FINAL) ===
- * Uses uploaded MP3 files. Fully safe with preload &
- * skip logic for missing files to avoid crashes.
+ * === PHASMA-PHONEY v2.9 — AUDIO MANAGER (MP3 FINAL FIXED) ===
+ * Uses uploaded MP3 files. Safe preload, skip logic,
+ * and fully controlled looping & stopping.
  *****************************************************/
 
 import { gameSettings } from "./state.js";
@@ -33,7 +33,8 @@ export const audioFiles = {
   ]
 };
 
-const loadedAudio = {}; // Cache of successfully preloaded audio
+const loadedAudio = {};          // ✅ Cache for preloaded files
+const playingLoops = {};         // ✅ Track looping audio for safe stopping
 
 /***********************
  === PRELOAD AUDIO ===
@@ -65,7 +66,7 @@ export function playAudio(file, loop = false, volume = 1.0) {
   if (gameSettings.muteSounds) return;
 
   if (!loadedAudio[file]) {
-    console.warn(`⚠️ Audio not available or not preloaded: ${file}`);
+    console.warn(`⚠️ Audio not preloaded or unavailable: ${file}`);
     return;
   }
 
@@ -73,6 +74,10 @@ export function playAudio(file, loop = false, volume = 1.0) {
     const sound = loadedAudio[file].cloneNode(true);
     sound.loop = loop;
     sound.volume = volume;
+
+    // ✅ Track loops for safe stopping
+    if (loop) playingLoops[file] = sound;
+
     sound.play().catch(() => {
       console.warn(`⚠️ Could not play audio: ${file}`);
     });
@@ -85,15 +90,32 @@ export function playAudio(file, loop = false, volume = 1.0) {
  === STOP ALL AUDIO ===
 ************************/
 export function stopAllSounds() {
-  Object.values(loadedAudio).forEach(audio => {
+  Object.values(playingLoops).forEach(audio => {
     try {
       audio.pause();
       audio.currentTime = 0;
     } catch {
-      console.warn("⚠️ Could not stop some audio.");
+      console.warn("⚠️ Could not stop some looping audio.");
     }
   });
-  console.log("🔇 All sounds stopped.");
+  playingLoops.length = 0;
+  console.log("🔇 All looping sounds stopped.");
+}
+
+/***********************
+ === STOP SPECIFIC LOOP ===
+************************/
+export function stopLoopAudio(file) {
+  if (playingLoops[file]) {
+    try {
+      playingLoops[file].pause();
+      playingLoops[file].currentTime = 0;
+      delete playingLoops[file];
+      console.log(`🔇 Stopped loop: ${file}`);
+    } catch {
+      console.warn(`⚠️ Failed to stop loop: ${file}`);
+    }
+  }
 }
 
 /***********************
@@ -101,7 +123,7 @@ export function stopAllSounds() {
 ************************/
 export function playNotebookSound() {
   if (gameSettings.muteSounds) return;
-  playAudio("audio/notebook_open.mp3");
+  playAudio("audio/notebook_open.mp3", false, 0.8);
 }
 
 /***********************
