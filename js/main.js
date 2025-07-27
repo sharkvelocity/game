@@ -1,39 +1,59 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — MAIN.JS (FINAL MASTER) ===
+ * === PHASMA-PHONEY v2.9 — MAIN.JS (FINAL FIXED MASTER) ===
  * Handles game start, title screen, investigation flow,
  * notebook initialization, and command routing.
  *****************************************************/
-import { game, resetGame as stateReset, possibleWeather, randomFromArray } from "./state.js";
-import { renderHUD, renderActionButtons, setupNotebookToggle, populateGhostNotebook } from "./ui.js";
-import { showLoadout, confirmLoadout } from "./ui.js";
+import {
+  game,
+  resetGame as stateReset,
+  possibleWeather,
+  randomFromArray,
+  allRooms
+} from "./state.js";
+import {
+  renderHUD,
+  renderActionButtons,
+  setupNotebookToggle,
+  populateGhostNotebook,
+  showLoadout,
+  confirmLoadout,
+  updateBackground
+} from "./ui.js";
 import { preloadAllAudio } from "./audioManager.js";
 import { checkTurnEvents } from "./events.js";
 import { saveGame, clearSave } from "./saveManager.js";
-import { updateBackground } from "./ui.js";
 import { updateCompassButtons } from "./map.js";
 
 /***********************
  === INITIAL SETUP ===
 ************************/
 document.addEventListener("DOMContentLoaded", () => {
-  const startButton = document.getElementById("startButton");
-  const titleScreen = document.getElementById("title-screen");
-  const mainScene = document.getElementById("main-scene");
+  console.log("✅ PHASMA‑PHONEY v2.9 MAIN.JS Ready.");
 
-  // ✅ Ensure modules are ready
+  // ✅ Core UI Setup
   setupNotebookToggle();
   populateGhostNotebook();
   preloadAllAudio();
 
+  const startButton = document.getElementById("startButton");
+  const confirmBtn = document.getElementById("confirm-loadout");
+
   if (startButton) {
     startButton.addEventListener("click", () => {
-      titleScreen.style.display = "none";
+      console.log("🎮 Starting new game — Loadout screen shown.");
+      stateReset();
+      assignWeather();
+      assignRandomGhost();
+      assignGhostRoom();
+
+      document.getElementById("title-screen").style.display = "none";
+      document.getElementById("main-scene").style.display = "block";
       document.getElementById("loadout-screen").style.display = "flex";
+
       showLoadout();
     });
   }
 
-  const confirmBtn = document.getElementById("confirm-loadout");
   if (confirmBtn) {
     confirmBtn.addEventListener("click", () => {
       confirmLoadout();
@@ -45,25 +65,20 @@ document.addEventListener("DOMContentLoaded", () => {
 /***********************
  === START INVESTIGATION ===
 ************************/
-export function startInvestigation(newGame = true) {
+export function startInvestigation() {
+  console.log(`🔎 Investigation begins — Ghost: ${game.ghost}, Room: ${game.ghostRoom}`);
+
   document.getElementById("loadout-screen").style.display = "none";
   document.getElementById("main-scene").style.display = "block";
   document.getElementById("narrator-ui").style.display = "flex";
 
-  if (newGame) {
-    stateReset();
-    assignWeather();
-    assignRandomGhost();
-    assignGhostRoom();
-    saveGame(true);
-  }
-
   renderHUD();
   updateBackground();
-  renderActionButtons();
   updateCompassButtons();
+  renderActionButtons();
   checkTurnEvents();
-  console.log("✅ Investigation started");
+
+  saveGame(true);
 }
 
 /***********************
@@ -79,8 +94,7 @@ function assignRandomGhost() {
 }
 
 function assignGhostRoom() {
-  const rooms = Object.keys(game.roomItems || {});
-  game.ghostRoom = randomFromArray(rooms.length ? rooms : ["Foyer", "Living Room", "Kitchen"]);
+  game.ghostRoom = randomFromArray(allRooms || ["Foyer", "Living Room", "Kitchen"]);
 }
 
 /***********************
@@ -93,7 +107,7 @@ document.addEventListener("ui-command", (e) => {
       updateCompassButtons();
       break;
     case "look":
-      console.log("👀 Looking around (future detailed logic here)");
+      console.log("👀 Looking around...");
       break;
     case "inventory":
       import("./items.js").then(m => m.openInventoryOverlay());
@@ -113,12 +127,14 @@ document.addEventListener("ui-command", (e) => {
 function openGhostGuess() {
   const popup = document.getElementById("guess-popup");
   if (!popup) return;
+
   popup.style.display = "block";
   popup.innerHTML = Object.keys(game.ghostProfiles)
     .map(g => `<button onclick="window.makeGuess('${g}')">${g}</button>`)
     .join("");
+
   window.makeGuess = (ghost) => {
-    alert(ghost === game.ghost ? "✅ Correct! It was " + ghost : "❌ Wrong! It was " + game.ghost);
+    alert(ghost === game.ghost ? `✅ Correct! It was ${ghost}` : `❌ Wrong! It was ${game.ghost}`);
     window.location.reload();
   };
 }
@@ -128,6 +144,7 @@ function openGhostGuess() {
 ************************/
 function returnToVan() {
   game.playerRoom = "Van";
+  console.log("🚐 Returning to van...");
   renderHUD();
   updateBackground();
   updateCompassButtons();
