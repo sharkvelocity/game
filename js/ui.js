@@ -1,13 +1,13 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — UI MODULE (FINAL MASTER) ===
- * Handles HUD, logging, notebook, loadout, and commands.
+ * === PHASMA-PHONEY v2.9 — UI.JS (FINAL MODULAR) ===
+ * Handles HUD, notebook, action buttons, and inventory display.
  *****************************************************/
-import { game, allLoadoutItems, roomVisuals, gameSettings, ghostProfiles } from "./state.js";
+import { game, ghostProfiles, roomVisuals, gameSettings, allLoadoutItems } from "./state.js";
 import { saveGame } from "./saveManager.js";
-import { playNotebookSound } from "./audioManager.js";
 import { useItem, pickItem } from "./items.js";
+import { playNotebookSound } from "./audioManager.js";
 
-/* === LOGGING & HUD === */
+/* === LOGGING === */
 export function logToGame(msg) {
   const log = document.getElementById("game-log");
   if (!log) return;
@@ -19,18 +19,20 @@ export function logToGame(msg) {
   setTimeout(() => e.classList.add("fade"), 8000);
 }
 
+/* === HUD === */
 export function renderHUD() {
   const loc = document.getElementById("hud-location");
   const weather = document.getElementById("hud-weather");
   const turns = document.getElementById("hud-turns");
   const held = document.getElementById("held-items-display");
   const temp = document.getElementById("hud-temp");
-  if (!loc) return;
+
+  if (!loc || !weather || !turns || !held || !temp) return;
+
   loc.textContent = game.playerRoom;
   weather.textContent = game.weather || "--";
   turns.textContent = game.currentTurn;
-  held.textContent =
-    game.inventory.length ? game.inventory.filter(x => x !== "Notebook").join(", ") : "None";
+  held.textContent = game.inventory.filter(i => i !== "Notebook").join(", ") || "None";
 
   if (game.inventory.includes("Thermometer") && game.playerRoom !== "Van") {
     const t = game.playerRoom === game.ghostRoom
@@ -40,6 +42,7 @@ export function renderHUD() {
   } else {
     temp.textContent = "--°C";
   }
+
   updateSanityBar();
 }
 
@@ -52,10 +55,12 @@ export function updateSanityBar() {
 }
 
 export function updateBackground() {
-  const v = roomVisuals[game.playerRoom] || roomVisuals["Van"];
-  const d = game.playerDirection || "N";
   const bg = document.getElementById("background");
-  if (bg && v && v[d]) bg.style.backgroundImage = `url('${v[d]}')`;
+  const room = roomVisuals[game.playerRoom];
+  const dir = game.playerDirection || "N";
+  if (bg && room && room[dir]) {
+    bg.style.backgroundImage = `url('${room[dir]}')`;
+  }
 }
 
 /* === ACTION BUTTONS === */
@@ -76,13 +81,21 @@ export function renderActionButtons() {
 }
 
 /* === NOTEBOOK === */
+export function setupNotebookToggle() {
+  const btn = document.getElementById("notebook-toggle-btn");
+  const notebook = document.getElementById("notebook");
+  if (!btn || !notebook) return;
+  btn.addEventListener("click", () => {
+    const isOpen = notebook.style.display === "block";
+    notebook.style.display = isOpen ? "none" : "block";
+    playNotebookSound(isOpen ? "close" : "open");
+    if (!isOpen) clearNotebookUpdateBadge();
+  });
+}
+
 export function showNotebookUpdateBadge() {
   const badge = document.getElementById("notebook-update-badge");
-  const btn = document.getElementById("notebook-toggle-btn");
-  if (!badge) return;
-  badge.style.display = "inline";
-  btn.classList.add("shake");
-  setTimeout(() => btn.classList.remove("shake"), 400);
+  if (badge) badge.style.display = "inline";
 }
 
 export function clearNotebookUpdateBadge() {
@@ -99,7 +112,7 @@ export function updateHeldItemsNotebook() {
     held.forEach(item => {
       const li = document.createElement("li");
       li.textContent = `• ${item}`;
-      li.addEventListener("click", () => useItem(item));
+      li.onclick = () => useItem(item);
       list.appendChild(li);
     });
   } else {
@@ -111,11 +124,11 @@ export function updateNearbyItemsNotebook() {
   const list = document.getElementById("nearby-items-list");
   if (!list) return;
   list.innerHTML = "";
-  if (game.nearbyItems && game.nearbyItems.length) {
+  if (game.nearbyItems.length) {
     game.nearbyItems.forEach(item => {
       const li = document.createElement("li");
       li.textContent = `• ${item}`;
-      li.addEventListener("click", () => pickItem(item));
+      li.onclick = () => pickItem(item);
       list.appendChild(li);
     });
   } else {
@@ -127,22 +140,10 @@ export function populateGhostNotebook() {
   const ghostList = document.getElementById("ghost-notebook-list");
   if (!ghostList) return;
   ghostList.innerHTML = "";
-  Object.entries(ghostProfiles).forEach(([ghost, data]) => {
+  Object.entries(ghostProfiles).forEach(([name, data]) => {
     const li = document.createElement("li");
-    li.textContent = `${ghost} — Evidence: ${data.evidence.join(", ")}`;
+    li.textContent = `${name} — Evidence: ${data.evidence.join(", ")}`;
     ghostList.appendChild(li);
-  });
-}
-
-export function setupNotebookToggle() {
-  const notebook = document.getElementById("notebook");
-  const btn = document.getElementById("notebook-toggle-btn");
-  if (!btn || !notebook) return;
-  btn.addEventListener("click", () => {
-    const visible = notebook.style.display === "block";
-    notebook.style.display = visible ? "none" : "block";
-    playNotebookSound();
-    if (!visible) clearNotebookUpdateBadge();
   });
 }
 
@@ -152,52 +153,42 @@ let tempHeld = [], tempVan = [];
 export function showLoadout() {
   tempHeld = [];
   tempVan = [...allLoadoutItems];
+
   const heldList = document.getElementById("held-list");
   const vanList = document.getElementById("van-list");
   const confirmBtn = document.getElementById("confirm-loadout");
-  if (!heldList) return;
 
-  function renderLoadout() {
-    heldList.innerHTML = tempHeld
-      .map(i => `<button class="item-button selected" onclick="removeHeldItem('${i}')">${i}</button>`)
-      .join("");
-    vanList.innerHTML = tempVan
-      .map(i => `<button class="item-button" onclick="addHeldItem('${i}')">${i}</button>`)
-      .join("");
+  function render() {
+    heldList.innerHTML = tempHeld.map(i => `<button onclick="removeHeldItem('${i}')">${i}</button>`).join("");
+    vanList.innerHTML = tempVan.map(i => `<button onclick="addHeldItem('${i}')">${i}</button>`).join("");
     confirmBtn.disabled = tempHeld.length === 0;
-    confirmBtn.classList.toggle("active", tempHeld.length > 0);
   }
 
-  window.addHeldItem = function(item) {
-    const carryable = tempHeld.filter(x => x !== "Notebook" && x !== "Lighter");
-    if (carryable.length >= 3) {
-      logToGame("⚠️ Max 3 items (Notebook & Lighter excluded).");
+  window.addHeldItem = function (i) {
+    if (tempHeld.filter(x => x !== "Notebook" && x !== "Lighter").length >= 3) {
+      logToGame("⚠️ Max 3 items allowed.");
       return;
     }
-    tempHeld.push(item);
-    tempVan = tempVan.filter(v => v !== item);
-    renderLoadout();
+    tempHeld.push(i);
+    tempVan = tempVan.filter(v => v !== i);
+    render();
   };
 
-  window.removeHeldItem = function(item) {
-    tempVan.push(item);
-    tempHeld = tempHeld.filter(h => h !== item);
-    renderLoadout();
+  window.removeHeldItem = function (i) {
+    tempVan.push(i);
+    tempHeld = tempHeld.filter(h => h !== i);
+    render();
   };
 
-  renderLoadout();
+  render();
   document.getElementById("loadout-screen").style.display = "flex";
 }
 
 export function confirmLoadout() {
-  if (!tempHeld.length) {
-    logToGame("⚠️ Select at least one item.");
-    return;
-  }
   game.inventory = [...tempHeld, "Notebook", "Lighter"];
   game.confirmedLoadout = [...tempHeld];
   game.vanStock = [...tempVan];
   document.getElementById("loadout-screen").style.display = "none";
-  logToGame("✅ Loadout confirmed. Ready to investigate!");
+  logToGame("✅ Loadout confirmed. Ready to investigate.");
   if (gameSettings.autosave) saveGame(true);
 }
