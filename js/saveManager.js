@@ -1,17 +1,19 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — SAVE MANAGER (FINAL FIXED) ===
+ * === PHASMA-PHONEY v2.9 — SAVE MANAGER (FINAL MASTER MP3) ===
  * Saves & loads full game state, including notebook,
- * camera placements, and settings. Modular & safe.
+ * camera placements, and settings. Fully modular & safe.
  *****************************************************/
 import { 
   game, gameSettings, resetGame as stateReset 
 } from "./state.js";
 import { 
   logToGame, renderHUD, updateBackground
-} from "./ui.js"; 
+} from "./ui.js";
 import { startInvestigation } from "./main.js";
 
-/* === SAVE GAME === */
+/***********************
+ === SAVE GAME ===
+************************/
 export function saveGame(showIndicator = false) {
   if (!gameSettings.autosave) return;
   try {
@@ -38,23 +40,29 @@ export function saveGame(showIndicator = false) {
       cameraPlacements: game.cameraPlacements || [],
       settings: { ...gameSettings }
     };
+
     localStorage.setItem("phasmaPhoneySave", JSON.stringify(saveData));
     if (showIndicator) showSaveIndicator();
   } catch (e) {
-    console.error("Save failed:", e);
+    console.error("❌ Save failed:", e);
     logToGame("⚠️ Save failed.");
   }
 }
 
-/* === LOAD GAME === */
+/***********************
+ === LOAD GAME ===
+************************/
 export function loadGame() {
   const data = localStorage.getItem("phasmaPhoneySave");
   if (!data) {
-    logToGame("⚠ No save data found.");
+    logToGame("⚠ No save data found. Starting new investigation...");
     return;
   }
+
   try {
     const s = JSON.parse(data);
+
+    // ✅ Restore full game state
     Object.assign(game, s);
     game.selectedEvidence = new Set(s.selectedEvidence || []);
     game.placedCrucifix = s.placedCrucifix || {};
@@ -64,6 +72,7 @@ export function loadGame() {
     game.cameraPlacements = s.cameraPlacements || [];
     if (s.settings) Object.assign(gameSettings, s.settings);
 
+    // ✅ Correct UI transitions
     document.getElementById("title-screen").style.display = "none";
     document.getElementById("loadout-screen").style.display = "none";
     document.getElementById("main-scene").style.display = "block";
@@ -71,30 +80,38 @@ export function loadGame() {
 
     renderHUD();
     updateBackground();
-    saveGame();
+
     logToGame("📂 Game loaded. Resuming investigation...");
+    saveGame();
   } catch (e) {
-    console.error("Load failed:", e);
-    logToGame("⚠ Load failed. Starting new game...");
+    console.error("❌ Load failed:", e);
+    logToGame("⚠ Load failed. Starting new investigation...");
     clearSave();
     resetGame();
     startInvestigation(false);
   }
 }
 
-/* === CLEAR SAVE === */
+/***********************
+ === CLEAR SAVE ===
+************************/
 export function clearSave() {
   localStorage.removeItem("phasmaPhoneySave");
   logToGame("🗑️ Save data cleared.");
 }
 
-/* === RESET GAME === */
+/***********************
+ === RESET GAME ===
+************************/
 export function resetGame() {
   stateReset();
   renderHUD();
   updateBackground();
 }
 
+/***********************
+ === SAVE INDICATOR (UI) ===
+************************/
 function showSaveIndicator() {
   const ind = document.getElementById("save-indicator");
   if (!ind) return;
