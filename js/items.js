@@ -1,36 +1,83 @@
 /*****************************************************
  * === PHASMA-PHONEY v2.9 — ITEMS.JS (FINAL MASTER) ===
- * Inventory, item interactions, cursed items, and consumables.
+ * Handles inventory, item interactions, cursed items,
+ * consumables, and camera placement.
  *****************************************************/
 import { game, cursedItems, getCursedItemCost, gameSettings, ghostProfiles } from "./state.js";
 import { logToGame, renderHUD, updateHeldItemsNotebook, updateNearbyItemsNotebook, showNotebookUpdateBadge } from "./ui.js";
 import { checkTurnEvents } from "./events.js";
 import { startHunt } from "./ghostBehavior.js";
 
+/***********************
+ === INVENTORY OVERLAY
+************************/
+export function openInventoryOverlay() {
+  const overlay = document.getElementById("inventory-overlay");
+  if (!overlay) return;
+  overlay.style.display = "flex";
+  renderInventoryOverlay();
+}
+
+function renderInventoryOverlay() {
+  const list = document.getElementById("inventory-list");
+  if (!list) return;
+  list.innerHTML = "";
+
+  const inv = game.inventory.filter(i => i !== "Notebook");
+  if (inv.length) {
+    inv.forEach(item => {
+      const btn = document.createElement("button");
+      btn.className = "inventory-item";
+      btn.textContent = item;
+      btn.onclick = () => {
+        useItem(item);
+        closeInventoryOverlay();
+      };
+      list.appendChild(btn);
+    });
+  } else {
+    list.innerHTML = "<p>No items currently held.</p>";
+  }
+}
+
+export function closeInventoryOverlay() {
+  const overlay = document.getElementById("inventory-overlay");
+  if (overlay) overlay.style.display = "none";
+}
+
+/***********************
+ === USE ITEM
+************************/
 export function useItem(i) {
   if (i === "Notebook") {
     logToGame("You open your Notebook...");
     return;
   }
+
   switch (i) {
     case "Smudge Stick":
       if (game.playerRoom === game.ghostRoom) {
         game.smudgeActive = 3;
         logToGame("You smudge the room, calming the ghost.");
-      } else logToGame("You smudge, but nothing happens.");
-      consumeItem(i); break;
+      } else {
+        logToGame("You smudge, but nothing happens.");
+      }
+      consumeItem(i);
+      break;
 
     case "Camera":
       if (game.playerRoom === game.ghostRoom &&
-        (ghostProfiles[game.ghost]?.evidence.includes("Orbs") || game.ghost === "TheMimic"))
-        logToGame("IR mode... Orbs shimmer faintly!");
-      else logToGame("No orbs visible here.");
+        (ghostProfiles[game.ghost]?.evidence.includes("Orbs") || game.ghost === "TheMimic")) {
+        logToGame("You switch to IR mode... Orbs shimmer faintly!");
+      } else {
+        logToGame("No orbs visible through IR here.");
+      }
       break;
 
     case "Video Camera":
       if (game.playerRoom !== "Van") {
-        game.roomItems[game.playerRoom] = game.roomItems[game.playerRoom] || [];
-        if (!game.roomItems[game.playerRoom].includes("Video Camera")) {
+        if (!game.roomItems[game.playerRoom]?.includes("Video Camera")) {
+          game.roomItems[game.playerRoom] = game.roomItems[game.playerRoom] || [];
           game.roomItems[game.playerRoom].push("Video Camera");
           game.cameraPlacements.push(game.playerRoom);
           logToGame(`You place a video camera in ${game.playerRoom}.`);
@@ -41,25 +88,17 @@ export function useItem(i) {
     case "Crucifix":
       if (game.playerRoom !== "Van") {
         game.placedCrucifix[game.playerRoom] = 2;
-        logToGame("You place the crucifix.");
-        consumeItem(i);
-      }
-      break;
-
-    case "Salt":
-      if (game.playerRoom !== "Van") {
-        game.roomItems[game.playerRoom] = game.roomItems[game.playerRoom] || [];
-        if (!game.roomItems[game.playerRoom].includes("Salt")) {
-          game.roomItems[game.playerRoom].push("Salt");
-          logToGame("You sprinkle salt.");
-        }
+        logToGame("You place the crucifix. It may stop two hunts.");
         consumeItem(i);
       }
       break;
 
     default:
-      if (cursedItems[i]) handleCursedItem(i);
-      else logToGame(`You use the ${i}, but nothing happens.`);
+      if (cursedItems[i]) {
+        handleCursedItem(i);
+      } else {
+        logToGame(`You use the ${i}, but nothing significant occurs.`);
+      }
   }
   endItemTurn();
 }
@@ -76,10 +115,12 @@ function endItemTurn() {
   updateNearbyItemsNotebook();
   showNotebookUpdateBadge();
   checkTurnEvents();
-  if (gameSettings.autosave)
-    localStorage.setItem("phasmaPhoneySave", JSON.stringify(game));
+  if (gameSettings.autosave) localStorage.setItem("phasmaPhoneySave", JSON.stringify(game));
 }
 
+/***********************
+ === HANDLE CURSED ITEMS
+************************/
 export function handleCursedItem(i) {
   if (game.usedCursedItems[i]) {
     logToGame(`The ${i} is inert now.`);
@@ -87,22 +128,34 @@ export function handleCursedItem(i) {
   }
   logToGame(`You use the ${i}...`);
   game.sanity = Math.max(0, game.sanity - getCursedItemCost(i));
-  if (i === "Summoning Circle") startHunt();
+  if (Math.random() < 0.3) startHunt();
   game.usedCursedItems[i] = true;
   endItemTurn();
 }
 
+/***********************
+ === PICK ITEM
+************************/
 export function pickItem(item) {
   if (!item) return;
-  if (game.inventory.filter(x => x !== "Notebook" && x !== "Lighter").length >= 3) {
-    logToGame("⚠️ Max 3 items allowed.");
+  if (item === "Notebook" || item === "Lighter") {
+    logToGame(`⚠️ You cannot pick up the ${item}.`);
+    return;
+  }
+  const carryable = game.inventory.filter(x => x !== "Notebook" && x !== "Lighter");
+  if (carryable.length >= 3) {
+    logToGame("⚠️ You can only hold 3 items.");
     return;
   }
   game.inventory.push(item);
-  if (game.nearbyItems.includes(item))
-    game.nearbyItems = game.nearbyItems.filter(i => i !== item);
-  if (game.roomItems[game.playerRoom])
+  if (game.nearbyItems.includes(item)) game.nearbyItems = game.nearbyItems.filter(i => i !== item);
+  if (game.roomItems[game.playerRoom]) {
     game.roomItems[game.playerRoom] = game.roomItems[game.playerRoom].filter(i => i !== item);
+    if (game.roomItems[game.playerRoom].length === 0) delete game.roomItems[game.playerRoom];
+  }
   logToGame(`You picked up the ${item}.`);
-  renderHUD(); updateHeldItemsNotebook(); updateNearbyItemsNotebook(); showNotebookUpdateBadge();
+  renderHUD();
+  updateHeldItemsNotebook();
+  updateNearbyItemsNotebook();
+  showNotebookUpdateBadge();
 }
