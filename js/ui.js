@@ -1,7 +1,6 @@
 /*****************************************************
  * === PHASMA-PHONEY v2.9 — UI MODULE (FINAL MASTER) ===
- * Handles HUD, logging, notebook, loadout, and van monitor sync.
- * Uses ui-command events and ensures notebook works properly.
+ * Handles HUD, logging, notebook, loadout, and UI sync.
  *****************************************************/
 import { game, allLoadoutItems, roomVisuals, gameSettings, ghostProfiles } from "./state.js";
 import { saveGame } from "./saveManager.js";
@@ -63,7 +62,7 @@ export function updateBackground() {
 }
 
 /***********************
- === ACTION BUTTONS (UI COMMANDS)
+ === ACTION BUTTONS
 ************************/
 export function renderActionButtons() {
   const cmd = document.getElementById("command-buttons");
@@ -131,21 +130,10 @@ export function updateNearbyItemsNotebook() {
   }
 }
 
-export function clearNotebookDetails() {
-  const heldList = document.getElementById("held-items-list");
-  const nearbyList = document.getElementById("nearby-items-list");
-  if (heldList) heldList.innerHTML = "<li>No items currently held.</li>";
-  if (nearbyList) nearbyList.innerHTML = "<li>No nearby items.</li>";
-}
-
 export function populateGhostNotebook() {
   const ghostList = document.getElementById("ghost-notebook-list");
   if (!ghostList) return;
   ghostList.innerHTML = "";
-  if (!Object.keys(ghostProfiles).length) {
-    ghostList.innerHTML = "<li>Loading ghost data...</li>";
-    return;
-  }
   Object.entries(ghostProfiles).forEach(([ghost, data]) => {
     const li = document.createElement("li");
     li.textContent = `${ghost} — Evidence: ${data.evidence.join(", ")}`;
@@ -153,13 +141,10 @@ export function populateGhostNotebook() {
   });
 }
 
-/* ✅ Notebook Toggle */
 export function setupNotebookToggle() {
   const notebook = document.getElementById("notebook");
   const btn = document.getElementById("notebook-toggle-btn");
   if (!btn || !notebook) return;
-  notebook.style.display = "none"; // ✅ Always start hidden
-
   btn.addEventListener("click", () => {
     const isVisible = notebook.style.display === "block";
     notebook.style.display = isVisible ? "none" : "block";
@@ -172,7 +157,6 @@ export function setupNotebookToggle() {
  === LOADOUT SELECTION
 ************************/
 let tempHeld = [], tempVan = [];
-
 export function showLoadout() {
   tempHeld = [];
   tempVan = [...allLoadoutItems];
@@ -192,7 +176,7 @@ export function showLoadout() {
     confirmBtn.classList.toggle("active", tempHeld.length > 0);
   }
 
-  window.addHeldItem = window.addHeldItem || function(item) {
+  window.addHeldItem = function(item) {
     const carryable = tempHeld.filter(x => x !== "Notebook" && x !== "Lighter");
     if (carryable.length >= 3) {
       logToGame("⚠️ Max 3 items (Notebook & Lighter excluded).");
@@ -203,7 +187,7 @@ export function showLoadout() {
     renderLoadout();
   };
 
-  window.removeHeldItem = window.removeHeldItem || function(item) {
+  window.removeHeldItem = function(item) {
     tempVan.push(item);
     tempHeld = tempHeld.filter(h => h !== item);
     renderLoadout();
