@@ -202,4 +202,50 @@ export function handleCursedItem(i) {
   game.usedCursedItems[i] = true;
   endItemTurn();
 }
+/***********************
+ === PICK ITEM (FINAL) ===
+************************/
+export function pickItem(item) {
+  if (!item) {
+    logToGame("⚠️ No item selected to pick up.");
+    return;
+  }
+
+  // Prevent picking up Notebook or Lighter from room (they are default items)
+  if (item === "Notebook" || item === "Lighter") {
+    logToGame(`⚠️ You cannot pick up the ${item}.`);
+    return;
+  }
+
+  // Check inventory capacity (3 carryable max, Notebook & Lighter excluded)
+  const carryable = game.inventory.filter(x => x !== "Notebook" && x !== "Lighter");
+  if (carryable.length >= 3) {
+    logToGame("⚠️ You can only hold 3 items at once (Notebook & Lighter excluded).");
+    return;
+  }
+
+  // Add the item to player inventory
+  game.inventory.push(item);
+
+  // Remove from nearby items in this room
+  if (game.nearbyItems.includes(item)) {
+    game.nearbyItems = game.nearbyItems.filter(i => i !== item);
+  }
+
+  // Remove from room's placed items
+  if (game.roomItems[game.playerRoom]) {
+    game.roomItems[game.playerRoom] = game.roomItems[game.playerRoom].filter(i => i !== item);
+    if (game.roomItems[game.playerRoom].length === 0) {
+      delete game.roomItems[game.playerRoom];
+    }
+  }
+
+  logToGame(`You picked up the ${item}.`);
+
+  // Update notebook + HUD
+  renderHUD();
+  updateHeldItemsNotebook();
+  updateNearbyItemsNotebook();
+  showNotebookUpdateBadge();
+}
 
