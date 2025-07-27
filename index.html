@@ -7,6 +7,50 @@
   <meta name="description" content="Phasma‑Phoney: Turn-based ghost investigation horror with 25 ghosts, mimic logic, cursed items, full hunt system, and save/restore." />
   <link rel="icon" href="favicon.ico" />
   <link rel="stylesheet" href="css/style.css" />
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: black;
+      color: #eee;
+      font-family: monospace;
+      overflow: hidden;
+    }
+    #background {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      z-index: 1;
+    }
+    #lightning, #fog-layer, #orbCanvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      pointer-events: none;
+      z-index: 2;
+    }
+    #hud, #inventory-display, #narrator-ui, #notebook-button-container {
+      position: relative;
+      z-index: 5;
+    }
+    #title-screen {
+      position: fixed;
+      top:0; left:0; width:100vw; height:100vh;
+      background:black;
+      display:flex; flex-direction:column; justify-content:center; align-items:center;
+      z-index:1000;
+    }
+    #title-screen img {
+      max-width: 250px;
+      margin-bottom: 20px;
+    }
+    #main-scene { display:none; }
+  </style>
 </head>
 <body>
   <!-- === TITLE SCREEN === -->
@@ -16,7 +60,7 @@
   </div>
 
   <!-- === MAIN SCENE === -->
-  <div id="main-scene" style="display:none;">
+  <div id="main-scene">
     <div id="background"></div>
     <div id="lightning"></div>
     <canvas id="fog-layer"></canvas>
@@ -43,16 +87,8 @@
       <div id="command-buttons"></div>
     </div>
 
-    <!-- === COMPASS MOVEMENT === -->
-    <div id="compass-controls">
-      <button id="move-north">N</button>
-      <button id="move-south">S</button>
-      <button id="move-east">E</button>
-      <button id="move-west">W</button>
-    </div>
-
     <!-- === NOTEBOOK PANEL === -->
-    <div id="notebook" style="display:none;">
+    <div id="notebook">
       <div id="notebook-left">
         <h4>Ghosts</h4>
         <ol id="ghost-notebook-list"></ol>
@@ -63,9 +99,7 @@
       </div>
       <div id="notebook-right">
         <div id="selected-ghost-name">// Ghost name will appear here //</div>
-        <div id="ghost-image-container">
-          <img id="selected-ghost-image" alt="Ghost visual" />
-        </div>
+        <div id="ghost-image-container"><img id="selected-ghost-image" alt="Ghost visual" /></div>
         <p id="selected-ghost-details">Select a ghost or item to see details.</p>
         <div id="selected-ghost-evidence"></div>
       </div>
@@ -80,16 +114,6 @@
         📓 <span id="notebook-update-badge" style="display:none;">!</span>
       </button>
     </div>
-
-    <!-- === SETTINGS PANEL === -->
-    <div id="settings-panel">
-      <h3>Settings</h3>
-      <label><input type="checkbox" id="mute-sounds">Mute Sounds</label>
-      <label><input type="checkbox" id="narrator-voice">Narrator Voice</label>
-      <label><input type="checkbox" id="mobile-mode">Mobile Mode</label>
-      <label><input type="checkbox" id="autosave-toggle" checked>Autosave</label>
-      <label><input type="checkbox" id="preload-dependencies">Preload Assets</label>
-    </div>
   </div>
 
   <!-- === LOADOUT SCREEN === -->
@@ -102,17 +126,6 @@
     </div>
   </div>
 
-  <!-- === INVENTORY OVERLAY === -->
-  <div id="inventory-overlay" style="display:none;">
-    <div id="inventory-list"></div>
-    <button onclick="import('./js/items.js').then(m=>m.closeInventoryOverlay())">Close</button>
-  </div>
-
-  <!-- === GUESS POPUP === -->
-  <div id="guess-popup" style="display:none;">
-    <div id="guess-list"></div>
-  </div>
-
   <!-- === FOOTER === -->
   <footer>
     <div><strong>Phasma‑Phoney v2.9</strong> — Modular Master Build</div>
@@ -122,7 +135,7 @@
     </div>
   </footer>
 
-  <!-- === MODULE SCRIPTS (ORDERED) === -->
+  <!-- === MODULE SCRIPTS === -->
   <script type="module" src="js/state.js"></script>
   <script type="module" src="js/audioManager.js"></script>
   <script type="module" src="js/ui.js"></script>
