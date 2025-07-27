@@ -5,7 +5,7 @@
   <title>Phasma‑Phoney v2.9 — Modular Master Build</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="description" content="Phasma‑Phoney: Turn-based ghost investigation horror with 25 ghosts, mimic logic, cursed items, full hunt system, and save/restore." />
-  <link rel="icon" href="favicon.ico" /> <!-- Optional; remove if 404 -->
+  <link rel="icon" href="favicon.ico" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -43,7 +43,15 @@
       <div id="command-buttons"></div>
     </div>
 
-    <!-- === NOTEBOOK (SLIDE-UP PANEL) === -->
+    <!-- === COMPASS MOVEMENT (Optional) === -->
+    <div id="compass-controls">
+      <button id="move-north">N</button>
+      <button id="move-south">S</button>
+      <button id="move-east">E</button>
+      <button id="move-west">W</button>
+    </div>
+
+    <!-- === NOTEBOOK PANEL === -->
     <div id="notebook">
       <div id="notebook-left">
         <h4>Ghosts</h4>
@@ -66,11 +74,10 @@
       </div>
     </div>
 
-    <!-- === NOTEBOOK TOGGLE BUTTON === -->
+    <!-- === NOTEBOOK TOGGLE === -->
     <div id="notebook-button-container">
       <button id="notebook-toggle-btn">
-        📓
-        <span id="notebook-update-badge">!</span>
+        📓 <span id="notebook-update-badge" style="display:none;">!</span>
       </button>
     </div>
 
@@ -95,6 +102,12 @@
     </div>
   </div>
 
+  <!-- === INVENTORY OVERLAY === -->
+  <div id="inventory-overlay" style="display:none;">
+    <div id="inventory-list"></div>
+    <button onclick="import('./js/items.js').then(m=>m.closeInventoryOverlay())">Close</button>
+  </div>
+
   <!-- === GUESS POPUP === -->
   <div id="guess-popup" style="display:none;">
     <div id="guess-list"></div>
@@ -114,6 +127,7 @@
   <script type="module" src="js/audioManager.js"></script>
   <script type="module" src="js/ui.js"></script>
   <script type="module" src="js/items.js"></script>
+  <script type="module" src="js/map.js"></script>
   <script type="module" src="js/ghostBehavior.js"></script>
   <script type="module" src="js/events.js"></script>
   <script type="module" src="js/main.js"></script>
