@@ -39,9 +39,10 @@ export function startHunt() {
   // ✅ Start with rumble, then heartbeat loop
   playAudio("audio/hunt_start_rumble.mp3");
   setTimeout(() => {
-    playAudio("audio/hunt_start_rumble_heartbeat.mp3", true, 0.7); // softer looping heartbeat
+    playAudio("audio/hunt_start_rumble_heartbeat.mp3", true, 0.7);
   }, 2000);
 
+  // === Crucifix Logic or Player Death
   if (game.playerRoom === game.ghostRoom) {
     if (game.placedCrucifix && game.placedCrucifix[game.playerRoom] > 0) {
       game.placedCrucifix[game.playerRoom]--;
@@ -65,6 +66,7 @@ export function startHunt() {
     setTimeout(() => stopLoopAudio("audio/hunt_start_rumble_heartbeat.mp3"), 2000);
   }
 
+  // === Hunt Cooldown Logic
   const aggressiveGhosts = ["Demon", "Oni", "Raiju", "Moroi"];
   game.huntCooldown = aggressiveGhosts.includes(game.ghost)
     ? 3 + Math.floor(Math.random() * 2)
@@ -80,7 +82,7 @@ export function playerDeath() {
   setTimeout(() => stopAllSounds(), 300);
 
   setTimeout(() => {
-    alert("You died.");
+    alert(`You died. Ghost: ${game.ghost}`);
     window.location.reload();
   }, 1200);
 }
