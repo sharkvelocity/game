@@ -3,7 +3,8 @@
  * Handles inventory, item interactions, cursed items,
  * consumables, and camera placement with IR logic.
  *****************************************************/
-import { game, cursedItems, getCursedItemCost, gameSettings, ghostProfiles } from "./state.js";
+
+import { game, cursedItems, getCursedItemCost, gameSettings, ghostProfiles } from "./stateMap.js";
 import {
   logToGame, renderHUD, updateHeldItemsNotebook,
   updateNearbyItemsNotebook, showNotebookUpdateBadge
@@ -55,6 +56,11 @@ export function closeInventoryOverlay() {
  === USE ITEM
 ************************/
 export function useItem(i) {
+  if (!i) {
+    logToGame("⚠️ No item selected to use.");
+    return;
+  }
+
   if (i === "Notebook") {
     logToGame("You open your Notebook...");
     return;
@@ -89,6 +95,8 @@ export function useItem(i) {
           game.roomItems[game.playerRoom].push("Video Camera");
           game.cameraPlacements.push(game.playerRoom);
           logToGame(`You place a video camera in ${game.playerRoom}.`);
+        } else {
+          logToGame("A camera is already placed here.");
         }
       } else {
         logToGame("Cannot place video cameras in the van.");
@@ -111,6 +119,8 @@ export function useItem(i) {
         if (!game.roomItems[game.playerRoom].includes("Salt")) {
           game.roomItems[game.playerRoom].push("Salt");
           logToGame("You sprinkle salt on the ground.");
+        } else {
+          logToGame("Salt is already scattered here.");
         }
         consumeItem(i);
       }
@@ -131,6 +141,8 @@ export function useItem(i) {
         if (!game.roomItems[game.playerRoom].includes("Candle")) {
           game.roomItems[game.playerRoom].push("Candle");
           logToGame("You place and light a candle here.");
+        } else {
+          logToGame("A candle is already placed here.");
         }
         consumeItem(i);
       }
@@ -142,6 +154,8 @@ export function useItem(i) {
         if (!game.roomItems[game.playerRoom].includes("Motion Sensor")) {
           game.roomItems[game.playerRoom].push("Motion Sensor");
           logToGame("You place a motion sensor in this room.");
+        } else {
+          logToGame("A motion sensor is already installed here.");
         }
         consumeItem(i);
       }
@@ -220,7 +234,7 @@ export function handleCursedItem(i) {
 }
 
 /***********************
- === PICK ITEM (FINAL)
+ === PICK ITEM
 ************************/
 export function pickItem(item) {
   if (!item) {
