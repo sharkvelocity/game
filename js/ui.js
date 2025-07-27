@@ -1,8 +1,11 @@
 /*****************************************************
  * === PHASMA-PHONEY v2.9 — UI MODULE (FINAL MASTER) ===
- * Handles HUD, logging, notebook, loadout, and UI sync.
+ * Handles HUD, logging, notebook, loadout, and compass updates.
  *****************************************************/
-import { game, allLoadoutItems, roomVisuals, gameSettings, ghostProfiles } from "./state.js";
+import { 
+  game, allLoadoutItems, roomVisuals, gameSettings, ghostProfiles,
+  updateCompassButtons
+} from "./state.js";
 import { saveGame } from "./saveManager.js";
 import { playNotebookSound } from "./audioManager.js";
 import { useItem, pickItem } from "./items.js";
@@ -62,7 +65,7 @@ export function updateBackground() {
 }
 
 /***********************
- === ACTION BUTTONS
+ === ACTION BUTTONS (UI COMMANDS)
 ************************/
 export function renderActionButtons() {
   const cmd = document.getElementById("command-buttons");
@@ -130,10 +133,21 @@ export function updateNearbyItemsNotebook() {
   }
 }
 
+export function clearNotebookDetails() {
+  const heldList = document.getElementById("held-items-list");
+  const nearbyList = document.getElementById("nearby-items-list");
+  if (heldList) heldList.innerHTML = "<li>No items currently held.</li>";
+  if (nearbyList) nearbyList.innerHTML = "<li>No nearby items.</li>";
+}
+
 export function populateGhostNotebook() {
   const ghostList = document.getElementById("ghost-notebook-list");
   if (!ghostList) return;
   ghostList.innerHTML = "";
+  if (!Object.keys(ghostProfiles).length) {
+    ghostList.innerHTML = "<li>Loading ghost data...</li>";
+    return;
+  }
   Object.entries(ghostProfiles).forEach(([ghost, data]) => {
     const li = document.createElement("li");
     li.textContent = `${ghost} — Evidence: ${data.evidence.join(", ")}`;
@@ -176,7 +190,7 @@ export function showLoadout() {
     confirmBtn.classList.toggle("active", tempHeld.length > 0);
   }
 
-  window.addHeldItem = function(item) {
+  window.addHeldItem = window.addHeldItem || function(item) {
     const carryable = tempHeld.filter(x => x !== "Notebook" && x !== "Lighter");
     if (carryable.length >= 3) {
       logToGame("⚠️ Max 3 items (Notebook & Lighter excluded).");
@@ -187,7 +201,7 @@ export function showLoadout() {
     renderLoadout();
   };
 
-  window.removeHeldItem = function(item) {
+  window.removeHeldItem = window.removeHeldItem || function(item) {
     tempVan.push(item);
     tempHeld = tempHeld.filter(h => h !== item);
     renderLoadout();
