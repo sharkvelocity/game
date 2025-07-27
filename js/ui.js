@@ -9,7 +9,7 @@ import { playNotebookSound } from "./audioManager.js";
 import { useItem, pickItem } from "./items.js";
 
 /***********************
- === LOGGING & HUD ===
+ === LOGGING & HUD
 ************************/
 export function logToGame(msg) {
   const log = document.getElementById("game-log");
@@ -142,10 +142,27 @@ export function populateGhostNotebook() {
   const ghostList = document.getElementById("ghost-notebook-list");
   if (!ghostList) return;
   ghostList.innerHTML = "";
+  if (!Object.keys(ghostProfiles).length) {
+    ghostList.innerHTML = "<li>Loading ghost data...</li>";
+    return;
+  }
   Object.entries(ghostProfiles).forEach(([ghost, data]) => {
     const li = document.createElement("li");
     li.textContent = `${ghost} — Evidence: ${data.evidence.join(", ")}`;
     ghostList.appendChild(li);
+  });
+}
+
+/* ✅ Notebook Toggle (Now built-in) */
+export function setupNotebookToggle() {
+  const notebook = document.getElementById("notebook");
+  const btn = document.getElementById("notebook-toggle-btn");
+  if (!btn || !notebook) return;
+  btn.addEventListener("click", () => {
+    const isVisible = notebook.style.display === "block";
+    notebook.style.display = isVisible ? "none" : "block";
+    playNotebookSound(isVisible ? "close" : "open");
+    if (!isVisible) clearNotebookUpdateBadge();
   });
 }
 
@@ -173,7 +190,7 @@ export function showLoadout() {
     confirmBtn.classList.toggle("active", tempHeld.length > 0);
   }
 
-  window.addHeldItem = function(item) {
+  window.addHeldItem = window.addHeldItem || function(item) {
     const carryable = tempHeld.filter(x => x !== "Notebook" && x !== "Lighter");
     if (carryable.length >= 3) {
       logToGame("⚠️ Max 3 items (Notebook & Lighter excluded).");
@@ -184,7 +201,7 @@ export function showLoadout() {
     renderLoadout();
   };
 
-  window.removeHeldItem = function(item) {
+  window.removeHeldItem = window.removeHeldItem || function(item) {
     tempVan.push(item);
     tempHeld = tempHeld.filter(h => h !== item);
     renderLoadout();
