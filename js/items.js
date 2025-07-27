@@ -1,5 +1,5 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — ITEMS.JS (FINAL FIXED) ===
+ * === PHASMA-PHONEY v2.9 — ITEMS.JS (FINAL CLEANED) ===
  * Handles inventory, item interactions, cursed items,
  * consumables, and camera placement with IR logic.
  *****************************************************/
@@ -12,7 +12,7 @@ import { checkTurnEvents } from "./events.js";
 import { startHunt } from "./ghostBehavior.js";
 
 /***********************
- === INVENTORY OVERLAY (NEW) ===
+ === INVENTORY OVERLAY
 ************************/
 export function openInventoryOverlay() {
   const overlay = document.getElementById("inventory-overlay");
@@ -52,7 +52,7 @@ export function closeInventoryOverlay() {
 }
 
 /***********************
- === USE ITEM (UPDATED)
+ === USE ITEM
 ************************/
 export function useItem(i) {
   if (i === "Notebook") {
@@ -204,12 +204,6 @@ export function handleCursedItem(i) {
 }
 
 /***********************
- ✅ GLOBAL EXPOSURE FOR INLINE BUTTONS
+ ✅ FINAL EXPORTS
 ************************/
-window.inspectItem = inspectItem;
-window.dropItem = dropItem;
-window.pickItem = pickItem;
-window.useItem = useItem;
-window.openInventoryOverlay = openInventoryOverlay;
-
-export { pickItem, useItem, openInventoryOverlay };
+export { openInventoryOverlay, closeInventoryOverlay, useItem };
