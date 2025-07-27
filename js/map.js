@@ -1,13 +1,10 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — MAP STUB (FINAL) ===
- * Purely imports state & map logic from unified module.
+ * === PHASMA-PHONEY v2.9 — MAP.JS (STUB FIXED) ===
+ * Re-exports only what's needed for compass updates.
  *****************************************************/
-export {
-  mapConnections,
-  roomVisuals,
-  compassDirections,
-  allRooms,
-  game,
-  randomFromArray,
-  resetGame
-} from "./stateMap.js";
+import { updateCompassButtons as coreUpdateCompassButtons } from "./state.js"; 
+// ✅ state.js now holds all map logic after unification
+
+export function updateCompassButtons() {
+  coreUpdateCompassButtons();
+}
