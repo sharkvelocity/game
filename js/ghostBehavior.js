@@ -1,10 +1,10 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — GHOSTBEHAVIOR.JS (FINAL MP3) ===
+ * === PHASMA-PHONEY v2.9 — GHOSTBEHAVIOR.JS (FINAL MP3 FIXED) ===
  * Handles mimic shifts, hunts, and death with synced MP3 audio.
  *****************************************************/
 import { game, ghostProfiles, randomFromArray } from "./state.js";
 import { logToGame } from "./ui.js";
-import { playAudio, stopAllSounds } from "./audioManager.js";
+import { playAudio, stopAllSounds, stopLoopAudio } from "./audioManager.js";
 
 /***********************
  === MIMIC LOGIC ===
@@ -39,10 +39,9 @@ export function startHunt() {
   // ✅ Start with rumble, then heartbeat loop
   playAudio("audio/hunt_start_rumble.mp3");
   setTimeout(() => {
-    playAudio("audio/hunt_start_rumble_heartbeat.mp3", true); // loops heartbeat after rumble
+    playAudio("audio/hunt_start_rumble_heartbeat.mp3", true, 0.7); // softer looping heartbeat
   }, 2000);
 
-  // === Check crucifix or death
   if (game.playerRoom === game.ghostRoom) {
     if (game.placedCrucifix && game.placedCrucifix[game.playerRoom] > 0) {
       game.placedCrucifix[game.playerRoom]--;
@@ -57,16 +56,15 @@ export function startHunt() {
       }
 
       playAudio("audio/crucifix_burn.mp3");
-      stopAllSounds();
+      setTimeout(() => stopLoopAudio("audio/hunt_start_rumble_heartbeat.mp3"), 500);
     } else {
       setTimeout(playerDeath, 3000);
     }
   } else {
     logToGame("You survived the hunt...");
-    setTimeout(() => stopAllSounds(), 2000);
+    setTimeout(() => stopLoopAudio("audio/hunt_start_rumble_heartbeat.mp3"), 2000);
   }
 
-  // === Cooldown logic
   const aggressiveGhosts = ["Demon", "Oni", "Raiju", "Moroi"];
   game.huntCooldown = aggressiveGhosts.includes(game.ghost)
     ? 3 + Math.floor(Math.random() * 2)
@@ -79,10 +77,10 @@ export function startHunt() {
 export function playerDeath() {
   logToGame("💀 The ghost finds you. Everything goes cold...");
   playAudio("audio/gameKilled.mp3");
-  stopAllSounds();
+  setTimeout(() => stopAllSounds(), 300);
 
   setTimeout(() => {
     alert("You died.");
     window.location.reload();
-  }, 1000);
+  }, 1200);
 }
