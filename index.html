@@ -5,7 +5,7 @@
   <title>Phasma‑Phoney v2.9 — Modular Master Build</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="description" content="Phasma‑Phoney: Turn-based ghost investigation horror with 25 ghosts, mimic logic, cursed items, full hunt system, and save/restore." />
-  <link rel="icon" href="favicon.ico" />
+  <link rel="icon" href="favicon.ico" /> <!-- Optional; remove if 404 -->
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -109,14 +109,13 @@
     </div>
   </footer>
 
-  <!-- === MODULE SCRIPTS (order matters) === -->
+  <!-- === MODULE SCRIPTS (FIXED ORDER) === -->
   <script type="module" src="js/state.js"></script>
-  <script type="module" src="js/ui.js"></script>
-  <script type="module" src="js/map.js"></script>
-  <script type="module" src="js/items.js"></script>
   <script type="module" src="js/audioManager.js"></script>
-  <script type="module" src="js/events.js"></script>
+  <script type="module" src="js/ui.js"></script>
+  <script type="module" src="js/items.js"></script>
   <script type="module" src="js/ghostBehavior.js"></script>
+  <script type="module" src="js/events.js"></script>
   <script type="module" src="js/main.js"></script>
 </body>
 </html>
