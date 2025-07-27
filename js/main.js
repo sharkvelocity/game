@@ -1,5 +1,5 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — MAIN GAME FLOW (FINAL MASTER) ===
+ * === PHASMA-PHONEY v2.9 — MAIN GAME FLOW (FINAL MASTER FIXED) ===
  * Handles title screen, loadout, investigation loop, and restart.
  * Fully compatible with ui.js, state.js, and modular event system.
  *****************************************************/
@@ -28,11 +28,11 @@ function initGame() {
   if (gameSettings.preloadDependencies) preloadAllAudio();
   setupTitleScreen();
   setupUICommandListener();
-  setupNotebookToggle(); // ✅ FIXED: Notebook button now works
+  setupNotebookToggle(); // ✅ Notebook toggle wired
 }
 
 /***********************
- === TITLE SCREEN LOGIC (FIXED) ===
+ === TITLE SCREEN ===
 ************************/
 function setupTitleScreen() {
   const titleScreen = document.getElementById("title-screen");
@@ -47,8 +47,6 @@ function setupTitleScreen() {
   startBtn.onclick = () => {
     console.log("🎬 Start Game button clicked!");
     startBtn.disabled = true;
-
-    // Fade out title screen
     titleScreen.style.opacity = "0";
     setTimeout(() => {
       titleScreen.style.display = "none";
@@ -72,13 +70,14 @@ function promptContinueGame() {
 }
 
 /***********************
- === START NEW GAME FLOW ===
+ === START NEW GAME ===
 ************************/
 function startNewGame() {
   resetGame();
 
-  game.ghost = randomFromArray(Object.keys(game.selectedEvidence.size ? {} : 
-    Object.keys(JSON.parse(JSON.stringify(game)))); // just to ensure no ghost pre-set
+  // ✅ Correct random ghost, weather, and ghost room selection
+  const ghostKeys = Object.keys(gameSettings?.ghostProfiles || {});
+  game.ghost = randomFromArray(ghostKeys.length ? ghostKeys : Object.keys(allRooms));
   game.weather = randomFromArray(possibleWeather);
   game.ghostRoom = randomFromArray(allRooms.filter(r => r !== "Van"));
 
@@ -87,7 +86,7 @@ function startNewGame() {
   clearNotebookUpdateBadge();
   populateGhostNotebook();
 
-  // Loadout Selection
+  // ✅ Loadout & confirm flow
   showLoadout();
   const confirmBtn = document.getElementById("confirm-loadout");
   confirmBtn.onclick = null;
@@ -140,7 +139,7 @@ export function restartGame() {
 }
 
 /***********************
- === NOTEBOOK TOGGLE (FIXED) ===
+ === NOTEBOOK TOGGLE ===
 ************************/
 function setupNotebookToggle() {
   const notebook = document.getElementById("notebook");
@@ -164,20 +163,16 @@ function setupUICommandListener() {
       case "move":
         logToGame("You look for a path to move...");
         break;
-
       case "look":
         logToGame("You look around carefully...");
         advanceTurn();
         break;
-
       case "inventory":
         logToGame("Opening inventory...");
         break;
-
       case "guess":
         logToGame("You consider making a ghost guess...");
         break;
-
       case "van":
         if (game.playerRoom !== "Van") {
           logToGame("You return to the van.");
@@ -189,7 +184,6 @@ function setupUICommandListener() {
           logToGame("You are already in the van.");
         }
         break;
-
       default:
         logToGame(`⚠️ Unknown command: ${cmd}`);
     }
