@@ -1,67 +1,45 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — AUDIO MANAGER (UPDATED WITH SAFEPLAY) ===
- * Handles optional audio playback, skipping any
- * missing or failed-to-load files to prevent 404 errors.
+ * === PHASMA-PHONEY v2.9 — AUDIO MANAGER (MP3 FINAL) ===
+ * Uses uploaded MP3 files. Fully safe with preload &
+ * skip logic for missing files to avoid crashes.
  *****************************************************/
 
 import { gameSettings } from "./state.js";
 
-/* === AUDIO LIBRARY === */
+/* === AUDIO LIBRARY (MP3) === */
 export const audioFiles = {
   ambient: [
-    "audio/ambient_wind_creaks.ogg",
-    "audio/ambient_fog_whisper.ogg",
-    "audio/ambient_rain_loop.ogg",
-    "audio/ambient_dread_low.ogg"
+    "audio/ambient_wind.mp3",
+    "audio/ambient_house_creak.mp3",
+    "audio/fireplace.mp3",
+    "audio/wildDog.mp3"
   ],
   ghost: [
-    "audio/ghost_whisper1.ogg",
-    "audio/ghost_whisper2.ogg",
-    "audio/ghost_breath.ogg",
-    "audio/revenant_growl.ogg",
-    "audio/banshee_scream.ogg",
-    "audio/succubus_murmur1.ogg"
+    "audio/spiritBoxStatic.mp3",
+    "audio/music_box_play.mp3",
+    "audio/Radio.mp3"
   ],
   events: [
-    "audio/floor_creak1.ogg",
-    "audio/floor_creak2.ogg",
-    "audio/polter_throw1.ogg",
-    "audio/polter_throw2.ogg",
-    "audio/wall_knock1.ogg",
-    "audio/wall_knock2.ogg",
-    "audio/emf_surge1.ogg",
-    "audio/spiritbox_phrase1.ogg",
-    "audio/freezing_breath1.ogg",
-    "audio/ghost_writing_scratch.ogg",
-    "audio/orb_soft_drift1.ogg",
-    "audio/smudge_ignite.ogg",
-    "audio/smudge_sizzle.ogg",
-    "audio/crucifix_burn.ogg",
-    "audio/hunt_start_rumble.ogg",
-    "audio/candle_out.ogg",
-    "audio/heartbeat_fast.ogg",
-    "audio/flicker_pop.ogg",
-    "audio/player_death_choke.ogg",
-    "audio/mare_light_pop.ogg",
-    "audio/footsteps_fast.ogg",
-    "audio/van_door.ogg",
-    "audio/monitor_boot.ogg",
-    "audio/success_chime.ogg",
-    "audio/fail_distort.ogg",
-    "audio/game_over_hit.ogg"
-  ],
-  notebook: [
-    "audio/notebook_rustle_open.ogg",
-    "audio/notebook_rustle_close.ogg"
+    "audio/doorSlam1.mp3",
+    "audio/doorSlam2.mp3",
+    "audio/doorCreak1.mp3",
+    "audio/doorCreak2.mp3",
+    "audio/doorCreak3.mp3",
+    "audio/hunt_start_rumble.mp3",
+    "audio/hunt_start_rumble_heartbeat.mp3",
+    "audio/gameKilled.mp3",
+    "audio/notebook_open.mp3",
+    "audio/tarot_card_flip.mp3"
   ]
 };
 
-let loadedAudio = {};
+const loadedAudio = {}; // Cache of successfully preloaded audio
 
 /***********************
  === PRELOAD AUDIO ===
 ************************/
 export function preloadAllAudio() {
+  console.log("🎵 Preloading MP3 audio files...");
   Object.keys(audioFiles).forEach(category => {
     audioFiles[category].forEach(file => {
       const audio = new Audio();
@@ -70,7 +48,7 @@ export function preloadAllAudio() {
 
       audio.addEventListener("canplaythrough", () => {
         loadedAudio[file] = audio;
-        console.log(`✅ Audio loaded: ${file}`);
+        console.log(`✅ Loaded: ${file}`);
       });
 
       audio.addEventListener("error", () => {
@@ -81,19 +59,26 @@ export function preloadAllAudio() {
 }
 
 /***********************
- === PLAY AUDIO (RESPECT SETTINGS) ===
+ === PLAY AUDIO (SAFE)
 ************************/
-export function playAudio(file, loop = false) {
+export function playAudio(file, loop = false, volume = 1.0) {
   if (gameSettings.muteSounds) return;
+
   if (!loadedAudio[file]) {
-    console.warn(`⚠️ Audio not available: ${file}`);
+    console.warn(`⚠️ Audio not available or not preloaded: ${file}`);
     return;
   }
-  const audio = loadedAudio[file].cloneNode(true);
-  audio.loop = loop;
-  audio.play().catch(() => {
-    console.warn(`⚠️ Could not play audio: ${file}`);
-  });
+
+  try {
+    const sound = loadedAudio[file].cloneNode(true);
+    sound.loop = loop;
+    sound.volume = volume;
+    sound.play().catch(() => {
+      console.warn(`⚠️ Could not play audio: ${file}`);
+    });
+  } catch (err) {
+    console.error(`❌ Playback error [${file}]:`, err);
+  }
 }
 
 /***********************
@@ -101,24 +86,26 @@ export function playAudio(file, loop = false) {
 ************************/
 export function stopAllSounds() {
   Object.values(loadedAudio).forEach(audio => {
-    audio.pause();
-    audio.currentTime = 0;
+    try {
+      audio.pause();
+      audio.currentTime = 0;
+    } catch {
+      console.warn("⚠️ Could not stop some audio.");
+    }
   });
+  console.log("🔇 All sounds stopped.");
 }
 
 /***********************
- === NOTEBOOK RUSTLE SOUNDS ===
+ === NOTEBOOK OPEN SOUND ===
 ************************/
-export function playNotebookSound(action) {
+export function playNotebookSound() {
   if (gameSettings.muteSounds) return;
-  const file = action === "open"
-    ? "audio/notebook_rustle_open.ogg"
-    : "audio/notebook_rustle_close.ogg";
-  playAudio(file);
+  playAudio("audio/notebook_open.mp3");
 }
 
 /***********************
- === SAFE SOUND WRAPPER (LEGACY COMPAT) ===
+ === SAFE SOUND WRAPPER ===
 ************************/
 export function safePlaySound(file) {
   try {
