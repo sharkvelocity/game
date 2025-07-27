@@ -36,13 +36,10 @@ export function attemptHunt() {
 export function startHunt() {
   logToGame("💀 The ghost is hunting!");
   
-  // Play hunt rumble first
-  playAudio("audio/hunt_start_rumble.mp3");
-
-  // Heartbeat starts shortly after rumble
-  setTimeout(() => {
-    playAudio("audio/hunt_start_rumble_heartbeat.mp3", true, 0.8);
-  }, 1800);
+playAudio("audio/hunt_start_rumble.mp3");
+setTimeout(() => {
+  playAudio("audio/hunt_start_rumble_heartbeat.mp3", true, 0.7);
+}, 2000); // plays heartbeat ~2 seconds after rumble
 
   if (game.playerRoom === game.ghostRoom) {
     if (game.placedCrucifix && game.placedCrucifix[game.playerRoom] > 0) {
