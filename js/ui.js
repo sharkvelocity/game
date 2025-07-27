@@ -1,7 +1,7 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — UI MODULE (FINAL FIXED) ===
+ * === PHASMA-PHONEY v2.9 — UI MODULE (FINAL MASTER) ===
  * Handles HUD, logging, notebook, loadout, and van monitor sync.
- * Uses ui-command events instead of handleCommand.
+ * Uses ui-command events and ensures notebook works properly.
  *****************************************************/
 import { game, allLoadoutItems, roomVisuals, gameSettings, ghostProfiles } from "./state.js";
 import { saveGame } from "./saveManager.js";
@@ -153,11 +153,13 @@ export function populateGhostNotebook() {
   });
 }
 
-/* ✅ Notebook Toggle (Now built-in) */
+/* ✅ Notebook Toggle */
 export function setupNotebookToggle() {
   const notebook = document.getElementById("notebook");
   const btn = document.getElementById("notebook-toggle-btn");
   if (!btn || !notebook) return;
+  notebook.style.display = "none"; // ✅ Always start hidden
+
   btn.addEventListener("click", () => {
     const isVisible = notebook.style.display === "block";
     notebook.style.display = isVisible ? "none" : "block";
