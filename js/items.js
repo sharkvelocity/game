@@ -203,7 +203,3 @@ export function handleCursedItem(i) {
   endItemTurn();
 }
 
-/***********************
- ✅ FINAL EXPORTS
-************************/
-export { openInventoryOverlay, closeInventoryOverlay, useItem };
