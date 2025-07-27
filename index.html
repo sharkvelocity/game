@@ -43,7 +43,7 @@
       <div id="command-buttons"></div>
     </div>
 
-    <!-- === COMPASS CONTROLS === -->
+    <!-- === COMPASS MOVEMENT === -->
     <div id="compass-controls">
       <button id="move-north">N</button>
       <button id="move-south">S</button>
@@ -57,9 +57,9 @@
         <h4>Ghosts</h4>
         <ol id="ghost-notebook-list"></ol>
         <h4>Held Items</h4>
-        <ul id="held-items-list"><li>No items currently held.</li></ul>
+        <ul id="held-items-list"></ul>
         <h4>Nearby Items</h4>
-        <ul id="nearby-items-list"><li>No nearby items.</li></ul>
+        <ul id="nearby-items-list"></ul>
       </div>
       <div id="notebook-right">
         <div id="selected-ghost-name">// Ghost name will appear here //</div>
@@ -74,7 +74,7 @@
       </div>
     </div>
 
-    <!-- === NOTEBOOK TOGGLE BUTTON === -->
+    <!-- === NOTEBOOK TOGGLE === -->
     <div id="notebook-button-container">
       <button id="notebook-toggle-btn">
         📓 <span id="notebook-update-badge" style="display:none;">!</span>
@@ -123,10 +123,11 @@
   </footer>
 
   <!-- === MODULE SCRIPTS (FINAL ORDER) === -->
-  <script type="module" src="js/stateMap.js"></script> <!-- ✅ unified state & map -->
+  <script type="module" src="js/state.js"></script>
   <script type="module" src="js/audioManager.js"></script>
   <script type="module" src="js/ui.js"></script>
   <script type="module" src="js/items.js"></script>
+  <script type="module" src="js/map.js"></script>
   <script type="module" src="js/ghostBehavior.js"></script>
   <script type="module" src="js/events.js"></script>
   <script type="module" src="js/main.js"></script>
