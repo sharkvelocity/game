@@ -1,18 +1,19 @@
 /*****************************************************
  * === PHASMA-PHONEY v2.9 — MAIN GAME FLOW (FINAL MASTER) ===
- * Handles title screen, loadout, investigation loop, restart,
- * and notebook toggle (fixed).
+ * Handles title screen, loadout, investigation loop, notebook toggle,
+ * compass auto-updates, and restart. Fully linked to all modules.
  *****************************************************/
 
 import { 
-  game, randomFromArray, allRooms, possibleWeather, gameSettings, resetGame 
-} from "./state.js";
+  game, randomFromArray, allRooms, possibleWeather, gameSettings, resetGame
+} from "./stateMap.js";
 import { 
   logToGame, renderHUD, showLoadout, confirmLoadout, updateBackground,
   clearNotebookDetails, populateGhostNotebook, clearNotebookUpdateBadge
 } from "./ui.js";
 import { preloadAllAudio, stopAllSounds } from "./audioManager.js";
 import { advanceTurn } from "./events.js";
+import { updateCompassButtons } from "./stateMap.js";
 import { loadGame } from "./saveManager.js";
 
 /***********************
@@ -29,7 +30,7 @@ function initGame() {
   if (gameSettings.preloadDependencies) preloadAllAudio();
   setupTitleScreen();
   setupUICommandListener();
-  setupNotebookToggle(); // ✅ Notebook now wired
+  setupNotebookToggle();
 }
 
 /***********************
@@ -48,7 +49,6 @@ function setupTitleScreen() {
   startBtn.onclick = () => {
     console.log("🎬 Start Game button clicked!");
     startBtn.disabled = true;
-
     titleScreen.style.opacity = "0";
     setTimeout(() => {
       titleScreen.style.display = "none";
@@ -77,7 +77,7 @@ function promptContinueGame() {
 function startNewGame() {
   resetGame();
 
-  game.ghost = randomFromArray(Object.keys(game.ghost ? [game.ghost] : Object.keys(game)));
+  game.ghost = randomFromArray(Object.keys(game.ghostProfiles));
   game.weather = randomFromArray(possibleWeather);
   game.ghostRoom = randomFromArray(allRooms.filter(r => r !== "Van"));
 
@@ -109,6 +109,7 @@ export function startInvestigation(isResume = false) {
 
   renderHUD();
   updateBackground();
+  updateCompassButtons();
 
   document.getElementById("loadout-screen").style.display = "none";
   document.getElementById("main-scene").style.display = "block";
@@ -143,16 +144,14 @@ export function restartGame() {
 function setupNotebookToggle() {
   const notebook = document.getElementById("notebook");
   const btn = document.getElementById("notebook-toggle-btn");
-
   if (!btn || !notebook) {
-    console.error("❌ Notebook or toggle button not found!");
+    console.warn("⚠️ Notebook toggle button or panel not found.");
     return;
   }
 
   btn.addEventListener("click", () => {
     const isVisible = notebook.style.display === "block";
     notebook.style.display = isVisible ? "none" : "block";
-
     if (!isVisible) {
       clearNotebookUpdateBadge();
       console.log("📓 Notebook opened.");
@@ -172,20 +171,16 @@ function setupUICommandListener() {
       case "move":
         logToGame("You look for a path to move...");
         break;
-
       case "look":
         logToGame("You look around carefully...");
         advanceTurn();
         break;
-
       case "inventory":
         logToGame("Opening inventory...");
         break;
-
       case "guess":
         logToGame("You consider making a ghost guess...");
         break;
-
       case "van":
         if (game.playerRoom !== "Van") {
           logToGame("You return to the van.");
@@ -193,11 +188,11 @@ function setupUICommandListener() {
           advanceTurn();
           renderHUD();
           updateBackground();
+          updateCompassButtons();
         } else {
           logToGame("You are already in the van.");
         }
         break;
-
       default:
         logToGame(`⚠️ Unknown command: ${cmd}`);
     }
