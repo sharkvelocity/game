@@ -60,16 +60,66 @@ export const ghostProfiles = {
 
 // === ROOMS & VISUALS ===
 export const roomVisuals = {
-  Van: { N: "Van_N.png", S: "Van_S.png", E: "Van_E.png", W: "Van_W.png" },
-  Foyer: { N: "Foyer_N.png", S: "Foyer_S.png", E: "Foyer_E.png", W: "Foyer_W.png" },
-  LivingRoom: { N: "LivingRoom_N.png", S: "LivingRoom_S.png", E: "LivingRoom_E.png", W: "LivingRoom_W.png" },
-  Kitchen: { N: "Kitchen_N.png", S: "Kitchen_S.png", E: "Kitchen_E.png", W: "Kitchen_W.png" },
-  DiningRoom: { N: "DiningRoom_N.png", S: "DiningRoom_S.png", E: "DiningRoom_E.png", W: "DiningRoom_W.png" },
-  Basement: { N: "Basement_N.png", S: "Basement_S.png", E: "Basement_E.png", W: "Basement_W.png" },
-  Bathroom: { N: "Bathroom_N.png", S: "Bathroom_S.png", E: "Bathroom_E.png", W: "Bathroom_W.png" },
-  Garage: { N: "Garage_N.png", S: "Garage_S.png", E: "Garage_E.png", W: "Garage_W.png" },
-  KidsBedroom: { N: "KidsBedroom_N.png", S: "KidsBedroom_S.png", E: "KidsBedroom_E.png", W: "KidsBedroom_W.png" },
-  MasterBedroom: { N: "MasterBedroom_N.png", S: "MasterBedroom_S.png", E: "MasterBedroom_E.png", W: "MasterBedroom_W.png" }
+  Van: {
+    N: "img/Van_N.png",
+    S: "img/Van_S.png",
+    E: "img/Van_E.png",
+    W: "img/Van_W.png"
+  },
+  Foyer: {
+    N: "img/Foyer_N.png",
+    S: "img/Foyer_S.png",
+    E: "img/Foyer_E.png",
+    W: "img/Foyer_W.png"
+  },
+  LivingRoom: {
+    N: "img/LivingRoom_N.png",
+    S: "img/LivingRoom_S.png",
+    E: "img/LivingRoom_E.png",
+    W: "img/LivingRoom_W.png"
+  },
+  Kitchen: {
+    N: "img/Kitchen_N.png",
+    S: "img/Kitchen_S.png",
+    E: "img/Kitchen_E.png",
+    W: "img/Kitchen_W.png"
+  },
+  DiningRoom: {
+    N: "img/DiningRoom_N.png",
+    S: "img/DiningRoom_S.png",
+    E: "img/DiningRoom_E.png",
+    W: "img/DiningRoom_W.png"
+  },
+  Basement: {
+    N: "img/Basement_N.png",
+    S: "img/Basement_S.png",
+    E: "img/Basement_E.png",
+    W: "img/Basement_W.png"
+  },
+  Bathroom: {
+    N: "img/Bathroom_N.png",
+    S: "img/Bathroom_S.png",
+    E: "img/Bathroom_E.png",
+    W: "img/Bathroom_W.png"
+  },
+  Garage: {
+    N: "img/Garage_N.png",
+    S: "img/Garage_S.png",
+    E: "img/Garage_E.png",
+    W: "img/Garage_W.png"
+  },
+  KidsBedroom: {
+    N: "img/KidsBedroom_N.png",
+    S: "img/KidsBedroom_S.png",
+    E: "img/KidsBedroom_E.png",
+    W: "img/KidsBedroom_W.png"
+  },
+  MasterBedroom: {
+    N: "img/MasterBedroom_N.png",
+    S: "img/MasterBedroom_S.png",
+    E: "img/MasterBedroom_E.png",
+    W: "img/MasterBedroom_W.png"
+  }
 };
 
 export const mapConnections = {
