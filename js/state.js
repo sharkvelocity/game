@@ -1,7 +1,7 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — STATE.JS (FINAL FIXED) ===
- * Holds all game constants, core state, and utilities.
- * Includes confirmedLoadout to track selected starting items.
+ * === PHASMA-PHONEY v2.9 — STATE.JS (FINAL MASTER) ===
+ * Holds all constants, ghost profiles, map connections,
+ * and core game state. Fully synced with all modules.
  *****************************************************/
 
 // === ALL LOADOUT ITEMS ===
@@ -21,15 +21,14 @@ export const cursedItems = {
   "Summoning Circle": { desc: "Forces ghost appearance.", cost: 25 },
   "Monkey Paw": { desc: "Grants risky wishes.", cost: 10 }
 };
-
 export function getCursedItemCost(item) {
   return cursedItems[item]?.cost || 5;
 }
 
-// === WEATHER ===
+// === WEATHER OPTIONS ===
 export const possibleWeather = ["Stormy", "Clear", "Foggy", "Blood Moon"];
 
-// === GHOST PROFILES ===
+// === GHOST PROFILES (25 GHOSTS, CANONICAL) ===
 export const ghostProfiles = {
   Spirit: { evidence: ["EMF Reader", "Spirit Box", "Ghost Writing"], behavior: "Standard activity; calmer with smudge." },
   Wraith: { evidence: ["EMF Reader", "Spirit Box", "D.O.T.S Projector"], behavior: "Rarely touches ground; teleporting behavior." },
@@ -58,70 +57,21 @@ export const ghostProfiles = {
   Succubus: { evidence: ["Spirit Box", "Ghost Writing", "Fingerprints"], behavior: "Drains sanity faster if alone; active at night." }
 };
 
-// === ROOMS & VISUALS ===
+// === ROOM VISUALS ===
 export const roomVisuals = {
-  Van: {
-    N: "img/Van_N.png",
-    S: "img/Van_S.png",
-    E: "img/Van_E.png",
-    W: "img/Van_W.png"
-  },
-  Foyer: {
-    N: "img/Foyer_N.png",
-    S: "img/Foyer_S.png",
-    E: "img/Foyer_E.png",
-    W: "img/Foyer_W.png"
-  },
-  LivingRoom: {
-    N: "img/LivingRoom_N.png",
-    S: "img/LivingRoom_S.png",
-    E: "img/LivingRoom_E.png",
-    W: "img/LivingRoom_W.png"
-  },
-  Kitchen: {
-    N: "img/Kitchen_N.png",
-    S: "img/Kitchen_S.png",
-    E: "img/Kitchen_E.png",
-    W: "img/Kitchen_W.png"
-  },
-  DiningRoom: {
-    N: "img/DiningRoom_N.png",
-    S: "img/DiningRoom_S.png",
-    E: "img/DiningRoom_E.png",
-    W: "img/DiningRoom_W.png"
-  },
-  Basement: {
-    N: "img/Basement_N.png",
-    S: "img/Basement_S.png",
-    E: "img/Basement_E.png",
-    W: "img/Basement_W.png"
-  },
-  Bathroom: {
-    N: "img/Bathroom_N.png",
-    S: "img/Bathroom_S.png",
-    E: "img/Bathroom_E.png",
-    W: "img/Bathroom_W.png"
-  },
-  Garage: {
-    N: "img/Garage_N.png",
-    S: "img/Garage_S.png",
-    E: "img/Garage_E.png",
-    W: "img/Garage_W.png"
-  },
-  KidsBedroom: {
-    N: "img/KidsBedroom_N.png",
-    S: "img/KidsBedroom_S.png",
-    E: "img/KidsBedroom_E.png",
-    W: "img/KidsBedroom_W.png"
-  },
-  MasterBedroom: {
-    N: "img/MasterBedroom_N.png",
-    S: "img/MasterBedroom_S.png",
-    E: "img/MasterBedroom_E.png",
-    W: "img/MasterBedroom_W.png"
-  }
+  Van: { N: "img/Van_N.png", S: "img/Van_S.png", E: "img/Van_E.png", W: "img/Van_W.png" },
+  Foyer: { N: "img/Foyer_N.png", S: "img/Foyer_S.png", E: "img/Foyer_E.png", W: "img/Foyer_W.png" },
+  LivingRoom: { N: "img/LivingRoom_N.png", S: "img/LivingRoom_S.png", E: "img/LivingRoom_E.png", W: "img/LivingRoom_W.png" },
+  Kitchen: { N: "img/Kitchen_N.png", S: "img/Kitchen_S.png", E: "img/Kitchen_E.png", W: "img/Kitchen_W.png" },
+  DiningRoom: { N: "img/DiningRoom_N.png", S: "img/DiningRoom_S.png", E: "img/DiningRoom_E.png", W: "img/DiningRoom_W.png" },
+  Basement: { N: "img/Basement_N.png", S: "img/Basement_S.png", E: "img/Basement_E.png", W: "img/Basement_W.png" },
+  Bathroom: { N: "img/Bathroom_N.png", S: "img/Bathroom_S.png", E: "img/Bathroom_E.png", W: "img/Bathroom_W.png" },
+  Garage: { N: "img/Garage_N.png", S: "img/Garage_S.png", E: "img/Garage_E.png", W: "img/Garage_W.png" },
+  KidsBedroom: { N: "img/KidsBedroom_N.png", S: "img/KidsBedroom_S.png", E: "img/KidsBedroom_E.png", W: "img/KidsBedroom_W.png" },
+  MasterBedroom: { N: "img/MasterBedroom_N.png", S: "img/MasterBedroom_S.png", E: "img/MasterBedroom_E.png", W: "img/MasterBedroom_W.png" }
 };
 
+// === MAP CONNECTIONS ===
 export const mapConnections = {
   Van: ["Foyer"],
   Foyer: ["Van", "LivingRoom", "Kitchen", "Bathroom"],
@@ -144,7 +94,7 @@ export const game = {
   playerRoom: "Van",
   playerDirection: "N",
   inventory: [],
-  confirmedLoadout: [], // ✅ NEW: Stores confirmed items from loadout
+  confirmedLoadout: [],
   vanStock: [...allLoadoutItems],
   selectedEvidence: new Set(),
   currentTurn: 0,
@@ -173,6 +123,7 @@ export let gameSettings = {
 
 // === UTILITIES ===
 export function randomFromArray(arr) {
+  if (!arr || !arr.length) return null;
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
@@ -182,7 +133,7 @@ export function resetGame() {
   game.playerRoom = "Van";
   game.playerDirection = "N";
   game.inventory = [];
-  game.confirmedLoadout = []; // ✅ Reset loadout selection
+  game.confirmedLoadout = [];
   game.vanStock = [...allLoadoutItems];
   game.selectedEvidence.clear();
   game.currentTurn = 0;
