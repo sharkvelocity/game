@@ -1,5 +1,5 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — EVENTS (FINAL FIXED) ===
+ * === PHASMA-PHONEY v2.9 — EVENTS (FINAL MASTER) ===
  * Safe audio, notebook integration, mimic shift,
  * and turn events. Fully synced with ghostBehavior.js.
  *****************************************************/
@@ -17,12 +17,12 @@ import { startHunt, assignMimicForm } from "./ghostBehavior.js";
 export function advanceTurn() {
   game.currentTurn++;
 
-  // === Mimic Behavior Shift ===
+  // ✅ Mimic Behavior Shift
   if (game.ghost === "TheMimic" && game.currentTurn >= game.nextMimicShift) {
     assignMimicForm();
   }
 
-  // === Sanity Drain ===
+  // ✅ Sanity Drain
   if (game.playerRoom === game.ghostRoom) {
     game.sanity -= 3 + Math.random() * 3;
   } else {
@@ -31,27 +31,28 @@ export function advanceTurn() {
   game.sanity = Math.max(0, game.sanity);
   updateSanityBar();
 
-  // === Ambient Ghost Cues ===
+  // ✅ Ambient Ghost Cues
   if (game.playerRoom === game.ghostRoom && Math.random() < 0.3) {
     const ghost = game.ghost === "TheMimic" ? game.mimicForm : game.ghost;
     const behaviorHint = ghostProfiles[ghost]?.behavior || "The air feels heavy...";
     logToGame(`[Ambient] ${behaviorHint}`);
 
     const ghostSounds = [
-      "audio/ghost_whisper1.ogg",
-      "audio/ghost_whisper2.ogg",
-      "audio/ghost_breath.ogg"
+      "wildDog",          // random ghost-like animal noises
+      "spiritBox",        // static burst for spooky effect
+      "radioStatic"       // distant whisper effect
     ];
     if (Math.random() < 0.4) playAudio(randomFromArray(ghostSounds));
   }
 
-  // === Ambient Environmental Sounds ===
-  if (Math.random() < 0.2) {
+  // ✅ Ambient Environmental Sounds
+  if (Math.random() < 0.25) {
     const randomAmbient = [
-      "audio/floor_creak1.ogg",
-      "audio/floor_creak2.ogg",
-      "audio/wall_knock1.ogg",
-      "audio/wall_knock2.ogg"
+      "ambientCreak",
+      "ambientWind",
+      "doorCreak1",
+      "doorCreak2",
+      "doorCreak3"
     ];
     playAudio(randomFromArray(randomAmbient));
   }
@@ -61,7 +62,7 @@ export function advanceTurn() {
   updateNearbyItemsNotebook();
   showNotebookUpdateBadge();
 
-  // === Hunt Attempt ===
+  // ✅ Hunt Attempt
   attemptHunt();
 }
 
@@ -79,7 +80,8 @@ export function attemptHunt() {
   }
   if (game.sanity < 30 && Math.random() < 0.25) {
     logToGame("💀 The ghost is starting a hunt!");
-    playAudio("audio/hunt_start_rumble.ogg");
+    // Hunt rumble sound now triggers heartbeat from ghostBehavior.js internally
+    playAudio("huntStart");
     startHunt();
   }
 }
@@ -108,7 +110,7 @@ export function discoverCursedItemsInRoom(roomName = game.playerRoom) {
 }
 
 /***********************
- ✅ CHECK TURN EVENTS (EXPORTED)
+ ✅ CHECK TURN EVENTS
 ************************/
 export function checkTurnEvents() {
   advanceTurn();
