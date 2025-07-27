@@ -1,200 +1,143 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — MAIN GAME FLOW (FINAL MASTER) ===
- * Handles title screen, loadout, investigation loop, notebook toggle,
- * compass auto-updates, and restart. Fully linked to all modules.
+ * === PHASMA-PHONEY v2.9 — MAIN.JS (FINAL MASTER) ===
+ * Handles game start, title screen, investigation flow,
+ * notebook initialization, and command routing.
  *****************************************************/
-
-import { 
-  game, randomFromArray, allRooms, possibleWeather, gameSettings, resetGame
-} from "./stateMap.js";
-import { 
-  logToGame, renderHUD, showLoadout, confirmLoadout, updateBackground,
-  clearNotebookDetails, populateGhostNotebook, clearNotebookUpdateBadge
-} from "./ui.js";
-import { preloadAllAudio, stopAllSounds } from "./audioManager.js";
-import { advanceTurn } from "./events.js";
-import { updateCompassButtons } from "./stateMap.js";
-import { loadGame } from "./saveManager.js";
+import { game, resetGame as stateReset, possibleWeather, randomFromArray } from "./state.js";
+import { renderHUD, renderActionButtons, setupNotebookToggle, populateGhostNotebook } from "./ui.js";
+import { showLoadout, confirmLoadout } from "./ui.js";
+import { preloadAllAudio } from "./audioManager.js";
+import { checkTurnEvents } from "./events.js";
+import { saveGame, clearSave } from "./saveManager.js";
+import { updateBackground } from "./ui.js";
+import { updateCompassButtons } from "./map.js";
 
 /***********************
- === INITIALIZATION ===
+ === INITIAL SETUP ===
 ************************/
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", initGame);
-} else {
-  initGame();
-}
-
-function initGame() {
-  console.log("✅ Phasma‑Phoney v2.9 initialized.");
-  if (gameSettings.preloadDependencies) preloadAllAudio();
-  setupTitleScreen();
-  setupUICommandListener();
-  setupNotebookToggle();
-}
-
-/***********************
- === TITLE SCREEN LOGIC ===
-************************/
-function setupTitleScreen() {
+document.addEventListener("DOMContentLoaded", () => {
+  const startButton = document.getElementById("startButton");
   const titleScreen = document.getElementById("title-screen");
-  const startBtn = document.getElementById("startButton");
+  const mainScene = document.getElementById("main-scene");
 
-  if (!startBtn) {
-    console.error("❌ Start button not found in DOM!");
-    return;
-  }
-
-  startBtn.disabled = false;
-  startBtn.onclick = () => {
-    console.log("🎬 Start Game button clicked!");
-    startBtn.disabled = true;
-    titleScreen.style.opacity = "0";
-    setTimeout(() => {
-      titleScreen.style.display = "none";
-      promptContinueGame();
-    }, 800);
-  };
-}
-
-/***********************
- === CONTINUE OR NEW GAME ===
-************************/
-function promptContinueGame() {
-  const savedState = localStorage.getItem("phasmaPhoneySave");
-  if (savedState && confirm("Would you like to continue your last investigation?")) {
-    loadGame();
-    logToGame("Resuming previous investigation...");
-    startInvestigation(true);
-  } else {
-    startNewGame();
-  }
-}
-
-/***********************
- === START NEW GAME FLOW ===
-************************/
-function startNewGame() {
-  resetGame();
-
-  game.ghost = randomFromArray(Object.keys(game.ghostProfiles));
-  game.weather = randomFromArray(possibleWeather);
-  game.ghostRoom = randomFromArray(allRooms.filter(r => r !== "Van"));
-
-  logToGame(`You are in the van. The weather is ${game.weather}.`);
-  clearNotebookDetails();
-  clearNotebookUpdateBadge();
+  // ✅ Ensure modules are ready
+  setupNotebookToggle();
   populateGhostNotebook();
+  preloadAllAudio();
 
-  showLoadout();
+  if (startButton) {
+    startButton.addEventListener("click", () => {
+      titleScreen.style.display = "none";
+      document.getElementById("loadout-screen").style.display = "flex";
+      showLoadout();
+    });
+  }
+
   const confirmBtn = document.getElementById("confirm-loadout");
-  confirmBtn.onclick = null;
-  confirmBtn.onclick = () => {
-    confirmLoadout();
-    startInvestigation();
-  };
-}
+  if (confirmBtn) {
+    confirmBtn.addEventListener("click", () => {
+      confirmLoadout();
+      startInvestigation();
+    });
+  }
+});
 
 /***********************
  === START INVESTIGATION ===
 ************************/
-export function startInvestigation(isResume = false) {
-  if (!isResume) {
-    game.playerRoom = "Van";
-    game.currentTurn = 1;
-    logToGame("You are ready to begin investigating.");
-  } else {
-    logToGame("Investigation resumed from your last save.");
-  }
-
-  renderHUD();
-  updateBackground();
-  updateCompassButtons();
-
+export function startInvestigation(newGame = true) {
   document.getElementById("loadout-screen").style.display = "none";
   document.getElementById("main-scene").style.display = "block";
   document.getElementById("narrator-ui").style.display = "flex";
 
-  advanceTurn();
-}
-
-/***********************
- === RESTART GAME ===
-************************/
-export function restartGame() {
-  stopAllSounds();
-  resetGame();
-
-  document.getElementById("main-scene").style.display = "none";
-  document.getElementById("narrator-ui").style.display = "none";
-  document.getElementById("loadout-screen").style.display = "none";
-
-  const ts = document.getElementById("title-screen");
-  ts.style.display = "flex";
-  ts.style.opacity = "1";
-
-  clearNotebookDetails();
-  clearNotebookUpdateBadge();
-  console.log("🔄 Game restarted and returned to title screen.");
-}
-
-/***********************
- === NOTEBOOK TOGGLE (FIXED) ===
-************************/
-function setupNotebookToggle() {
-  const notebook = document.getElementById("notebook");
-  const btn = document.getElementById("notebook-toggle-btn");
-  if (!btn || !notebook) {
-    console.warn("⚠️ Notebook toggle button or panel not found.");
-    return;
+  if (newGame) {
+    stateReset();
+    assignWeather();
+    assignRandomGhost();
+    assignGhostRoom();
+    saveGame(true);
   }
 
-  btn.addEventListener("click", () => {
-    const isVisible = notebook.style.display === "block";
-    notebook.style.display = isVisible ? "none" : "block";
-    if (!isVisible) {
-      clearNotebookUpdateBadge();
-      console.log("📓 Notebook opened.");
-    } else {
-      console.log("📓 Notebook closed.");
-    }
-  });
+  renderHUD();
+  updateBackground();
+  renderActionButtons();
+  updateCompassButtons();
+  checkTurnEvents();
+  console.log("✅ Investigation started");
 }
 
 /***********************
- === UI COMMAND HANDLER ===
+ === RANDOM SETUP ===
 ************************/
-function setupUICommandListener() {
-  document.addEventListener("ui-command", (e) => {
-    const cmd = e.detail;
-    switch (cmd) {
-      case "move":
-        logToGame("You look for a path to move...");
-        break;
-      case "look":
-        logToGame("You look around carefully...");
-        advanceTurn();
-        break;
-      case "inventory":
-        logToGame("Opening inventory...");
-        break;
-      case "guess":
-        logToGame("You consider making a ghost guess...");
-        break;
-      case "van":
-        if (game.playerRoom !== "Van") {
-          logToGame("You return to the van.");
-          game.playerRoom = "Van";
-          advanceTurn();
-          renderHUD();
-          updateBackground();
-          updateCompassButtons();
-        } else {
-          logToGame("You are already in the van.");
-        }
-        break;
-      default:
-        logToGame(`⚠️ Unknown command: ${cmd}`);
-    }
-  });
+function assignWeather() {
+  game.weather = randomFromArray(possibleWeather);
 }
+
+function assignRandomGhost() {
+  const ghosts = Object.keys(game.ghostProfiles || {});
+  game.ghost = randomFromArray(ghosts);
+}
+
+function assignGhostRoom() {
+  const rooms = Object.keys(game.roomItems || {});
+  game.ghostRoom = randomFromArray(rooms.length ? rooms : ["Foyer", "Living Room", "Kitchen"]);
+}
+
+/***********************
+ === COMMAND HANDLER ===
+************************/
+document.addEventListener("ui-command", (e) => {
+  const cmd = e.detail;
+  switch (cmd) {
+    case "move":
+      updateCompassButtons();
+      break;
+    case "look":
+      console.log("👀 Looking around (future detailed logic here)");
+      break;
+    case "inventory":
+      import("./items.js").then(m => m.openInventoryOverlay());
+      break;
+    case "guess":
+      openGhostGuess();
+      break;
+    case "van":
+      returnToVan();
+      break;
+  }
+});
+
+/***********************
+ === GHOST GUESS (SIMPLE)
+************************/
+function openGhostGuess() {
+  const popup = document.getElementById("guess-popup");
+  if (!popup) return;
+  popup.style.display = "block";
+  popup.innerHTML = Object.keys(game.ghostProfiles)
+    .map(g => `<button onclick="window.makeGuess('${g}')">${g}</button>`)
+    .join("");
+  window.makeGuess = (ghost) => {
+    alert(ghost === game.ghost ? "✅ Correct! It was " + ghost : "❌ Wrong! It was " + game.ghost);
+    window.location.reload();
+  };
+}
+
+/***********************
+ === RETURN TO VAN ===
+************************/
+function returnToVan() {
+  game.playerRoom = "Van";
+  renderHUD();
+  updateBackground();
+  updateCompassButtons();
+  checkTurnEvents();
+}
+
+/***********************
+ === CLEAR SAVE (DEBUG)
+************************/
+window.clearGameSave = () => {
+  clearSave();
+  alert("Save cleared.");
+};
