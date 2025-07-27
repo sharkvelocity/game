@@ -1,56 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Phasma‑Phoney v2.9 — Modular Master Build</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="description" content="Phasma‑Phoney: Turn-based ghost investigation horror with 25 ghosts, mimic logic, cursed items, full hunt system, and save/restore." />
-  <link rel="icon" href="favicon.ico" />
-  <link rel="stylesheet" href="css/style.css" />
-  <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      background: black;
-      color: #eee;
-      font-family: monospace;
-      overflow: hidden;
-    }
-    #background {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      z-index: 1;
-    }
-    #lightning, #fog-layer, #orbCanvas {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      pointer-events: none;
-      z-index: 2;
-    }
-    #hud, #inventory-display, #narrator-ui, #notebook-button-container {
-      position: relative;
-      z-index: 5;
-    }
-    #title-screen {
-      position: fixed;
-      top:0; left:0; width:100vw; height:100vh;
-      background:black;
-      display:flex; flex-direction:column; justify-content:center; align-items:center;
-      z-index:1000;
-    }
-    #title-screen img {
-      max-width: 250px;
-      margin-bottom: 20px;
-    }
-    #main-scene { display:none; }
-  </style>
+<meta charset="UTF-8" />
+<title>Phasma‑Phoney v2.9 — Modular Master Build</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="description" content="Phasma‑Phoney: Turn-based ghost investigation horror with 25 ghosts, mimic logic, cursed items, full hunt system, and save/restore." />
+<link rel="icon" href="favicon.ico" />
+<link rel="stylesheet" href="css/style.css" />
+<style>
+  body, html {
+    margin: 0; padding: 0;
+    width: 100vw; height: 100vh;
+    background: black;
+    font-family: monospace;
+    overflow: hidden;
+    color: #eee;
+  }
+  #background {
+    position: absolute;
+    top:0; left:0;
+    width:100vw; height:100vh;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: 1;
+  }
+  #hud, #inventory-display, #narrator-ui, #notebook-button-container {
+    position: absolute;
+    top: 10px; left: 10px;
+    z-index: 5;
+    background: rgba(0,0,0,0.5);
+    padding: 6px; border-radius:4px;
+  }
+  #title-screen {
+    position: fixed;
+    top:0; left:0; width:100vw; height:100vh;
+    background:black;
+    display:flex; flex-direction:column; justify-content:center; align-items:center;
+    z-index:1000;
+  }
+  #title-screen img {
+    max-width: 240px;
+    margin-bottom: 20px;
+  }
+  #main-scene {display:none;}
+  #narrator-ui {position:fixed; bottom:10px; left:10px; width:40%; max-height:40%; overflow-y:auto;}
+  #notebook {
+    position: fixed; right:10px; bottom:10px;
+    width: 300px; height: 400px;
+    background: rgba(0,0,0,0.85);
+    display:none;
+    z-index:10; overflow-y:auto;
+    padding:10px; border:1px solid #0f0;
+  }
+  #notebook-button-container {position:fixed; right:20px; bottom:20px;}
+  #notebook-toggle-btn {font-size:18px;}
+</style>
 </head>
 <body>
   <!-- === TITLE SCREEN === -->
@@ -62,21 +67,18 @@
   <!-- === MAIN SCENE === -->
   <div id="main-scene">
     <div id="background"></div>
-    <div id="lightning"></div>
-    <canvas id="fog-layer"></canvas>
-    <canvas id="orbCanvas"></canvas>
 
     <!-- === HUD === -->
     <div id="hud">
       <div>Location: <span id="hud-location">Van</span> | Weather: <span id="hud-weather">--</span></div>
       <div>Turns: <span id="hud-turns">0</span></div>
       <div>Sanity:</div>
-      <div id="sanity-bar-container"><div id="sanity-bar"></div></div>
+      <div id="sanity-bar-container"><div id="sanity-bar" style="background:#0f0;height:6px;width:100%;"></div></div>
       <div>Temp: <span id="hud-temp">--°C</span></div>
     </div>
 
     <!-- === HELD INVENTORY HUD === -->
-    <div id="inventory-display">
+    <div id="inventory-display" style="top:120px;">
       <div>Held:</div>
       <div id="held-items-display">None</div>
     </div>
@@ -87,38 +89,20 @@
       <div id="command-buttons"></div>
     </div>
 
-    <!-- === NOTEBOOK PANEL === -->
+    <!-- === NOTEBOOK === -->
     <div id="notebook">
-      <div id="notebook-left">
-        <h4>Ghosts</h4>
-        <ol id="ghost-notebook-list"></ol>
-        <h4>Held Items</h4>
-        <ul id="held-items-list"></ul>
-        <h4>Nearby Items</h4>
-        <ul id="nearby-items-list"></ul>
-      </div>
-      <div id="notebook-right">
-        <div id="selected-ghost-name">// Ghost name will appear here //</div>
-        <div id="ghost-image-container"><img id="selected-ghost-image" alt="Ghost visual" /></div>
-        <p id="selected-ghost-details">Select a ghost or item to see details.</p>
-        <div id="selected-ghost-evidence"></div>
-      </div>
-      <div id="notebook-settings-container">
-        <button id="open-settings-btn">⚙</button>
-      </div>
+      <div><strong>Ghosts</strong><ol id="ghost-notebook-list"></ol></div>
+      <div><strong>Held Items</strong><ul id="held-items-list"></ul></div>
+      <div><strong>Nearby Items</strong><ul id="nearby-items-list"></ul></div>
     </div>
-
-    <!-- === NOTEBOOK TOGGLE === -->
     <div id="notebook-button-container">
-      <button id="notebook-toggle-btn">
-        📓 <span id="notebook-update-badge" style="display:none;">!</span>
-      </button>
+      <button id="notebook-toggle-btn">📓 <span id="notebook-update-badge" style="display:none;">!</span></button>
     </div>
   </div>
 
   <!-- === LOADOUT SCREEN === -->
-  <div id="loadout-screen" style="display:none;">
-    <div id="loadout-container">
+  <div id="loadout-screen" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.9);color:#fff;z-index:2000;display:flex;justify-content:center;align-items:center;">
+    <div>
       <h3>Select your starting gear</h3>
       <div><strong>Holding:</strong><div id="held-list"></div></div>
       <div><strong>Van Inventory:</strong><div id="van-list"></div></div>
@@ -127,15 +111,12 @@
   </div>
 
   <!-- === FOOTER === -->
-  <footer>
-    <div><strong>Phasma‑Phoney v2.9</strong> — Modular Master Build</div>
-    <div class="update-log">
-      Audio optional — no errors if files missing |
-      <a href="mailto:sharkvelocity@gmail.com?subject=Phasma-Phoney%20Bug%20Report">Report Bug</a>
-    </div>
+  <footer style="position:fixed;bottom:0;width:100%;text-align:center;background:#000;color:#aaa;padding:4px;font-size:12px;">
+    <strong>Phasma‑Phoney v2.9</strong> — Modular Master Build | 
+    Audio optional — no errors if files missing
   </footer>
 
-  <!-- === MODULE SCRIPTS === -->
+  <!-- === MODULES === -->
   <script type="module" src="js/state.js"></script>
   <script type="module" src="js/audioManager.js"></script>
   <script type="module" src="js/ui.js"></script>
