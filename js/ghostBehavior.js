@@ -1,6 +1,6 @@
 /*****************************************************
  * === PHASMA-PHONEY v2.9 — GHOSTBEHAVIOR.JS (FINAL MP3) ===
- * Handles mimic shifts, hunts, and death with synced audio.
+ * Handles mimic shifts, hunts, and death with synced MP3 audio.
  *****************************************************/
 import { game, ghostProfiles, randomFromArray } from "./state.js";
 import { logToGame } from "./ui.js";
@@ -35,12 +35,14 @@ export function attemptHunt() {
 
 export function startHunt() {
   logToGame("💀 The ghost is hunting!");
-  
-playAudio("audio/hunt_start_rumble.mp3");
-setTimeout(() => {
-  playAudio("audio/hunt_start_rumble_heartbeat.mp3", true, 0.7);
-}, 2000); // plays heartbeat ~2 seconds after rumble
 
+  // ✅ Start with rumble, then heartbeat loop
+  playAudio("audio/hunt_start_rumble.mp3");
+  setTimeout(() => {
+    playAudio("audio/hunt_start_rumble_heartbeat.mp3", true); // loops heartbeat after rumble
+  }, 2000);
+
+  // === Check crucifix or death
   if (game.playerRoom === game.ghostRoom) {
     if (game.placedCrucifix && game.placedCrucifix[game.playerRoom] > 0) {
       game.placedCrucifix[game.playerRoom]--;
@@ -49,7 +51,9 @@ setTimeout(() => {
         delete game.placedCrucifix[game.playerRoom];
         logToGame("The crucifix has burned away completely.");
       } else {
-        logToGame(`The crucifix burns, stopping the hunt. (${game.placedCrucifix[game.playerRoom]} uses left)`);
+        logToGame(
+          `The crucifix burns, stopping the hunt. (${game.placedCrucifix[game.playerRoom]} uses left)`
+        );
       }
 
       playAudio("audio/crucifix_burn.mp3");
@@ -62,12 +66,16 @@ setTimeout(() => {
     setTimeout(() => stopAllSounds(), 2000);
   }
 
+  // === Cooldown logic
   const aggressiveGhosts = ["Demon", "Oni", "Raiju", "Moroi"];
   game.huntCooldown = aggressiveGhosts.includes(game.ghost)
     ? 3 + Math.floor(Math.random() * 2)
     : 5 + Math.floor(Math.random() * 3);
 }
 
+/***********************
+ === PLAYER DEATH ===
+************************/
 export function playerDeath() {
   logToGame("💀 The ghost finds you. Everything goes cold...");
   playAudio("audio/gameKilled.mp3");
