@@ -1,5 +1,5 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — EVENTS (FINAL MASTER) ===
+ * === PHASMA-PHONEY v2.9 — EVENTS (FINAL MASTER MP3) ===
  * Safe audio, notebook integration, mimic shift,
  * and turn events. Fully synced with ghostBehavior.js.
  *****************************************************/
@@ -31,16 +31,16 @@ export function advanceTurn() {
   game.sanity = Math.max(0, game.sanity);
   updateSanityBar();
 
-  // ✅ Ambient Ghost Cues
+  // ✅ Ambient Ghost Cues (behavior hints + random ghost audio)
   if (game.playerRoom === game.ghostRoom && Math.random() < 0.3) {
     const ghost = game.ghost === "TheMimic" ? game.mimicForm : game.ghost;
     const behaviorHint = ghostProfiles[ghost]?.behavior || "The air feels heavy...";
     logToGame(`[Ambient] ${behaviorHint}`);
 
     const ghostSounds = [
-      "wildDog",          // random ghost-like animal noises
-      "spiritBox",        // static burst for spooky effect
-      "radioStatic"       // distant whisper effect
+      "audio/spiritBoxStatic.mp3",   // static burst
+      "audio/music_box_play.mp3",    // distant eerie melody
+      "audio/Radio.mp3"              // low radio chatter
     ];
     if (Math.random() < 0.4) playAudio(randomFromArray(ghostSounds));
   }
@@ -48,11 +48,11 @@ export function advanceTurn() {
   // ✅ Ambient Environmental Sounds
   if (Math.random() < 0.25) {
     const randomAmbient = [
-      "ambientCreak",
-      "ambientWind",
-      "doorCreak1",
-      "doorCreak2",
-      "doorCreak3"
+      "audio/ambient_house_creak.mp3",
+      "audio/ambient_wind.mp3",
+      "audio/doorCreak1.mp3",
+      "audio/doorCreak2.mp3",
+      "audio/doorCreak3.mp3"
     ];
     playAudio(randomFromArray(randomAmbient));
   }
@@ -80,8 +80,7 @@ export function attemptHunt() {
   }
   if (game.sanity < 30 && Math.random() < 0.25) {
     logToGame("💀 The ghost is starting a hunt!");
-    // Hunt rumble sound now triggers heartbeat from ghostBehavior.js internally
-    playAudio("huntStart");
+    // ✅ Rumble & heartbeat handled internally by startHunt()
     startHunt();
   }
 }
