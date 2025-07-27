@@ -1,8 +1,16 @@
 /*****************************************************
  * === PHASMA-PHONEY v2.9 — MAIN GAME FLOW (FINAL MASTER) ===
+ * Handles title screen, loadout, investigation loop, restart,
+ * and notebook toggle (fixed).
  *****************************************************/
-import { game, randomFromArray, allRooms, possibleWeather, gameSettings, resetGame } from "./state.js";
-import { logToGame, renderHUD, showLoadout, confirmLoadout, updateBackground, clearNotebookDetails, populateGhostNotebook, clearNotebookUpdateBadge } from "./ui.js";
+
+import { 
+  game, randomFromArray, allRooms, possibleWeather, gameSettings, resetGame 
+} from "./state.js";
+import { 
+  logToGame, renderHUD, showLoadout, confirmLoadout, updateBackground,
+  clearNotebookDetails, populateGhostNotebook, clearNotebookUpdateBadge
+} from "./ui.js";
 import { preloadAllAudio, stopAllSounds } from "./audioManager.js";
 import { advanceTurn } from "./events.js";
 import { loadGame } from "./saveManager.js";
@@ -21,36 +29,26 @@ function initGame() {
   if (gameSettings.preloadDependencies) preloadAllAudio();
   setupTitleScreen();
   setupUICommandListener();
-  setupNotebookToggle();
-  setupAudioSettings();
+  setupNotebookToggle(); // ✅ Notebook now wired
 }
 
 /***********************
- === AUDIO SETTINGS ===
-************************/
-function setupAudioSettings() {
-  const muteToggle = document.getElementById("mute-sounds");
-  if (!muteToggle) return;
-  muteToggle.addEventListener("change", () => {
-    gameSettings.muteSounds = muteToggle.checked;
-    if (muteToggle.checked) stopAllSounds();
-  });
-}
-
-/***********************
- === TITLE SCREEN ===
+ === TITLE SCREEN LOGIC ===
 ************************/
 function setupTitleScreen() {
   const titleScreen = document.getElementById("title-screen");
   const startBtn = document.getElementById("startButton");
+
   if (!startBtn) {
-    console.error("❌ Start button not found!");
+    console.error("❌ Start button not found in DOM!");
     return;
   }
+
   startBtn.disabled = false;
   startBtn.onclick = () => {
-    console.log("🎬 Start clicked!");
+    console.log("🎬 Start Game button clicked!");
     startBtn.disabled = true;
+
     titleScreen.style.opacity = "0";
     setTimeout(() => {
       titleScreen.style.display = "none";
@@ -64,7 +62,7 @@ function setupTitleScreen() {
 ************************/
 function promptContinueGame() {
   const savedState = localStorage.getItem("phasmaPhoneySave");
-  if (savedState && confirm("Continue previous investigation?")) {
+  if (savedState && confirm("Would you like to continue your last investigation?")) {
     loadGame();
     logToGame("Resuming previous investigation...");
     startInvestigation(true);
@@ -74,11 +72,12 @@ function promptContinueGame() {
 }
 
 /***********************
- === START NEW GAME ===
+ === START NEW GAME FLOW ===
 ************************/
 function startNewGame() {
   resetGame();
-  game.ghost = randomFromArray(Object.keys(gameSettings));
+
+  game.ghost = randomFromArray(Object.keys(game.ghost ? [game.ghost] : Object.keys(game)));
   game.weather = randomFromArray(possibleWeather);
   game.ghostRoom = randomFromArray(allRooms.filter(r => r !== "Van"));
 
@@ -105,41 +104,88 @@ export function startInvestigation(isResume = false) {
     game.currentTurn = 1;
     logToGame("You are ready to begin investigating.");
   } else {
-    logToGame("Investigation resumed.");
+    logToGame("Investigation resumed from your last save.");
   }
+
   renderHUD();
   updateBackground();
+
   document.getElementById("loadout-screen").style.display = "none";
   document.getElementById("main-scene").style.display = "block";
   document.getElementById("narrator-ui").style.display = "flex";
+
   advanceTurn();
 }
 
 /***********************
- === NOTEBOOK TOGGLE ===
+ === RESTART GAME ===
+************************/
+export function restartGame() {
+  stopAllSounds();
+  resetGame();
+
+  document.getElementById("main-scene").style.display = "none";
+  document.getElementById("narrator-ui").style.display = "none";
+  document.getElementById("loadout-screen").style.display = "none";
+
+  const ts = document.getElementById("title-screen");
+  ts.style.display = "flex";
+  ts.style.opacity = "1";
+
+  clearNotebookDetails();
+  clearNotebookUpdateBadge();
+  console.log("🔄 Game restarted and returned to title screen.");
+}
+
+/***********************
+ === NOTEBOOK TOGGLE (FIXED) ===
 ************************/
 function setupNotebookToggle() {
   const notebook = document.getElementById("notebook");
   const btn = document.getElementById("notebook-toggle-btn");
-  if (!btn || !notebook) return;
+
+  if (!btn || !notebook) {
+    console.error("❌ Notebook or toggle button not found!");
+    return;
+  }
+
   btn.addEventListener("click", () => {
     const isVisible = notebook.style.display === "block";
     notebook.style.display = isVisible ? "none" : "block";
-    if (!isVisible) clearNotebookUpdateBadge();
+
+    if (!isVisible) {
+      clearNotebookUpdateBadge();
+      console.log("📓 Notebook opened.");
+    } else {
+      console.log("📓 Notebook closed.");
+    }
   });
 }
 
 /***********************
- === UI COMMANDS ===
+ === UI COMMAND HANDLER ===
 ************************/
 function setupUICommandListener() {
   document.addEventListener("ui-command", (e) => {
     const cmd = e.detail;
     switch (cmd) {
-      case "move": logToGame("You look for a path to move..."); break;
-      case "look": logToGame("You look around carefully..."); advanceTurn(); break;
-      case "inventory": logToGame("Opening inventory..."); break;
-      case "guess": logToGame("You consider making a ghost guess..."); break;
+      case "move":
+        logToGame("You look for a path to move...");
+        break;
+
+      case "look":
+        logToGame("You look around carefully...");
+        advanceTurn();
+        break;
+
+      case "inventory":
+        logToGame("Opening inventory...");
+        break;
+
+      case "guess":
+        logToGame("You consider making a ghost guess...");
+        break;
+
       case "van":
         if (game.playerRoom !== "Van") {
           logToGame("You return to the van.");
@@ -147,9 +193,13 @@ function setupUICommandListener() {
           advanceTurn();
           renderHUD();
           updateBackground();
-        } else logToGame("You are already in the van.");
+        } else {
+          logToGame("You are already in the van.");
+        }
         break;
-      default: logToGame(`⚠️ Unknown command: ${cmd}`);
+
+      default:
+        logToGame(`⚠️ Unknown command: ${cmd}`);
     }
   });
 }
