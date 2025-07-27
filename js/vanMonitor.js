@@ -1,12 +1,12 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — VAN MONITOR MODULE (FINAL) ===
+ * === PHASMA-PHONEY v2.9 — VAN MONITOR MODULE (FINAL FIXED) ===
  * Dynamic camera feeds, boot animation, orb animation,
- * and notebook update integration.
+ * notebook sync, and safe cleanup.
  *****************************************************/
-
 import { game } from "./state.js";
 import { logToGame, showNotebookUpdateBadge } from "./ui.js";
 import { ghostProfiles, roomVisuals } from "./state.js";
+import { playAudio } from "./audioManager.js";
 
 let vanMonitorBooted = false;
 let vanMonitorInterval = null;
@@ -16,6 +16,7 @@ let vanMonitorInterval = null;
 ************************/
 export function openVanMonitor() {
   if (document.getElementById("van-monitor")) return;
+
   const monitor = document.createElement("div");
   monitor.id = "van-monitor";
   Object.assign(monitor.style, {
@@ -31,6 +32,7 @@ export function openVanMonitor() {
 
   if (!vanMonitorBooted) {
     vanMonitorBooted = true;
+    playAudio("audio/monitor_boot.mp3");
     runVanBootSequence(monitor);
   } else {
     renderCameraGrid(monitor);
@@ -40,7 +42,10 @@ export function openVanMonitor() {
 export function closeVanMonitor() {
   const m = document.getElementById("van-monitor");
   if (m) document.body.removeChild(m);
-  if (vanMonitorInterval) clearInterval(vanMonitorInterval);
+  if (vanMonitorInterval) {
+    clearInterval(vanMonitorInterval);
+    vanMonitorInterval = null;
+  }
 }
 
 /***********************
@@ -61,12 +66,13 @@ function runVanBootSequence(monitor) {
     "Connecting to spectral network...",
     "Starting Phasma‑Phoney Monitoring Service..."
   ];
+
   let i = 0, progress = 0;
   const bootText = document.getElementById("boot-text");
   const bootBar = document.getElementById("boot-bar");
 
   function addLine() {
-    if (!document.getElementById("van-monitor")) return; // ✅ Stop if closed
+    if (!document.getElementById("van-monitor")) return;
     if (i < lines.length) {
       bootText.innerHTML += `<div>${lines[i++]}</div>`;
       progress += 100 / lines.length;
@@ -80,7 +86,7 @@ function runVanBootSequence(monitor) {
 }
 
 function showLogin(monitor) {
-  if (!document.getElementById("van-monitor")) return; // ✅ Stop if closed
+  if (!document.getElementById("van-monitor")) return;
   monitor.innerHTML = `
     <div style="background:#111;padding:20px;border:2px solid #0f0;width:300px;text-align:left;">
       <h3 style="color:#0f0;text-align:center;">System Login</h3>
@@ -89,8 +95,9 @@ function showLogin(monitor) {
   const out = document.getElementById("login-output");
   const username = "sharkvelocity", password = "********";
   let step = 0;
+
   function typeLogin() {
-    if (!document.getElementById("van-monitor")) return; // ✅ Stop if closed
+    if (!document.getElementById("van-monitor")) return;
     if (step === 0) {
       out.innerHTML += `<div>Username: <span id="user-type"></span></div>`;
       autoType("user-type", username, () => { step = 1; setTimeout(typeLogin, 500); });
@@ -112,18 +119,20 @@ function autoType(elId, text, cb, delay = 100) {
   const el = document.getElementById(elId);
   let i = 0;
   function t() {
-    if (!document.getElementById("van-monitor")) return; // ✅ Stop if closed
-    if (i < text.length) { el.textContent += text[i++]; setTimeout(t, delay); }
-    else if (cb) cb();
+    if (!document.getElementById("van-monitor")) return;
+    if (i < text.length) {
+      el.textContent += text[i++];
+      setTimeout(t, delay);
+    } else if (cb) cb();
   }
   t();
 }
 
 /***********************
- === CAMERA FEEDS (DYNAMIC) ===
+ === CAMERA FEEDS ===
 ************************/
 function generateCameraFeeds() {
-  const activeFeeds = game.cameraPlacements.slice(-4); // ✅ Last 4 placed cameras
+  const activeFeeds = game.cameraPlacements.slice(-4);
   if (activeFeeds.length === 0) {
     return `<p style="color:#0f0;opacity:0.7;">No cameras placed.</p>`;
   }
@@ -133,12 +142,12 @@ function generateCameraFeeds() {
     let imgSrc = "nosignal.gif", label = "NO SIGNAL";
 
     if (hasCamera) {
-      imgSrc = roomVisuals[room].N;
+      imgSrc = roomVisuals[room]?.N || "nosignal.gif";
       label = `${room} — ACTIVE`;
       if (room === game.ghostRoom) {
         if (game.ghost === "TheMimic") {
           label = `${room} — FAKE ORBS DETECTED`;
-        } else if (ghostProfiles[game.ghost].evidence.includes("Orbs")) {
+        } else if (ghostProfiles[game.ghost]?.evidence.includes("Orbs")) {
           label = `${room} — ORBS DETECTED`;
         }
       }
@@ -149,7 +158,8 @@ function generateCameraFeeds() {
         <img src="${imgSrc}" style="width:100%;height:100%;object-fit:cover;">
         <canvas id="camera-orbs-${room}-${idx}" style="position:absolute;top:0;left:0;width:100%;height:100%;"></canvas>
         <div style="position:absolute;bottom:0;width:100%;text-align:center;font-size:11px;background:rgba(0,0,0,0.5);color:#0f0;">
-          ${label}</div>
+          ${label}
+        </div>
       </div>`;
   }).join("");
 }
@@ -160,13 +170,16 @@ function renderCameraGrid(monitor) {
     <div style="display:grid;grid-template-columns:repeat(2,200px);grid-gap:8px;">
       ${generateCameraFeeds()}
     </div>
-    <button style="margin-top:12px;background:#111;color:#0f0;border:1px solid #0f0;"
-      onclick="import('./vanMonitor.js').then(m=>m.closeVanMonitor())">Close Monitor</button>`;
+    <button id="close-monitor-btn" style="margin-top:12px;background:#111;color:#0f0;border:1px solid #0f0;">
+      Close Monitor
+    </button>`;
+
+  const closeBtn = document.getElementById("close-monitor-btn");
+  closeBtn.addEventListener("click", closeVanMonitor);
 
   if (vanMonitorInterval) clearInterval(vanMonitorInterval);
   vanMonitorInterval = setInterval(() => animateAllCameraOrbs(), 1000);
 
-  // ✅ Notify notebook of monitor update (orb evidence discovered, etc.)
   showNotebookUpdateBadge();
 }
 
@@ -183,9 +196,8 @@ function drawCameraOrbs(room, idx) {
 
   const active =
     (game.roomItems[room] || []).includes("Video Camera") &&
-    (room === game.ghostRoom &&
-      (ghostProfiles[game.ghost].evidence.includes("Orbs") ||
-        game.ghost === "TheMimic"));
+    room === game.ghostRoom &&
+    (ghostProfiles[game.ghost]?.evidence.includes("Orbs") || game.ghost === "TheMimic");
 
   if (!active) return;
   for (let i = 0; i < 6; i++) {
