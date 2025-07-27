@@ -1,9 +1,10 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — MAIN.JS (FIXED MASTER) ===
+ * === PHASMA-PHONEY v2.9 — MAIN.JS (FINAL MASTER) ===
+ * Handles game start, title screen, investigation flow,
+ * notebook initialization, and turn logic.
  *****************************************************/
-import { game, resetGame as stateReset, possibleWeather, randomFromArray, roomVisuals, ghostProfiles } from "./state.js";
-import { renderHUD, renderActionButtons, setupNotebookToggle, populateGhostNotebook, updateBackground } from "./ui.js";
-import { showLoadout, confirmLoadout } from "./ui.js";
+import { game, resetGame as stateReset, possibleWeather, randomFromArray, ghostProfiles, roomVisuals } from "./state.js";
+import { renderHUD, renderActionButtons, setupNotebookToggle, populateGhostNotebook, updateBackground, showLoadout, confirmLoadout } from "./ui.js";
 import { preloadAllAudio } from "./audioManager.js";
 import { checkTurnEvents } from "./events.js";
 import { saveGame, clearSave } from "./saveManager.js";
@@ -13,7 +14,6 @@ import { saveGame, clearSave } from "./saveManager.js";
 ************************/
 document.addEventListener("DOMContentLoaded", () => {
   const startButton = document.getElementById("startButton");
-
   setupNotebookToggle();
   populateGhostNotebook();
   preloadAllAudio();
@@ -26,10 +26,13 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  document.getElementById("confirm-loadout").addEventListener("click", () => {
-    confirmLoadout();
-    startInvestigation();
-  });
+  const confirmBtn = document.getElementById("confirm-loadout");
+  if (confirmBtn) {
+    confirmBtn.addEventListener("click", () => {
+      confirmLoadout();
+      startInvestigation();
+    });
+  }
 });
 
 /***********************
@@ -55,13 +58,15 @@ export function startInvestigation(newGame = true) {
   console.log("✅ Investigation started");
 }
 
+/***********************
+ === RANDOM SETUP ===
+************************/
 function assignWeather() {
   game.weather = randomFromArray(possibleWeather);
 }
 
 function assignRandomGhost() {
-  const ghosts = Object.keys(ghostProfiles || {});
-  game.ghost = randomFromArray(ghosts);
+  game.ghost = randomFromArray(Object.keys(ghostProfiles));
 }
 
 function assignGhostRoom() {
@@ -76,7 +81,8 @@ document.addEventListener("ui-command", (e) => {
   const cmd = e.detail;
   switch (cmd) {
     case "move":
-      console.log("Move command coming soon!");
+      // Compass-based movement auto-handled via buttons
+      console.log("Move triggered");
       break;
     case "look":
       console.log("👀 Looking around...");
@@ -93,10 +99,25 @@ document.addEventListener("ui-command", (e) => {
   }
 });
 
+/***********************
+ === GHOST GUESS (SIMPLE)
+************************/
 function openGhostGuess() {
-  alert("Ghost guessing coming soon!");
+  const popup = document.getElementById("guess-popup");
+  if (!popup) return;
+  popup.style.display = "block";
+  popup.innerHTML = Object.keys(ghostProfiles)
+    .map(g => `<button onclick="window.makeGuess('${g}')">${g}</button>`)
+    .join("");
+  window.makeGuess = (ghost) => {
+    alert(ghost === game.ghost ? "✅ Correct! It was " + ghost : "❌ Wrong! It was " + game.ghost);
+    window.location.reload();
+  };
 }
 
+/***********************
+ === RETURN TO VAN ===
+************************/
 function returnToVan() {
   game.playerRoom = "Van";
   renderHUD();
@@ -104,4 +125,10 @@ function returnToVan() {
   checkTurnEvents();
 }
 
-window.clearGameSave = () => { clearSave(); alert("Save cleared."); };
+/***********************
+ === CLEAR SAVE (DEBUG)
+************************/
+window.clearGameSave = () => {
+  clearSave();
+  alert("Save cleared.");
+};
