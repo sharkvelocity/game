@@ -1,88 +1,55 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — GHOSTBEHAVIOR.JS (FINAL MP3 FIXED) ===
- * Handles mimic shifts, hunts, and death with synced MP3 audio.
+ * === PHASMA-PHONEY v2.9 — GHOST BEHAVIOR (FINAL MASTER) ===
+ * Mimic logic, hunts, and player death with synced MP3.
  *****************************************************/
 import { game, ghostProfiles, randomFromArray } from "./state.js";
 import { logToGame } from "./ui.js";
 import { playAudio, stopAllSounds, stopLoopAudio } from "./audioManager.js";
 
-/***********************
- === MIMIC LOGIC ===
-************************/
+/* === MIMIC LOGIC === */
 export function assignMimicForm() {
-  const ghostList = Object.keys(ghostProfiles).filter(g => g !== "TheMimic");
-  game.mimicForm = randomFromArray(ghostList);
+  const ghosts = Object.keys(ghostProfiles).filter(g => g !== "TheMimic");
+  game.mimicForm = randomFromArray(ghosts);
   game.nextMimicShift = game.currentTurn + 3 + Math.floor(Math.random() * 4);
   logToGame("The Mimic shifts its behavior...");
 }
 
-/***********************
- === HUNT SYSTEM ===
-************************/
+/* === HUNT SYSTEM === */
 export function attemptHunt() {
-  if (game.smudgeActive > 0) {
-    game.smudgeActive--;
-    return;
-  }
-  if (game.huntCooldown > 0) {
-    game.huntCooldown--;
-    return;
-  }
-  if (game.sanity < 30 && Math.random() < 0.25) {
-    startHunt();
-  }
+  if (game.smudgeActive > 0) { game.smudgeActive--; return; }
+  if (game.huntCooldown > 0) { game.huntCooldown--; return; }
+  if (game.sanity < 30 && Math.random() < 0.25) startHunt();
 }
 
 export function startHunt() {
   logToGame("💀 The ghost is hunting!");
-
-  // ✅ Start with rumble, then heartbeat loop
   playAudio("audio/hunt_start_rumble.mp3");
-  setTimeout(() => {
-    playAudio("audio/hunt_start_rumble_heartbeat.mp3", true, 0.7);
-  }, 2000);
+  setTimeout(() => playAudio("audio/hunt_start_rumble_heartbeat.mp3", true, 0.7), 2000);
 
-  // === Crucifix Logic or Player Death
   if (game.playerRoom === game.ghostRoom) {
-    if (game.placedCrucifix && game.placedCrucifix[game.playerRoom] > 0) {
+    if (game.placedCrucifix[game.playerRoom] > 0) {
       game.placedCrucifix[game.playerRoom]--;
-
-      if (game.placedCrucifix[game.playerRoom] === 0) {
-        delete game.placedCrucifix[game.playerRoom];
-        logToGame("The crucifix has burned away completely.");
-      } else {
-        logToGame(
-          `The crucifix burns, stopping the hunt. (${game.placedCrucifix[game.playerRoom]} uses left)`
-        );
-      }
-
+      logToGame(game.placedCrucifix[game.playerRoom]
+        ? `The crucifix burns, stopping the hunt. (${game.placedCrucifix[game.playerRoom]} left)`
+        : "The crucifix has burned away completely.");
+      if (game.placedCrucifix[game.playerRoom] === 0) delete game.placedCrucifix[game.playerRoom];
       playAudio("audio/crucifix_burn.mp3");
       setTimeout(() => stopLoopAudio("audio/hunt_start_rumble_heartbeat.mp3"), 500);
-    } else {
-      setTimeout(playerDeath, 3000);
-    }
+    } else setTimeout(playerDeath, 3000);
   } else {
     logToGame("You survived the hunt...");
     setTimeout(() => stopLoopAudio("audio/hunt_start_rumble_heartbeat.mp3"), 2000);
   }
 
-  // === Hunt Cooldown Logic
-  const aggressiveGhosts = ["Demon", "Oni", "Raiju", "Moroi"];
-  game.huntCooldown = aggressiveGhosts.includes(game.ghost)
+  const aggressive = ["Demon", "Oni", "Raiju", "Moroi"];
+  game.huntCooldown = aggressive.includes(game.ghost)
     ? 3 + Math.floor(Math.random() * 2)
     : 5 + Math.floor(Math.random() * 3);
 }
 
-/***********************
- === PLAYER DEATH ===
-************************/
 export function playerDeath() {
   logToGame("💀 The ghost finds you. Everything goes cold...");
   playAudio("audio/gameKilled.mp3");
   setTimeout(() => stopAllSounds(), 300);
-
-  setTimeout(() => {
-    alert(`You died. Ghost: ${game.ghost}`);
-    window.location.reload();
-  }, 1200);
+  setTimeout(() => { alert(`You died. It was ${game.ghost}.`); window.location.reload(); }, 1200);
 }
