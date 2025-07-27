@@ -1,9 +1,8 @@
 /*****************************************************
  * === PHASMA-PHONEY v2.9 — STATE.JS (FINAL MASTER) ===
- * Core state, constants, rooms, ghost profiles, and utilities.
  *****************************************************/
 
-// === ALL LOADOUT ITEMS ===
+// === LOADOUT ITEMS ===
 export const allLoadoutItems = [
   "EMF Reader", "Spirit Box", "Camera", "UV Light", "D.O.T.S Projector",
   "Thermometer", "Ghost Writing Book", "Video Camera", "Crucifix",
@@ -28,7 +27,7 @@ export function getCursedItemCost(item) {
 // === WEATHER ===
 export const possibleWeather = ["Stormy", "Clear", "Foggy", "Blood Moon"];
 
-// === GHOST PROFILES (25 Ghosts) ===
+// === GHOST PROFILES (25 ghosts) ===
 export const ghostProfiles = {
   Spirit: { evidence: ["EMF Reader", "Spirit Box", "Ghost Writing"], behavior: "Standard activity; calmer with smudge." },
   Wraith: { evidence: ["EMF Reader", "Spirit Box", "D.O.T.S Projector"], behavior: "Rarely touches ground; teleporting behavior." },
@@ -57,52 +56,37 @@ export const ghostProfiles = {
   Succubus: { evidence: ["Spirit Box", "Ghost Writing", "Fingerprints"], behavior: "Drains sanity faster if alone; active at night." }
 };
 
-// === ROOMS ===
+// === ROOM VISUALS ===
 export const roomVisuals = {
-  Van: { N: "img/Van_N.png", S: "img/Van_S.png", E: "img/Van_E.png", W: "img/Van_W.png" },
-  Foyer: { N: "img/Foyer_N.png", S: "img/Foyer_S.png", E: "img/Foyer_E.png", W: "img/Foyer_W.png" },
-  LivingRoom: { N: "img/LivingRoom_N.png", S: "img/LivingRoom_S.png", E: "img/LivingRoom_E.png", W: "img/LivingRoom_W.png" },
-  Kitchen: { N: "img/Kitchen_N.png", S: "img/Kitchen_S.png", E: "img/Kitchen_E.png", W: "img/Kitchen_W.png" },
-  DiningRoom: { N: "img/DiningRoom_N.png", S: "img/DiningRoom_S.png", E: "img/DiningRoom_E.png", W: "img/DiningRoom_W.png" },
-  Basement: { N: "img/Basement_N.png", S: "img/Basement_S.png", E: "img/Basement_E.png", W: "img/Basement_W.png" },
-  Bathroom: { N: "img/Bathroom_N.png", S: "img/Bathroom_S.png", E: "img/Bathroom_E.png", W: "img/Bathroom_W.png" },
-  Garage: { N: "img/Garage_N.png", S: "img/Garage_S.png", E: "img/Garage_E.png", W: "img/Garage_W.png" },
-  KidsBedroom: { N: "img/KidsBedroom_N.png", S: "img/KidsBedroom_S.png", E: "img/KidsBedroom_E.png", W: "img/KidsBedroom_W.png" },
-  MasterBedroom: { N: "img/MasterBedroom_N.png", S: "img/MasterBedroom_S.png", E: "img/MasterBedroom_E.png", W: "img/MasterBedroom_W.png" }
+  Van: { N: "img/Van_N.png" },
+  Foyer: { N: "img/Foyer_N.png" },
+  LivingRoom: { N: "img/LivingRoom_N.png" },
+  Kitchen: { N: "img/Kitchen_N.png" },
+  DiningRoom: { N: "img/DiningRoom_N.png" },
+  Basement: { N: "img/Basement_N.png" },
+  Bathroom: { N: "img/Bathroom_N.png" },
+  KidsBedroom: { N: "img/KidsBedroom_N.png" },
+  MasterBedroom: { N: "img/MasterBedroom_N.png" },
+  Garage: { N: "img/Garage_N.png" }
 };
-
-export const allRooms = Object.keys(roomVisuals);
 
 // === CORE GAME STATE ===
 export const game = {
-  ghost: null,
-  ghostRoom: null,
-  playerRoom: "Van",
-  playerDirection: "N",
-  inventory: [],
-  confirmedLoadout: [],
-  vanStock: [...allLoadoutItems],
+  ghost: null, ghostRoom: null,
+  playerRoom: "Van", playerDirection: "N",
+  inventory: [], confirmedLoadout: [], vanStock: [...allLoadoutItems],
   selectedEvidence: new Set(),
-  currentTurn: 0,
-  sanity: 100,
-  weather: null,
-  mimicForm: null,
-  nextMimicShift: 0,
-  cameraPlacements: [],
-  huntCooldown: 0,
-  smudgeActive: 0,
-  placedCrucifix: {},
-  roomItems: {},
-  usedCursedItems: {},
+  currentTurn: 0, sanity: 100,
+  weather: null, mimicForm: null, nextMimicShift: 0,
+  cameraActive: false, cameraPlacements: [],
+  huntCooldown: 0, smudgeActive: 0,
+  placedCrucifix: {}, roomItems: {}, usedCursedItems: {},
   nearbyItems: []
 };
 
-// === GAME SETTINGS ===
 export let gameSettings = {
-  muteSounds: false,
-  narratorVoice: false,
-  mobileMode: false,
-  autosave: true
+  muteSounds: false, narratorVoice: false,
+  mobileMode: false, autosave: true, preloadDependencies: false
 };
 
 // === UTILITIES ===
@@ -111,24 +95,16 @@ export function randomFromArray(arr) {
 }
 
 export function resetGame() {
-  game.ghost = null;
-  game.ghostRoom = null;
-  game.playerRoom = "Van";
-  game.playerDirection = "N";
-  game.inventory = [];
-  game.confirmedLoadout = [];
+  game.ghost = null; game.ghostRoom = null;
+  game.playerRoom = "Van"; game.playerDirection = "N";
+  game.inventory = []; game.confirmedLoadout = [];
   game.vanStock = [...allLoadoutItems];
   game.selectedEvidence.clear();
-  game.currentTurn = 0;
-  game.sanity = 100;
-  game.weather = null;
-  game.mimicForm = null;
-  game.nextMimicShift = 0;
-  game.cameraPlacements = [];
-  game.huntCooldown = 0;
-  game.smudgeActive = 0;
-  game.placedCrucifix = {};
-  game.roomItems = {};
-  game.usedCursedItems = {};
+  game.currentTurn = 0; game.sanity = 100;
+  game.weather = null; game.mimicForm = null;
+  game.nextMimicShift = 0; game.cameraActive = false;
+  game.cameraPlacements = []; game.huntCooldown = 0;
+  game.smudgeActive = 0; game.placedCrucifix = {};
+  game.roomItems = {}; game.usedCursedItems = {};
   game.nearbyItems = [];
 }
