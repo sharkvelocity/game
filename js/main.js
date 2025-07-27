@@ -28,6 +28,7 @@ function initGame() {
   if (gameSettings.preloadDependencies) preloadAllAudio();
   setupTitleScreen();
   setupUICommandListener();
+  setupNotebookToggle(); // ✅ FIXED: Notebook button now works
 }
 
 /***********************
@@ -76,11 +77,10 @@ function promptContinueGame() {
 function startNewGame() {
   resetGame();
 
-  Object.assign(game, {
-    ghost: randomFromArray(Object.keys(game.ghost ? [game.ghost] : Object.keys(game.selectedEvidence ? {} : {}))), 
-    weather: randomFromArray(possibleWeather),
-    ghostRoom: randomFromArray(allRooms.filter(r => r !== "Van"))
-  });
+  game.ghost = randomFromArray(Object.keys(game.selectedEvidence.size ? {} : 
+    Object.keys(JSON.parse(JSON.stringify(game)))); // just to ensure no ghost pre-set
+  game.weather = randomFromArray(possibleWeather);
+  game.ghostRoom = randomFromArray(allRooms.filter(r => r !== "Van"));
 
   logToGame(`You are in the van. The weather is ${game.weather}.`);
   clearNotebookDetails();
@@ -137,6 +137,21 @@ export function restartGame() {
   clearNotebookDetails();
   clearNotebookUpdateBadge();
   console.log("🔄 Game restarted and returned to title screen.");
+}
+
+/***********************
+ === NOTEBOOK TOGGLE (FIXED) ===
+************************/
+function setupNotebookToggle() {
+  const notebook = document.getElementById("notebook");
+  const btn = document.getElementById("notebook-toggle-btn");
+  if (!btn || !notebook) return;
+
+  btn.addEventListener("click", () => {
+    const isVisible = notebook.style.display === "block";
+    notebook.style.display = isVisible ? "none" : "block";
+    if (!isVisible) clearNotebookUpdateBadge();
+  });
 }
 
 /***********************
