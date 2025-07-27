@@ -1,18 +1,13 @@
 /*****************************************************
  * === PHASMA-PHONEY v2.9 — UI MODULE (FINAL MASTER) ===
- * Handles HUD, logging, notebook, loadout, and compass updates.
+ * Handles HUD, logging, notebook, loadout, and commands.
  *****************************************************/
-import { 
-  game, allLoadoutItems, roomVisuals, gameSettings, ghostProfiles,
-  updateCompassButtons
-} from "./state.js";
+import { game, allLoadoutItems, roomVisuals, gameSettings, ghostProfiles } from "./state.js";
 import { saveGame } from "./saveManager.js";
 import { playNotebookSound } from "./audioManager.js";
 import { useItem, pickItem } from "./items.js";
 
-/***********************
- === LOGGING & HUD
-************************/
+/* === LOGGING & HUD === */
 export function logToGame(msg) {
   const log = document.getElementById("game-log");
   if (!log) return;
@@ -30,8 +25,7 @@ export function renderHUD() {
   const turns = document.getElementById("hud-turns");
   const held = document.getElementById("held-items-display");
   const temp = document.getElementById("hud-temp");
-  if (!loc || !weather || !turns || !held || !temp) return;
-
+  if (!loc) return;
   loc.textContent = game.playerRoom;
   weather.textContent = game.weather || "--";
   turns.textContent = game.currentTurn;
@@ -64,9 +58,7 @@ export function updateBackground() {
   if (bg && v && v[d]) bg.style.backgroundImage = `url('${v[d]}')`;
 }
 
-/***********************
- === ACTION BUTTONS (UI COMMANDS)
-************************/
+/* === ACTION BUTTONS === */
 export function renderActionButtons() {
   const cmd = document.getElementById("command-buttons");
   if (!cmd) return;
@@ -83,13 +75,11 @@ export function renderActionButtons() {
   };
 }
 
-/***********************
- === NOTEBOOK SYSTEM
-************************/
+/* === NOTEBOOK === */
 export function showNotebookUpdateBadge() {
   const badge = document.getElementById("notebook-update-badge");
   const btn = document.getElementById("notebook-toggle-btn");
-  if (!badge || !btn) return;
+  if (!badge) return;
   badge.style.display = "inline";
   btn.classList.add("shake");
   setTimeout(() => btn.classList.remove("shake"), 400);
@@ -133,21 +123,10 @@ export function updateNearbyItemsNotebook() {
   }
 }
 
-export function clearNotebookDetails() {
-  const heldList = document.getElementById("held-items-list");
-  const nearbyList = document.getElementById("nearby-items-list");
-  if (heldList) heldList.innerHTML = "<li>No items currently held.</li>";
-  if (nearbyList) nearbyList.innerHTML = "<li>No nearby items.</li>";
-}
-
 export function populateGhostNotebook() {
   const ghostList = document.getElementById("ghost-notebook-list");
   if (!ghostList) return;
   ghostList.innerHTML = "";
-  if (!Object.keys(ghostProfiles).length) {
-    ghostList.innerHTML = "<li>Loading ghost data...</li>";
-    return;
-  }
   Object.entries(ghostProfiles).forEach(([ghost, data]) => {
     const li = document.createElement("li");
     li.textContent = `${ghost} — Evidence: ${data.evidence.join(", ")}`;
@@ -160,24 +139,23 @@ export function setupNotebookToggle() {
   const btn = document.getElementById("notebook-toggle-btn");
   if (!btn || !notebook) return;
   btn.addEventListener("click", () => {
-    const isVisible = notebook.style.display === "block";
-    notebook.style.display = isVisible ? "none" : "block";
-    playNotebookSound(isVisible ? "close" : "open");
-    if (!isVisible) clearNotebookUpdateBadge();
+    const visible = notebook.style.display === "block";
+    notebook.style.display = visible ? "none" : "block";
+    playNotebookSound();
+    if (!visible) clearNotebookUpdateBadge();
   });
 }
 
-/***********************
- === LOADOUT SELECTION
-************************/
+/* === LOADOUT === */
 let tempHeld = [], tempVan = [];
+
 export function showLoadout() {
   tempHeld = [];
   tempVan = [...allLoadoutItems];
   const heldList = document.getElementById("held-list");
   const vanList = document.getElementById("van-list");
   const confirmBtn = document.getElementById("confirm-loadout");
-  if (!heldList || !vanList || !confirmBtn) return;
+  if (!heldList) return;
 
   function renderLoadout() {
     heldList.innerHTML = tempHeld
@@ -190,7 +168,7 @@ export function showLoadout() {
     confirmBtn.classList.toggle("active", tempHeld.length > 0);
   }
 
-  window.addHeldItem = window.addHeldItem || function(item) {
+  window.addHeldItem = function(item) {
     const carryable = tempHeld.filter(x => x !== "Notebook" && x !== "Lighter");
     if (carryable.length >= 3) {
       logToGame("⚠️ Max 3 items (Notebook & Lighter excluded).");
@@ -201,7 +179,7 @@ export function showLoadout() {
     renderLoadout();
   };
 
-  window.removeHeldItem = window.removeHeldItem || function(item) {
+  window.removeHeldItem = function(item) {
     tempVan.push(item);
     tempHeld = tempHeld.filter(h => h !== item);
     renderLoadout();
@@ -212,9 +190,8 @@ export function showLoadout() {
 }
 
 export function confirmLoadout() {
-  const confirmBtn = document.getElementById("confirm-loadout");
-  if (!confirmBtn.classList.contains("active")) {
-    logToGame("⚠️ Select at least one item before confirming.");
+  if (!tempHeld.length) {
+    logToGame("⚠️ Select at least one item.");
     return;
   }
   game.inventory = [...tempHeld, "Notebook", "Lighter"];
