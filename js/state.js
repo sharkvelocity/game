@@ -88,6 +88,7 @@ export const gameSettings = {
 export function randomFromArray(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
+export const allRooms = Object.keys(roomVisuals);
 
 export function resetGame() {
   game.ghost = null;
