@@ -1,13 +1,19 @@
 /*****************************************************
  * === PHASMA-PHONEY v2.9 — EVENTS (FINAL MASTER) ===
- * Handles turn events, mimic shifts, ambient sounds,
- * notebook sync, and hunt attempts.
+ * Safe audio, notebook integration, mimic shift,
+ * and turn events synced with ghostBehavior.js.
  *****************************************************/
 import { game, randomFromArray, cursedItems, ghostProfiles } from "./state.js";
-import { logToGame, updateSanityBar, updateHeldItemsNotebook, updateNearbyItemsNotebook, showNotebookUpdateBadge } from "./ui.js";
+import {
+  logToGame, updateSanityBar, updateHeldItemsNotebook,
+  updateNearbyItemsNotebook, showNotebookUpdateBadge
+} from "./ui.js";
 import { playAudio } from "./audioManager.js";
 import { startHunt, assignMimicForm } from "./ghostBehavior.js";
 
+/***********************
+ === TURN ADVANCEMENT ===
+************************/
 export function advanceTurn() {
   game.currentTurn++;
 
@@ -28,11 +34,15 @@ export function advanceTurn() {
   // ✅ Ambient Ghost Cues
   if (game.playerRoom === game.ghostRoom && Math.random() < 0.3) {
     const ghost = game.ghost === "TheMimic" ? game.mimicForm : game.ghost;
-    logToGame(`[Ambient] ${ghostProfiles[ghost]?.behavior || "The air feels heavy..."}`);
-    if (Math.random() < 0.4) {
-      const ghostSounds = ["audio/spiritBoxStatic.mp3", "audio/music_box_play.mp3", "audio/Radio.mp3"];
-      playAudio(randomFromArray(ghostSounds));
-    }
+    const behaviorHint = ghostProfiles[ghost]?.behavior || "The air feels heavy...";
+    logToGame(`[Ambient] ${behaviorHint}`);
+
+    const ghostSounds = [
+      "audio/spiritBoxStatic.mp3",
+      "audio/music_box_play.mp3",
+      "audio/Radio.mp3"
+    ];
+    if (Math.random() < 0.4) playAudio(randomFromArray(ghostSounds));
   }
 
   // ✅ Ambient Environmental Sounds
@@ -41,18 +51,24 @@ export function advanceTurn() {
       "audio/ambient_wind.mp3",
       "audio/ambient_house_creak.mp3",
       "audio/doorCreak1.mp3",
-      "audio/doorCreak2.mp3"
+      "audio/doorCreak2.mp3",
+      "audio/doorCreak3.mp3"
     ];
     playAudio(randomFromArray(randomAmbient));
   }
 
+  // ✅ Auto-refresh notebook each turn
   updateHeldItemsNotebook();
   updateNearbyItemsNotebook();
   showNotebookUpdateBadge();
 
+  // ✅ Hunt Attempt
   attemptHunt();
 }
 
+/***********************
+ === HUNT ATTEMPTS ===
+************************/
 export function attemptHunt() {
   if (game.smudgeActive > 0) {
     game.smudgeActive--;
@@ -62,12 +78,19 @@ export function attemptHunt() {
     game.huntCooldown--;
     return;
   }
-  if (game.sanity < 30 && Math.random() < 0.25) startHunt();
+  if (game.sanity < 30 && Math.random() < 0.25) {
+    logToGame("💀 The ghost is starting a hunt!");
+    startHunt();
+  }
 }
 
+/***********************
+ === CURSED ITEM DISCOVERY ===
+************************/
 export function discoverCursedItemsInRoom(roomName = game.playerRoom) {
   if (!game.roomItems[roomName]) game.roomItems[roomName] = [];
-  const undiscovered = Object.keys(cursedItems).filter(ci => !game.roomItems[roomName].includes(ci));
+  const undiscovered = Object.keys(cursedItems)
+    .filter(ci => !game.roomItems[roomName].includes(ci));
   if (undiscovered.length === 0) {
     logToGame("You search but find nothing unusual.");
     return;
@@ -84,6 +107,9 @@ export function discoverCursedItemsInRoom(roomName = game.playerRoom) {
   }
 }
 
+/***********************
+ ✅ CHECK TURN EVENTS
+************************/
 export function checkTurnEvents() {
   advanceTurn();
 }
