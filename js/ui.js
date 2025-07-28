@@ -1,5 +1,5 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — UI MODULE (FINAL PATCHED) ===
+ * === PHASMA-PHONEY v2.9 — UI MODULE (FINAL COMPLETE) ===
  * HUD, logging, notebook, loadout & buttons.
  *****************************************************/
 import { game, allLoadoutItems, roomVisuals, gameSettings, ghostProfiles } from "./state.js";
@@ -62,7 +62,7 @@ export function updateBackground() {
 }
 
 /***********************
- ✅ ACTION BUTTONS (RE-EXPORTED)
+ ✅ ACTION BUTTONS
 ************************/
 export function renderActionButtons() {
   const cmd = document.getElementById("command-buttons");
@@ -81,6 +81,144 @@ export function renderActionButtons() {
 }
 
 /***********************
- === NOTEBOOK (UNCHANGED)
+ === NOTEBOOK SYSTEM
 ************************/
-// ... (rest of notebook functions stay same as previous fixed version)
+export function showNotebookUpdateBadge() {
+  const badge = document.getElementById("notebook-update-badge");
+  const btn = document.getElementById("notebook-toggle-btn");
+  if (!badge || !btn) return;
+  badge.style.display = "inline";
+  btn.classList.add("shake");
+  setTimeout(() => btn.classList.remove("shake"), 400);
+}
+
+export function clearNotebookUpdateBadge() {
+  const badge = document.getElementById("notebook-update-badge");
+  if (badge) badge.style.display = "none";
+}
+
+export function updateHeldItemsNotebook() {
+  const list = document.getElementById("held-items-list");
+  if (!list) return;
+  list.innerHTML = "";
+  const held = game.inventory.filter(i => i !== "Notebook");
+  if (held.length) {
+    held.forEach(item => {
+      const li = document.createElement("li");
+      li.textContent = `• ${item}`;
+      li.addEventListener("click", () => useItem(item));
+      list.appendChild(li);
+    });
+  } else {
+    list.innerHTML = "<li>No items currently held.</li>";
+  }
+}
+
+export function updateNearbyItemsNotebook() {
+  const list = document.getElementById("nearby-items-list");
+  if (!list) return;
+  list.innerHTML = "";
+  if (game.nearbyItems && game.nearbyItems.length) {
+    game.nearbyItems.forEach(item => {
+      const li = document.createElement("li");
+      li.textContent = `• ${item}`;
+      li.addEventListener("click", () => pickItem(item));
+      list.appendChild(li);
+    });
+  } else {
+    list.innerHTML = "<li>No nearby items.</li>";
+  }
+}
+
+export function clearNotebookDetails() {
+  const heldList = document.getElementById("held-items-list");
+  const nearbyList = document.getElementById("nearby-items-list");
+  if (heldList) heldList.innerHTML = "<li>No items currently held.</li>";
+  if (nearbyList) nearbyList.innerHTML = "<li>No nearby items.</li>";
+}
+
+export function populateGhostNotebook() {
+  const ghostList = document.getElementById("ghost-notebook-list");
+  if (!ghostList) return;
+  ghostList.innerHTML = "";
+  if (!Object.keys(ghostProfiles).length) {
+    ghostList.innerHTML = "<li>Loading ghost data...</li>";
+    return;
+  }
+  Object.entries(ghostProfiles).forEach(([ghost, data]) => {
+    const li = document.createElement("li");
+    li.textContent = `${ghost} — Evidence: ${data.evidence.join(", ")}`;
+    ghostList.appendChild(li);
+  });
+}
+
+export function setupNotebookToggle() {
+  const notebook = document.getElementById("notebook");
+  const btn = document.getElementById("notebook-toggle-btn");
+  if (!btn || !notebook) return;
+  btn.addEventListener("click", () => {
+    const isVisible = notebook.classList.contains("open");
+    notebook.classList.toggle("open");
+    playNotebookSound(isVisible ? "close" : "open");
+    if (!isVisible) clearNotebookUpdateBadge();
+  });
+}
+
+/***********************
+ === LOADOUT SELECTION
+************************/
+let tempHeld = [], tempVan = [];
+
+export function showLoadout() {
+  tempHeld = [];
+  tempVan = [...allLoadoutItems];
+  const heldList = document.getElementById("held-list");
+  const vanList = document.getElementById("van-list");
+  const confirmBtn = document.getElementById("confirm-loadout");
+  if (!heldList || !vanList || !confirmBtn) return;
+
+  function renderLoadout() {
+    heldList.innerHTML = tempHeld
+      .map(i => `<button class="item-button selected" onclick="removeHeldItem('${i}')">${i}</button>`)
+      .join("");
+    vanList.innerHTML = tempVan
+      .map(i => `<button class="item-button" onclick="addHeldItem('${i}')">${i}</button>`)
+      .join("");
+    confirmBtn.disabled = tempHeld.length === 0;
+    confirmBtn.classList.toggle("active", tempHeld.length > 0);
+  }
+
+  window.addHeldItem = function(item) {
+    const carryable = tempHeld.filter(x => x !== "Notebook" && x !== "Lighter");
+    if (carryable.length >= 3) {
+      logToGame("⚠️ Max 3 items (Notebook & Lighter excluded).");
+      return;
+    }
+    tempHeld.push(item);
+    tempVan = tempVan.filter(v => v !== item);
+    renderLoadout();
+  };
+
+  window.removeHeldItem = function(item) {
+    tempVan.push(item);
+    tempHeld = tempHeld.filter(h => h !== item);
+    renderLoadout();
+  };
+
+  renderLoadout();
+  document.getElementById("loadout-screen").style.display = "flex";
+}
+
+export function confirmLoadout() {
+  const confirmBtn = document.getElementById("confirm-loadout");
+  if (!confirmBtn.classList.contains("active")) {
+    logToGame("⚠️ Select at least one item before confirming.");
+    return;
+  }
+  game.inventory = [...tempHeld, "Notebook", "Lighter"];
+  game.confirmedLoadout = [...tempHeld];
+  game.vanStock = [...tempVan];
+  document.getElementById("loadout-screen").style.display = "none";
+  logToGame("✅ Loadout confirmed. Ready to investigate!");
+  if (gameSettings.autosave) saveGame(true);
+}
