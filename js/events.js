@@ -1,7 +1,6 @@
 /*****************************************************
  * === PHASMA-PHONEY v2.9 — EVENTS (FINAL MASTER) ===
- * Safe audio, notebook integration, mimic shift,
- * and turn events synced with ghostBehavior.js.
+ * Turn events, mimic shifts, hunts & cursed item discovery.
  *****************************************************/
 import { game, randomFromArray, cursedItems, ghostProfiles } from "./state.js";
 import {
@@ -36,28 +35,20 @@ export function advanceTurn() {
     const ghost = game.ghost === "TheMimic" ? game.mimicForm : game.ghost;
     const behaviorHint = ghostProfiles[ghost]?.behavior || "The air feels heavy...";
     logToGame(`[Ambient] ${behaviorHint}`);
-
-    const ghostSounds = [
-      "audio/spiritBoxStatic.mp3",
-      "audio/music_box_play.mp3",
-      "audio/Radio.mp3"
-    ];
-    if (Math.random() < 0.4) playAudio(randomFromArray(ghostSounds));
+    if (Math.random() < 0.4) playAudio("audio/doorCreak1.mp3");
   }
 
   // ✅ Ambient Environmental Sounds
   if (Math.random() < 0.25) {
-    const randomAmbient = [
-      "audio/ambient_wind.mp3",
+    const ambient = [
       "audio/ambient_house_creak.mp3",
-      "audio/doorCreak1.mp3",
+      "audio/ambient_wind.mp3",
       "audio/doorCreak2.mp3",
       "audio/doorCreak3.mp3"
     ];
-    playAudio(randomFromArray(randomAmbient));
+    playAudio(randomFromArray(ambient));
   }
 
-  // ✅ Auto-refresh notebook each turn
   updateHeldItemsNotebook();
   updateNearbyItemsNotebook();
   showNotebookUpdateBadge();
