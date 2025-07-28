@@ -1,6 +1,7 @@
 /*****************************************************
  * === PHASMA-PHONEY v2.9 — STATE.JS (FINAL PATCHED) ===
- * Holds all game constants, core state, and utilities.
+ * Full core state, constants, and utilities exported
+ * for all modules. Includes gameSettings & cursedItems.
  *****************************************************/
 
 // === ALL LOADOUT ITEMS ===
@@ -11,7 +12,7 @@ export const allLoadoutItems = [
   "Sound Sensor", "Candle"
 ];
 
-// ✅ RE-ADDED: CURSED ITEMS
+// === CURSED ITEMS ===
 export const cursedItems = {
   "Ouija Board": { desc: "Ask ghost questions, drains sanity.", cost: 15 },
   "Tarot Cards": { desc: "Random effects, risky.", cost: 5 },
@@ -28,12 +29,25 @@ export function getCursedItemCost(item) {
 // === WEATHER ===
 export const possibleWeather = ["Stormy", "Clear", "Foggy", "Blood Moon"];
 
-// === GHOST PROFILES ===
+// === GHOST PROFILES (TRIMMED FOR DEMO; USE YOUR FULL LIST) ===
 export const ghostProfiles = {
   Spirit: { evidence: ["EMF Reader", "Spirit Box", "Ghost Writing"], behavior: "Standard activity; calmer with smudge." },
   Wraith: { evidence: ["EMF Reader", "Spirit Box", "D.O.T.S Projector"], behavior: "Rarely touches ground; teleporting behavior." },
   TheMimic: { evidence: ["Spirit Box", "Fingerprints", "Freezing Temps"], behavior: "Mimics other ghosts; fake orbs appear on camera only." }
-  // ... (rest unchanged)
+  // ✅ include all 25 ghosts in final
+};
+
+// === ROOM VISUALS (SAMPLE — extend fully) ===
+export const roomVisuals = {
+  Van: {
+    N: "img/Van_N.png", S: "img/Van_S.png", E: "img/Van_E.png", W: "img/Van_W.png"
+  },
+  Foyer: {
+    N: "img/Foyer_N.png", S: "img/Foyer_S.png", E: "img/Foyer_E.png", W: "img/Foyer_W.png"
+  },
+  LivingRoom: {
+    N: "img/LivingRoom_N.png", S: "img/LivingRoom_S.png", E: "img/LivingRoom_E.png", W: "img/LivingRoom_W.png"
+  }
 };
 
 // === CORE GAME STATE ===
@@ -59,6 +73,15 @@ export const game = {
   roomItems: {},
   usedCursedItems: {},
   nearbyItems: []
+};
+
+// === GAME SETTINGS (✅ EXPORT FIXED) ===
+export const gameSettings = {
+  muteSounds: false,
+  narratorVoice: false,
+  mobileMode: false,
+  autosave: true,
+  preloadDependencies: false
 };
 
 // === UTILITIES ===
