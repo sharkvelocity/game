@@ -3,11 +3,53 @@
  * Game start, title screen, investigation, UI routing.
  *****************************************************/
 import { game, resetGame as stateReset, possibleWeather, randomFromArray, ghostProfiles, allRooms } from "./state.js";
-import { renderHUD, renderActionButtons, setupNotebookToggle, populateGhostNotebook, updateBackground } from "./ui.js";
+import { renderHUD, renderActionButtons, setupNotebookToggle, populateGhostNotebook, updateBackground, logToGame } from "./ui.js";
 import { showLoadout, confirmLoadout } from "./ui.js";
 import { preloadAllAudio } from "./audioManager.js";
 import { checkTurnEvents } from "./events.js";
 import { saveGame, clearSave } from "./saveManager.js";
+
+/***********************
+ === INVESTIGATION START
+************************/
+export function startInvestigation(newGame = true) {
+  const loadout = document.getElementById("loadout-screen");
+  if (loadout) loadout.style.display = "none";
+
+  const scene = document.getElementById("main-scene");
+  if (scene) scene.style.display = "block";
+
+  const narrator = document.getElementById("narrator-ui");
+  if (narrator) narrator.style.display = "flex";
+
+  if (newGame) {
+    stateReset();
+    game.weather = randomFromArray(possibleWeather);
+    game.ghost = randomFromArray(Object.keys(ghostProfiles));
+    game.ghostRoom = getRandomRoom();
+    game.playerRoom = "Van";
+    game.playerDirection = "N";
+    game.sanity = 100;
+    game.currentTurn = 1;
+    game.inventory = [...game.loadout];
+    game.itemsPlaced = {};
+  }
+
+  updateBackground();
+  renderHUD();
+  renderActionButtons();
+  setupNotebookToggle();
+  populateGhostNotebook();
+
+  logToGame("🚪 You arrive at the haunted location.");
+  logToGame(`🌦️ Weather: ${game.weather}`);
+  logToGame(`🧭 Your starting point is the Van. Good luck.`);
+
+  preloadAllAudio();
+
+  const log = document.getElementById("game-log");
+  if (log) log.scrollTop = log.scrollHeight;
+}
 
 /***********************
  === INITIAL SETUP ===
@@ -26,66 +68,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-const confirmBtn = document.getElementById("confirm-loadout");
-if (confirmBtn) {
-  confirmBtn.addEventListener("click", () => {
-    confirmLoadout();
-    setTimeout(() => {
-      startInvestigation(true); // ensure newGame logic triggers
-    }, 100); // tiny delay to allow UI updates
-  });
-}
-
-export function startInvestigation(newGame = true) {
-  // Hide loadout
-  const loadout = document.getElementById("loadout-screen");
-  if (loadout) loadout.style.display = "none";
-
-  // Show main scene and narrator interface
-  const scene = document.getElementById("main-scene");
-  if (scene) scene.style.display = "block";
-
-  const narrator = document.getElementById("narrator-ui");
-  if (narrator) narrator.style.display = "flex";
-
-  // Reset state if it's a new game
-  if (newGame) {
-    stateReset();
-    game.weather = randomFromArray(possibleWeather);
-    game.ghost = randomFromArray(Object.keys(ghostProfiles));
-    game.ghostRoom = getRandomRoom();
-    game.playerRoom = "Van";
-    game.playerDirection = "N";
-    game.sanity = 100;
-    game.currentTurn = 1;
-    game.inventory = [...game.loadout];
-    game.itemsPlaced = {};
+  const confirmBtn = document.getElementById("confirm-loadout");
+  if (confirmBtn) {
+    confirmBtn.addEventListener("click", () => {
+      confirmLoadout();
+      setTimeout(() => {
+        startInvestigation(true);
+      }, 100);
+    });
   }
-
-  // Setup UI
-  updateBackground();
-  renderHUD();
-  renderActionButtons();
-  setupNotebookToggle();
-  populateGhostNotebook();
-
-  // Log intro narration
-  logToGame("🚪 You arrive at the haunted location.");
-  logToGame(`🌦️ Weather: ${game.weather}`);
-  logToGame(`🧭 Your starting point is the Van. Good luck.`);
-
-  // Optional: preload voice or sounds
-  preloadAllAudio();
-
-  // Auto-scroll game log
-  const log = document.getElementById("game-log");
-  if (log) log.scrollTop = log.scrollHeight;
-}
-
-/***********************
- === START INVESTIGATION ===
-************************/
-
+});
 
 /***********************
  === RANDOM SETUP ===
@@ -101,6 +93,14 @@ function assignRandomGhost() {
 
 function assignGhostRoom() {
   game.ghostRoom = randomFromArray(allRooms.filter(r => r !== "Van"));
+}
+
+function getRandomRoom() {
+  return randomFromArray([
+    "Foyer", "LivingRoom", "DiningRoom", "Kitchen",
+    "Basement", "Bathroom", "Garage", "Hallway",
+    "KidsBedroom", "MasterBedroom", "Storage", "Laundry"
+  ]);
 }
 
 /***********************
@@ -128,7 +128,7 @@ document.addEventListener("ui-command", (e) => {
 });
 
 /***********************
- === GHOST GUESS
+ === GHOST GUESS SYSTEM
 ************************/
 function openGhostGuess() {
   const popup = document.getElementById("guess-popup");
