@@ -1,9 +1,10 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — STATE.JS (FINAL MASTER) ===
- * Holds all constants, ghost profiles, rooms, and core game state.
+ * === PHASMA-PHONEY v2.9 — STATE.JS (FINAL FIXED) ===
+ * Holds all constants, ghost profiles, room visuals,
+ * map connections, and the global game state.
  *****************************************************/
 
-// === LOADOUT ITEMS ===
+// === ALL LOADOUT ITEMS ===
 export const allLoadoutItems = [
   "EMF Reader", "Spirit Box", "Camera", "UV Light", "D.O.T.S Projector",
   "Thermometer", "Ghost Writing Book", "Video Camera", "Crucifix",
@@ -11,20 +12,7 @@ export const allLoadoutItems = [
   "Sound Sensor", "Candle"
 ];
 
-// === CURSED ITEMS ===
-export const cursedItems = {
-  "Ouija Board": { desc: "Ask ghost questions, drains sanity.", cost: 15 },
-  "Tarot Cards": { desc: "Random effects, risky.", cost: 5 },
-  "Music Box": { desc: "Attracts ghost, risky.", cost: 10 },
-  "Haunted Mirror": { desc: "Reveals ghost room, drains sanity.", cost: 20 },
-  "Summoning Circle": { desc: "Forces ghost appearance.", cost: 25 },
-  "Monkey Paw": { desc: "Grants risky wishes.", cost: 10 }
-};
-export function getCursedItemCost(item) {
-  return cursedItems[item]?.cost || 5;
-}
-
-// === WEATHER ===
+// === WEATHER OPTIONS ===
 export const possibleWeather = ["Stormy", "Clear", "Foggy", "Blood Moon"];
 
 // === GHOST PROFILES ===
@@ -49,9 +37,9 @@ export const ghostProfiles = {
   TheTwins: { evidence: ["EMF Reader", "Spirit Box", "Freezing Temps"], behavior: "Alternates activity between rooms." },
   Raiju: { evidence: ["EMF Reader", "Orbs", "D.O.T.S Projector"], behavior: "Faster near electronic equipment." },
   Obake: { evidence: ["EMF Reader", "Fingerprints", "Orbs"], behavior: "Rare ghostly fingerprint changes." },
-  TheMimic: { evidence: ["Spirit Box", "Fingerprints", "Freezing Temps"], behavior: "Mimics other ghosts; fake orbs on camera only." },
+  TheMimic: { evidence: ["Spirit Box", "Fingerprints", "Freezing Temps"], behavior: "Mimics other ghosts; fake orbs appear on camera only." },
   Moroi: { evidence: ["Spirit Box", "Ghost Writing", "Freezing Temps"], behavior: "Curses sanity when responding on Spirit Box." },
-  Deogen: { evidence: ["Spirit Box", "Ghost Writing", "D.O.T.S Projector"], behavior: "Always knows your location but very slow close." },
+  Deogen: { evidence: ["Spirit Box", "Ghost Writing", "D.O.T.S Projector"], behavior: "Always knows player’s location but very slow close." },
   Thaye: { evidence: ["Ghost Writing", "Orbs", "D.O.T.S Projector"], behavior: "Very active early, weaker over time." },
   Succubus: { evidence: ["Spirit Box", "Ghost Writing", "Fingerprints"], behavior: "Drains sanity faster if alone; active at night." }
 };
@@ -63,12 +51,14 @@ export const roomVisuals = {
   LivingRoom: { N: "img/LivingRoom_N.png", S: "img/LivingRoom_S.png", E: "img/LivingRoom_E.png", W: "img/LivingRoom_W.png" },
   Kitchen: { N: "img/Kitchen_N.png", S: "img/Kitchen_S.png", E: "img/Kitchen_E.png", W: "img/Kitchen_W.png" },
   DiningRoom: { N: "img/DiningRoom_N.png", S: "img/DiningRoom_S.png", E: "img/DiningRoom_E.png", W: "img/DiningRoom_W.png" },
+  Garage: { N: "img/Garage_N.png", S: "img/Garage_S.png", E: "img/Garage_E.png", W: "img/Garage_W.png" },
   Basement: { N: "img/Basement_N.png", S: "img/Basement_S.png", E: "img/Basement_E.png", W: "img/Basement_W.png" },
   Bathroom: { N: "img/Bathroom_N.png", S: "img/Bathroom_S.png", E: "img/Bathroom_E.png", W: "img/Bathroom_W.png" },
-  Garage: { N: "img/Garage_N.png", S: "img/Garage_S.png", E: "img/Garage_E.png", W: "img/Garage_W.png" },
   KidsBedroom: { N: "img/KidsBedroom_N.png", S: "img/KidsBedroom_S.png", E: "img/KidsBedroom_E.png", W: "img/KidsBedroom_W.png" },
   MasterBedroom: { N: "img/MasterBedroom_N.png", S: "img/MasterBedroom_S.png", E: "img/MasterBedroom_E.png", W: "img/MasterBedroom_W.png" }
 };
+
+export const allRooms = Object.keys(roomVisuals);
 
 // === CORE GAME STATE ===
 export const game = {
@@ -95,12 +85,13 @@ export const game = {
   nearbyItems: []
 };
 
-// === SETTINGS ===
+// === GAME SETTINGS ===
 export let gameSettings = {
   muteSounds: false,
   narratorVoice: false,
   mobileMode: false,
-  autosave: true
+  autosave: true,
+  preloadDependencies: false
 };
 
 // === UTILITIES ===
