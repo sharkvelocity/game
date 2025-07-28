@@ -36,32 +36,56 @@ if (confirmBtn) {
   });
 }
 
+export function startInvestigation(newGame = true) {
+  // Hide loadout
+  const loadout = document.getElementById("loadout-screen");
+  if (loadout) loadout.style.display = "none";
+
+  // Show main scene and narrator interface
+  const scene = document.getElementById("main-scene");
+  if (scene) scene.style.display = "block";
+
+  const narrator = document.getElementById("narrator-ui");
+  if (narrator) narrator.style.display = "flex";
+
+  // Reset state if it's a new game
+  if (newGame) {
+    stateReset();
+    game.weather = randomFromArray(possibleWeather);
+    game.ghost = randomFromArray(Object.keys(ghostProfiles));
+    game.ghostRoom = getRandomRoom();
+    game.playerRoom = "Van";
+    game.playerDirection = "N";
+    game.sanity = 100;
+    game.currentTurn = 1;
+    game.inventory = [...game.loadout];
+    game.itemsPlaced = {};
+  }
+
+  // Setup UI
+  updateBackground();
+  renderHUD();
+  renderActionButtons();
+  setupNotebookToggle();
+  populateGhostNotebook();
+
+  // Log intro narration
+  logToGame("🚪 You arrive at the haunted location.");
+  logToGame(`🌦️ Weather: ${game.weather}`);
+  logToGame(`🧭 Your starting point is the Van. Good luck.`);
+
+  // Optional: preload voice or sounds
+  preloadAllAudio();
+
+  // Auto-scroll game log
+  const log = document.getElementById("game-log");
+  if (log) log.scrollTop = log.scrollHeight;
+}
 
 /***********************
  === START INVESTIGATION ===
 ************************/
-export function startInvestigation(newGame = true) {
-  document.getElementById("loadout-screen").style.display = "none";
-  document.getElementById("main-scene").style.display = "block";
-  document.getElementById("narrator-ui").style.display = "flex";
 
-  if (newGame) {
-    stateReset();
-    game.playerRoom = "Van"; // ensure valid room
-    game.playerDirection = "N";
-    assignWeather();
-    assignRandomGhost();
-    assignGhostRoom();
-    saveGame(true);
-  }
-
-  renderHUD();
-  updateBackground();
-  renderActionButtons();
-  setupNotebookToggle();
-  checkTurnEvents();
-  console.log("✅ Investigation started:", game.playerRoom, game.ghostRoom);
-}
 
 /***********************
  === RANDOM SETUP ===
