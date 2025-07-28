@@ -1,5 +1,5 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — UI MODULE (FINAL COMPLETE) ===
+ * === PHASMA-PHONEY v2.9 — UI MODULE (FINAL PATCHED) ===
  * HUD, logging, notebook, loadout & buttons.
  *****************************************************/
 import { game, allLoadoutItems, roomVisuals, gameSettings, ghostProfiles } from "./state.js";
@@ -62,7 +62,7 @@ export function updateBackground() {
 }
 
 /***********************
- ✅ ACTION BUTTONS
+ ✅ ACTION BUTTONS (RE-EXPORTED)
 ************************/
 export function renderActionButtons() {
   const cmd = document.getElementById("command-buttons");
@@ -157,10 +157,9 @@ export function setupNotebookToggle() {
   const btn = document.getElementById("notebook-toggle-btn");
   if (!btn || !notebook) return;
   btn.addEventListener("click", () => {
-    const isVisible = notebook.classList.contains("open");
-    notebook.classList.toggle("open");
-    playNotebookSound(isVisible ? "close" : "open");
-    if (!isVisible) clearNotebookUpdateBadge();
+    const open = notebook.classList.toggle("open");
+    playNotebookSound(open ? "open" : "close");
+    if (open) clearNotebookUpdateBadge();
   });
 }
 
