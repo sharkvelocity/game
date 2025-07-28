@@ -26,14 +26,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  const confirmBtn = document.getElementById("confirm-loadout");
-  if (confirmBtn) {
-    confirmBtn.addEventListener("click", () => {
-      confirmLoadout();
-      startInvestigation();
-    });
-  }
-});
+const confirmBtn = document.getElementById("confirm-loadout");
+if (confirmBtn) {
+  confirmBtn.addEventListener("click", () => {
+    confirmLoadout();
+    setTimeout(() => {
+      startInvestigation(true); // ensure newGame logic triggers
+    }, 100); // tiny delay to allow UI updates
+  });
+}
+
 
 /***********************
  === START INVESTIGATION ===
@@ -45,6 +47,8 @@ export function startInvestigation(newGame = true) {
 
   if (newGame) {
     stateReset();
+    game.playerRoom = "Van"; // ensure valid room
+    game.playerDirection = "N";
     assignWeather();
     assignRandomGhost();
     assignGhostRoom();
@@ -54,8 +58,9 @@ export function startInvestigation(newGame = true) {
   renderHUD();
   updateBackground();
   renderActionButtons();
+  setupNotebookToggle();
   checkTurnEvents();
-  console.log("✅ Investigation started");
+  console.log("✅ Investigation started:", game.playerRoom, game.ghostRoom);
 }
 
 /***********************
