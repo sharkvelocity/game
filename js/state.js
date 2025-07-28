@@ -31,103 +31,103 @@ export const possibleWeather = ["Stormy", "Clear", "Foggy", "Blood Moon"];
 
 // === GHOST PROFILES (TRIMMED FOR DEMO; USE YOUR FULL LIST) ===
 export const ghostProfiles = {
-  Spirit: {
+  "Spirit": {
     evidence: ["EMF Reader", "Spirit Box", "Ghost Writing"],
     behavior: "Calm until provoked. Less aggressive when smudged."
   },
-  Wraith: {
+  "Wraith": {
     evidence: ["EMF Reader", "Spirit Box", "D.O.T.S Projector"],
     behavior: "Rarely touches ground. Cannot be tracked by footsteps."
   },
-  Phantom: {
+  "Phantom": {
     evidence: ["Spirit Box", "Fingerprints", "D.O.T.S Projector"],
     behavior: "Looking at it drops sanity faster. Disappears when photographed."
   },
-  Poltergeist: {
+  "Poltergeist": {
     evidence: ["Spirit Box", "Fingerprints", "Ghost Writing"],
     behavior: "Throws many objects at once. Very noisy."
   },
-  Banshee: {
+  "Banshee": {
     evidence: ["Fingerprints", "D.O.T.S Projector", "Ghost Orb"],
     behavior: "Focuses on one target. Fears Crucifix more than others."
   },
-  Jinn: {
+  "Jinn": {
     evidence: ["EMF Reader", "Fingerprints", "Freezing Temps"],
     behavior: "Moves fast if power is on. Turns off power to attack."
   },
-  Mare: {
+  "Mare": {
     evidence: ["Spirit Box", "Ghost Orb", "Ghost Writing"],
     behavior: "Stronger in darkness. Turns lights off frequently."
   },
-  Revenant: {
+  "Revenant": {
     evidence: ["Ghost Orb", "Ghost Writing", "Freezing Temps"],
     behavior: "Very fast when hunting if you're not hidden."
   },
-  Shade: {
+  "Shade": {
     evidence: ["EMF Reader", "Ghost Writing", "Freezing Temps"],
     behavior: "Shy and quiet. Less active with people around."
   },
-  Demon: {
+  "Demon": {
     evidence: ["Fingerprints", "Ghost Writing", "Freezing Temps"],
     behavior: "Aggressive. Hunts early and often. Crucifix is more effective."
   },
-  Yurei: {
+  "Yurei": {
     evidence: ["D.O.T.S Projector", "Ghost Orb", "Freezing Temps"],
     behavior: "Drains sanity quickly. Smudge keeps it in place for 5 turns."
   },
-  Oni: {
+  "Oni": {
     evidence: ["EMF Reader", "Freezing Temps", "D.O.T.S Projector"],
     behavior: "More active when players are nearby. Throws objects far."
   },
-  Hantu: {
+  "Hantu": {
     evidence: ["Ghost Orb", "Fingerprints", "Freezing Temps"],
     behavior: "Moves faster in cold rooms. No breath visible in warmer rooms."
   },
-  Goryo: {
+  "Goryo": {
     evidence: ["EMF Reader", "Fingerprints", "D.O.T.S Projector"],
     behavior: "Only shows on D.O.T.S through camera. Stays in ghost room."
   },
-  Myling: {
+  "Myling": {
     evidence: ["EMF Reader", "Fingerprints", "Ghost Writing"],
     behavior: "Quieter when hunting. Produces more paranormal sounds."
   },
-  Onryo: {
+  "Onryo": {
     evidence: ["Spirit Box", "Ghost Orb", "Freezing Temps"],
     behavior: "Extinguishing flames can trigger hunts. Fears fire."
   },
-  The Twins: {
+  "The Twins": {
     evidence: ["EMF Reader", "Spirit Box", "Freezing Temps"],
     behavior: "Two entities. One may interact while the other is idle."
   },
-  Raiju: {
+  "Raiju": {
     evidence: ["EMF Reader", "Ghost Orb", "D.O.T.S Projector"],
     behavior: "Faster near electronics. Disrupts equipment during hunts."
   },
-  Obake: {
+  "Obake": {
     evidence: ["EMF Reader", "Fingerprints", "Ghost Orb"],
     behavior: "Rarely leaves fingerprints. Can shapeshift while hunting."
   },
-  The Mimic: {
+  "The Mimic": {
     evidence: ["Spirit Box", "Fingerprints", "Freezing Temps"],
     behavior: "Mimics random ghost behavior every 3–6 turns. Fake orbs appear on camera only."
   },
-  Moroi: {
+  "Moroi": {
     evidence: ["Spirit Box", "Ghost Writing", "Freezing Temps"],
     behavior: "Curses victims to lose sanity faster. Slower when smudged."
   },
-  Deogen: {
+  "Deogen": {
     evidence: ["Spirit Box", "Ghost Writing", "D.O.T.S Projector"],
     behavior: "Always knows your location. Very slow when near player."
   },
-  Thaye: {
+  "Thaye": {
     evidence: ["Ghost Orb", "Ghost Writing", "D.O.T.S Projector"],
     behavior: "Starts strong but weakens over time as investigation continues."
   },
-  Yokai: {
+  "Yokai": {
     evidence: ["Spirit Box", "Ghost Orb", "D.O.T.S Projector"],
     behavior: "Only hunts those nearby. Less active if players are quiet."
   },
-  Succubus: {
+  "Succubus": {
     evidence: ["Ghost Orb", "Fingerprints", "Spirit Box"],
     behavior: "Prefers luring with voice. May whisper or sing. Becomes violent if ignored."
   }
