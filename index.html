@@ -16,7 +16,7 @@
   </div>
 
   <!-- === MAIN SCENE === -->
-  <div id="main-scene" style="display:none; position:relative; width:100%; height:100%;">
+  <div id="main-scene" style="display:none;">
     <div id="background"></div>
     <div id="lightning"></div>
     <canvas id="fog-layer"></canvas>
@@ -61,23 +61,37 @@
         <p id="selected-ghost-details">Select a ghost or item to see details.</p>
         <div id="selected-ghost-evidence"></div>
       </div>
+      <div id="notebook-settings-container">
+        <button id="open-settings-btn">⚙</button>
+      </div>
     </div>
 
-    <!-- === NOTEBOOK TOGGLE BUTTON === -->
+    <!-- === NOTEBOOK TOGGLE === -->
     <div id="notebook-button-container">
       <button id="notebook-toggle-btn">
         📓 <span id="notebook-update-badge" style="display:none;">!</span>
       </button>
     </div>
-  </div>
 
-  <!-- === LOADOUT SCREEN === -->
-  <div id="loadout-screen" style="display:none;">
-    <div id="loadout-container">
-      <h3>Select your starting gear</h3>
-      <div><strong>Holding:</strong><div id="held-list"></div></div>
-      <div><strong>Van Inventory:</strong><div id="van-list"></div></div>
-      <button id="confirm-loadout" disabled>Confirm</button>
+    <!-- === LOADOUT SCREEN === -->
+    <div id="loadout-screen" style="display:none;">
+      <div id="loadout-container">
+        <h3>Select your starting gear</h3>
+        <div><strong>Holding:</strong><div id="held-list"></div></div>
+        <div><strong>Van Inventory:</strong><div id="van-list"></div></div>
+        <button id="confirm-loadout" disabled>Confirm</button>
+      </div>
+    </div>
+
+    <!-- === INVENTORY OVERLAY === -->
+    <div id="inventory-overlay" style="display:none;">
+      <div id="inventory-list"></div>
+      <button id="close-inventory-btn">Close</button>
+    </div>
+
+    <!-- === GUESS POPUP === -->
+    <div id="guess-popup" style="display:none;">
+      <div id="guess-list"></div>
     </div>
   </div>
 
@@ -95,8 +109,9 @@
   <script type="module" src="js/audioManager.js"></script>
   <script type="module" src="js/ui.js"></script>
   <script type="module" src="js/items.js"></script>
-  <script type="module" src="js/ghostBehavior.js"></script>
   <script type="module" src="js/events.js"></script>
+  <script type="module" src="js/ghostBehavior.js"></script>
+  <script type="module" src="js/saveManager.js"></script>
   <script type="module" src="js/main.js"></script>
 </body>
 </html>
