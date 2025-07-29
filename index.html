@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Phasma‑Phoney v2.9 — Modular Master Build</title>
+  <title>Phasma‑Phoney</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="description" content="Phasma‑Phoney: Turn-based ghost investigation horror with 25 ghosts, mimic logic, cursed items, full hunt system, and save/restore." />
   <link rel="icon" href="favicon.ico" />
@@ -15,84 +15,84 @@
     <button id="startButton">Start New Game</button>
   </div>
 
-  <!-- === MAIN SCENE === -->
+  <!-- === MAIN SCENE (ONLY VISUAL ELEMENTS) === -->
   <div id="main-scene" style="display:none;">
     <div id="background"></div>
     <div id="lightning"></div>
     <canvas id="fog-layer"></canvas>
     <canvas id="orbCanvas"></canvas>
+  </div>
 
-    <!-- === HUD === -->
-    <div id="hud">
-      <div>Location: <span id="hud-location">Van</span> | Weather: <span id="hud-weather">--</span></div>
-      <div>Turns: <span id="hud-turns">0</span></div>
-      <div>Sanity:</div>
-      <div id="sanity-bar-container"><div id="sanity-bar"></div></div>
-      <div>Temp: <span id="hud-temp">--°C</span></div>
+  <!-- === HUD === -->
+  <div id="hud">
+    <div>Location: <span id="hud-location">Van</span> | Weather: <span id="hud-weather">--</span></div>
+    <div>Turns: <span id="hud-turns">0</span></div>
+    <div>Sanity:</div>
+    <div id="sanity-bar-container"><div id="sanity-bar"></div></div>
+    <div>Temp: <span id="hud-temp">--°C</span></div>
+  </div>
+
+  <!-- === HELD INVENTORY HUD === -->
+  <div id="inventory-display">
+    <div>Held:</div>
+    <div id="held-items-display">None</div>
+  </div>
+
+  <!-- === NARRATOR UI === -->
+  <div id="narrator-ui" style="display:none;">
+    <div id="game-log"></div>
+    <div id="command-buttons"></div>
+  </div>
+
+  <!-- === NOTEBOOK PANEL === -->
+  <div id="notebook">
+    <div id="notebook-left">
+      <h4>Ghosts</h4>
+      <ol id="ghost-notebook-list"></ol>
+      <h4>Held Items</h4>
+      <ul id="held-items-list"></ul>
+      <h4>Nearby Items</h4>
+      <ul id="nearby-items-list"></ul>
     </div>
-
-    <!-- === HELD INVENTORY HUD === -->
-    <div id="inventory-display">
-      <div>Held:</div>
-      <div id="held-items-display">None</div>
-    </div>
-
-    <!-- === NARRATOR UI === -->
-    <div id="narrator-ui" style="display:none;">
-      <div id="game-log"></div>
-      <div id="command-buttons"></div>
-    </div>
-
-    <!-- === NOTEBOOK PANEL === -->
-    <div id="notebook">
-      <div id="notebook-left">
-        <h4>Ghosts</h4>
-        <ol id="ghost-notebook-list"></ol>
-        <h4>Held Items</h4>
-        <ul id="held-items-list"></ul>
-        <h4>Nearby Items</h4>
-        <ul id="nearby-items-list"></ul>
+    <div id="notebook-right">
+      <div id="selected-ghost-name">// Ghost name will appear here //</div>
+      <div id="ghost-image-container">
+        <img id="selected-ghost-image" alt="Ghost visual" />
       </div>
-      <div id="notebook-right">
-        <div id="selected-ghost-name">// Ghost name will appear here //</div>
-        <div id="ghost-image-container">
-          <img id="selected-ghost-image" alt="Ghost visual" />
-        </div>
-        <p id="selected-ghost-details">Select a ghost or item to see details.</p>
-        <div id="selected-ghost-evidence"></div>
-      </div>
-      <div id="notebook-settings-container">
-        <button id="open-settings-btn">⚙</button>
-      </div>
+      <p id="selected-ghost-details">Select a ghost or item to see details.</p>
+      <div id="selected-ghost-evidence"></div>
     </div>
+    <div id="notebook-settings-container">
+      <button id="open-settings-btn">⚙</button>
+    </div>
+  </div>
 
-    <!-- === NOTEBOOK TOGGLE === -->
-    <div id="notebook-button-container">
-      <button id="notebook-toggle-btn">
-        📓 <span id="notebook-update-badge" style="display:none;">!</span>
-      </button>
-    </div>
+  <!-- === NOTEBOOK TOGGLE === -->
+  <div id="notebook-button-container">
+    <button id="notebook-toggle-btn">
+      📓 <span id="notebook-update-badge" style="display:none;">!</span>
+    </button>
+  </div>
 
-    <!-- === LOADOUT SCREEN === -->
-    <div id="loadout-screen" style="display:none;">
-      <div id="loadout-container">
-        <h3>Select your starting gear</h3>
-        <div><strong>Holding:</strong><div id="held-list"></div></div>
-        <div><strong>Van Inventory:</strong><div id="van-list"></div></div>
-        <button id="confirm-loadout" disabled>Confirm</button>
-      </div>
+  <!-- === LOADOUT SCREEN === -->
+  <div id="loadout-screen" style="display:none;">
+    <div id="loadout-container">
+      <h3>Select your starting gear</h3>
+      <div><strong>Holding:</strong><div id="held-list"></div></div>
+      <div><strong>Van Inventory:</strong><div id="van-list"></div></div>
+      <button id="confirm-loadout" disabled>Confirm</button>
     </div>
+  </div>
 
-    <!-- === INVENTORY OVERLAY === -->
-    <div id="inventory-overlay" style="display:none;">
-      <div id="inventory-list"></div>
-      <button id="close-inventory-btn">Close</button>
-    </div>
+  <!-- === INVENTORY OVERLAY === -->
+  <div id="inventory-overlay" style="display:none;">
+    <div id="inventory-list"></div>
+    <button id="close-inventory-btn">Close</button>
+  </div>
 
-    <!-- === GUESS POPUP === -->
-    <div id="guess-popup" style="display:none;">
-      <div id="guess-list"></div>
-    </div>
+  <!-- === GUESS POPUP === -->
+  <div id="guess-popup" style="display:none;">
+    <div id="guess-list"></div>
   </div>
 
   <!-- === FOOTER === -->
