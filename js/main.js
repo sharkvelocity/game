@@ -1,69 +1,22 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — MAIN.JS (FINAL MASTER) ===
- * Game start, title screen, investigation, UI routing.
+ * === PHASMA-PHONEY v2.9 — MAIN MODULE (FINAL PATCHED) ===
+ * Game startup, core loop, transitions and ghost setup.
  *****************************************************/
-import { game, resetGame as stateReset, possibleWeather, randomFromArray, ghostProfiles, allRooms } from "./state.js";
-import { renderHUD, renderActionButtons, setupNotebookToggle, populateGhostNotebook, updateBackground, logToGame } from "./ui.js";
-import { showLoadout, confirmLoadout } from "./ui.js";
-import { preloadAllAudio } from "./audioManager.js";
-import { checkTurnEvents } from "./events.js";
-import { saveGame, clearSave } from "./saveManager.js";
+import { game, ghostProfiles, allRooms, allDirections } from "./state.js";
+import { showLoadout, renderActionButtons, renderHUD, updateBackground } from "./ui.js";
+import { advanceTurn } from "./events.js";
+import { populateGhostNotebook, setupNotebookToggle } from "./ui.js";
+import { updateHeldItemsNotebook, updateNearbyItemsNotebook } from "./ui.js";
+import { confirmLoadout } from "./ui.js";
 
 /***********************
- === INVESTIGATION START
+ === GAME INIT
 ************************/
-export function startInvestigation(newGame = true) {
-  const loadout = document.getElementById("loadout-screen");
-  if (loadout) loadout.style.display = "none";
-
-  const scene = document.getElementById("main-scene");
-  if (scene) scene.style.display = "block";
-
-  const narrator = document.getElementById("narrator-ui");
-  if (narrator) narrator.style.display = "flex";
-
-  if (newGame) {
-    stateReset();
-    game.weather = randomFromArray(possibleWeather);
-    game.ghost = randomFromArray(Object.keys(ghostProfiles));
-    game.ghostRoom = getRandomRoom();
-    game.playerRoom = "Van";
-    game.playerDirection = "N";
-    game.sanity = 100;
-    game.currentTurn = 1;
-    game.inventory = [...game.loadout];
-    game.itemsPlaced = {};
-  }
-
-  updateBackground();
-  renderHUD();
-  renderActionButtons();
-  setupNotebookToggle();
-  populateGhostNotebook();
-
-  logToGame("🚪 You arrive at the haunted location.");
-  logToGame(`🌦️ Weather: ${game.weather}`);
-  logToGame(`🧭 Your starting point is the Van. Good luck.`);
-
-  preloadAllAudio();
-
-  const log = document.getElementById("game-log");
-  if (log) log.scrollTop = log.scrollHeight;
-}
-
-/***********************
- === INITIAL SETUP ===
-************************/
-document.addEventListener("DOMContentLoaded", () => {
-  const startButton = document.getElementById("startButton");
-  setupNotebookToggle();
-  populateGhostNotebook();
-  preloadAllAudio();
-
-  if (startButton) {
-    startButton.addEventListener("click", () => {
+window.addEventListener("DOMContentLoaded", () => {
+  const startBtn = document.getElementById("startButton");
+  if (startBtn) {
+    startBtn.addEventListener("click", () => {
       document.getElementById("title-screen").style.display = "none";
-      document.getElementById("loadout-screen").style.display = "flex";
       showLoadout();
     });
   }
@@ -72,91 +25,39 @@ document.addEventListener("DOMContentLoaded", () => {
   if (confirmBtn) {
     confirmBtn.addEventListener("click", () => {
       confirmLoadout();
-      setTimeout(() => {
-        startInvestigation(true);
-      }, 100);
+      setTimeout(() => startInvestigation(), 600);
     });
   }
+
+  setupNotebookToggle();
 });
 
 /***********************
- === RANDOM SETUP ===
+ === START INVESTIGATION
 ************************/
-function assignWeather() {
-  game.weather = randomFromArray(possibleWeather);
-}
+export function startInvestigation(newGame = true) {
+  document.getElementById("loadout-screen").style.display = "none";
+  document.getElementById("main-scene").style.display = "block";
+  document.getElementById("narrator-ui").style.display = "flex";
 
-function assignRandomGhost() {
-  const ghosts = Object.keys(ghostProfiles);
-  game.ghost = randomFromArray(ghosts);
-}
-
-function assignGhostRoom() {
-  game.ghostRoom = randomFromArray(allRooms.filter(r => r !== "Van"));
-}
-
-function getRandomRoom() {
-  return randomFromArray([
-    "Foyer", "LivingRoom", "DiningRoom", "Kitchen",
-    "Basement", "Bathroom", "Garage", "Hallway",
-    "KidsBedroom", "MasterBedroom", "Storage", "Laundry"
-  ]);
-}
-
-/***********************
- === COMMAND HANDLER ===
-************************/
-document.addEventListener("ui-command", (e) => {
-  const cmd = e.detail;
-  switch (cmd) {
-    case "move":
-      logToGame("🧭 Use compass buttons to move.");
-      break;
-    case "look":
-      logToGame("👀 You look around carefully...");
-      break;
-    case "inventory":
-      import("./items.js").then(m => m.openInventoryOverlay());
-      break;
-    case "guess":
-      openGhostGuess();
-      break;
-    case "van":
-      returnToVan();
-      break;
-  }
-});
-
-/***********************
- === GHOST GUESS SYSTEM
-************************/
-function openGhostGuess() {
-  const popup = document.getElementById("guess-popup");
-  if (!popup) return;
-  popup.style.display = "block";
-  popup.innerHTML = Object.keys(ghostProfiles)
-    .map(g => `<button onclick="window.makeGuess('${g}')">${g}</button>`)
-    .join("");
-  window.makeGuess = (ghost) => {
-    alert(ghost === game.ghost ? "✅ Correct! It was " + ghost : "❌ Wrong! It was " + game.ghost);
-    window.location.reload();
-  };
-}
-
-/***********************
- === RETURN TO VAN ===
-************************/
-function returnToVan() {
-  game.playerRoom = "Van";
-  renderHUD();
+  // Reset visuals
   updateBackground();
-  checkTurnEvents();
-}
+  renderHUD();
+  renderActionButtons();
 
-/***********************
- === CLEAR SAVE (DEBUG)
-************************/
-window.clearGameSave = () => {
-  clearSave();
-  alert("Save cleared.");
-};
+  // Populate notebook
+  populateGhostNotebook();
+  updateHeldItemsNotebook();
+  updateNearbyItemsNotebook();
+
+  // Setup ghost
+  if (newGame) {
+    const ghostNames = Object.keys(ghostProfiles);
+    game.ghost = ghostNames[Math.floor(Math.random() * ghostNames.length)];
+    game.ghostRoom = allRooms[Math.floor(Math.random() * allRooms.length)];
+    game.ghostDirection = allDirections[Math.floor(Math.random() * allDirections.length)];
+  }
+
+  // Start first turn
+  advanceTurn();
+}
