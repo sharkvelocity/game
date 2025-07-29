@@ -133,7 +133,7 @@ export const ghostProfiles = {
   }
 };
 
-
+export const allDirections = ["N", "E", "S", "W"];
 // === ROOM VISUALS (SAMPLE — extend fully) ===
 export const roomVisuals = {
   Van:        { N: "img/van_N.png" },
