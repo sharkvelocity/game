@@ -1,7 +1,6 @@
 /*****************************************************
- * === PHASMA-PHONEY v2.9 — ITEMS.JS (FINAL MASTER) ===
- * Handles inventory, item interactions, cursed items,
- * consumables, and camera placement with IR logic.
+ * === PHASMA-PHONEY v2.9 — ITEMS.JS (FINAL CLEANED) ===
+ * Inventory use, cursed item effects, pickups, and HUD sync
  *****************************************************/
 import { game, cursedItems, getCursedItemCost, gameSettings, ghostProfiles } from "./state.js";
 import {
@@ -12,14 +11,11 @@ import { checkTurnEvents } from "./events.js";
 import { startHunt } from "./ghostBehavior.js";
 
 /***********************
- === INVENTORY OVERLAY
-************************/
+ * INVENTORY OVERLAY
+ ************************/
 export function openInventoryOverlay() {
   const overlay = document.getElementById("inventory-overlay");
-  if (!overlay) {
-    console.error("❌ Inventory overlay not found!");
-    return;
-  }
+  if (!overlay) return console.error("❌ Inventory overlay not found!");
   overlay.style.display = "flex";
   renderInventoryOverlay();
 }
@@ -52,8 +48,8 @@ export function closeInventoryOverlay() {
 }
 
 /***********************
- === USE ITEM
-************************/
+ * USE ITEM
+ ************************/
 export function useItem(i) {
   if (i === "Notebook") {
     logToGame("You open your Notebook...");
@@ -65,9 +61,9 @@ export function useItem(i) {
     case "Smudge Stick":
       if (game.playerRoom === game.ghostRoom) {
         game.smudgeActive = 3;
-        logToGame("You smudge the room, calming the ghost.");
+        logToGame("You smudge the ghost room. The entity recoils.");
       } else {
-        logToGame("You smudge, but nothing happens.");
+        logToGame("You smudge, but nothing reacts.");
       }
       consumeItem(i);
       break;
@@ -75,65 +71,75 @@ export function useItem(i) {
     case "Camera":
       if (
         game.playerRoom === game.ghostRoom &&
-        (ghostProfiles[game.ghost]?.evidence.includes("Orbs") || game.ghost === "TheMimic")
+        (ghostProfiles[game.ghost]?.evidence.includes("Ghost Orb") || game.ghost === "The Mimic")
       ) {
-        logToGame("You switch to IR mode... Orbs shimmer faintly!");
+        logToGame("You snap a photo — shimmering orbs appear on IR!");
       } else {
-        logToGame("No orbs visible through IR here.");
+        logToGame("You take a photo, but nothing unusual shows.");
       }
       break;
 
     case "Video Camera":
-      if (game.playerRoom !== "Van") {
-        if (!game.roomItems[game.playerRoom]?.includes("Video Camera")) {
-          game.roomItems[game.playerRoom] = game.roomItems[game.playerRoom] || [];
-          game.roomItems[game.playerRoom].push("Video Camera");
-          game.cameraPlacements.push(game.playerRoom);
-          logToGame(`You place a video camera in ${game.playerRoom}.`);
-        }
+      if (game.playerRoom === "Van") {
+        logToGame("You can't place cameras in the van.");
+        break;
+      }
+      if (!game.roomItems[game.playerRoom]?.includes("Video Camera")) {
+        game.roomItems[game.playerRoom] = game.roomItems[game.playerRoom] || [];
+        game.roomItems[game.playerRoom].push("Video Camera");
+        game.cameraPlacements.push(game.playerRoom);
+        logToGame(`You set up a video camera in the ${game.playerRoom}.`);
       } else {
-        logToGame("Cannot place video cameras in the van.");
+        logToGame("There's already a video camera here.");
       }
       break;
 
     case "Crucifix":
-      if (game.playerRoom !== "Van") {
-        game.placedCrucifix[game.playerRoom] = 2;
-        logToGame("You place the crucifix. It may stop two hunts.");
-        consumeItem(i);
-      } else {
-        logToGame("Cannot place crucifix in van.");
+      if (game.playerRoom === "Van") {
+        logToGame("Can't place crucifix in the van.");
+        break;
       }
+      game.placedCrucifix[game.playerRoom] = 2;
+      logToGame("You place the crucifix to block hunts (2 charges).");
+      consumeItem(i);
       break;
 
     case "Salt":
-      if (game.playerRoom !== "Van") {
-        game.roomItems[game.playerRoom] = game.roomItems[game.playerRoom] || [];
-        if (!game.roomItems[game.playerRoom].includes("Salt")) {
-          game.roomItems[game.playerRoom].push("Salt");
-          logToGame("You sprinkle salt on the ground.");
-        }
+      if (game.playerRoom === "Van") {
+        logToGame("Salt won't help inside the van.");
+        break;
+      }
+      game.roomItems[game.playerRoom] = game.roomItems[game.playerRoom] || [];
+      if (!game.roomItems[game.playerRoom].includes("Salt")) {
+        game.roomItems[game.playerRoom].push("Salt");
+        logToGame("You sprinkle salt across the floor.");
         consumeItem(i);
+      } else {
+        logToGame("You've already used salt in this room.");
       }
       break;
 
     case "UV Light":
       if (game.roomItems[game.playerRoom]?.includes("Footprints")) {
-        logToGame("You see glowing footprints under UV!");
+        logToGame("UV reveals glowing footprints!");
         game.selectedEvidence.add("Fingerprints");
       } else {
-        logToGame("No visible prints under UV.");
+        logToGame("You scan the room... nothing lights up.");
       }
       break;
 
     case "Candle":
-      if (game.playerRoom !== "Van") {
-        game.roomItems[game.playerRoom] = game.roomItems[game.playerRoom] || [];
-        if (!game.roomItems[game.playerRoom].includes("Candle")) {
-          game.roomItems[game.playerRoom].push("Candle");
-          logToGame("You place and light a candle here.");
-        }
+      if (game.playerRoom === "Van") {
+        logToGame("No need to place a candle in the van.");
+        break;
+      }
+      game.roomItems[game.playerRoom] = game.roomItems[game.playerRoom] || [];
+      if (!game.roomItems[game.playerRoom].includes("Candle")) {
+        game.roomItems[game.playerRoom].push("Candle");
+        logToGame("You light a candle in the room.");
         consumeItem(i);
+      } else {
+        logToGame("A candle is already burning here.");
       }
       break;
 
@@ -142,9 +148,13 @@ export function useItem(i) {
         game.roomItems[game.playerRoom] = game.roomItems[game.playerRoom] || [];
         if (!game.roomItems[game.playerRoom].includes("Motion Sensor")) {
           game.roomItems[game.playerRoom].push("Motion Sensor");
-          logToGame("You place a motion sensor in this room.");
+          logToGame("You set up a motion sensor.");
+          consumeItem(i);
+        } else {
+          logToGame("Motion sensor already placed.");
         }
-        consumeItem(i);
+      } else {
+        logToGame("Motion sensors don’t work inside the van.");
       }
       break;
 
@@ -152,7 +162,7 @@ export function useItem(i) {
       if (cursedItems[i]) {
         handleCursedItem(i);
       } else {
-        logToGame(`You use the ${i}, but nothing significant occurs.`);
+        logToGame(`You use the ${i}, but nothing happens.`);
       }
   }
 
@@ -163,6 +173,9 @@ function consumeItem(i) {
   game.inventory = game.inventory.filter(x => x !== i);
 }
 
+/***********************
+ * END TURN + HUD UPDATE
+ ************************/
 function endItemTurn() {
   game.currentTurn++;
   game.nearbyItems = [...(game.roomItems[game.playerRoom] || [])];
@@ -177,8 +190,8 @@ function endItemTurn() {
 }
 
 /***********************
- === HANDLE CURSED ITEMS
-************************/
+ * CURSED ITEMS
+ ************************/
 export function handleCursedItem(i) {
   if (game.usedCursedItems[i]) {
     logToGame(`The ${i} is inert now.`);
@@ -191,19 +204,14 @@ export function handleCursedItem(i) {
     case "Ouija Board":
       if (Math.random() < 0.2) startHunt();
       break;
-    case "Tarot Cards": {
+    case "Tarot Cards":
       const r = Math.random();
       if (r < 0.2) logToGame("The Fool — nothing happens.");
-      else if (r < 0.4) logToGame("The Tower — ghost activity spikes!");
-      else if (r < 0.6) {
-        logToGame("The Death card — hunt triggered!");
-        startHunt();
-      } else {
-        logToGame("The Sun — sanity restored.");
-        game.sanity = Math.min(100, game.sanity + 10);
-      }
+      else if (r < 0.4) logToGame("The Tower — sudden burst of ghost activity!");
+      else if (r < 0.6) { logToGame("The Death card — a hunt is triggered!"); startHunt(); }
+      else logToGame("The Sun — your mind clears. Sanity +10.");
+      if (r >= 0.6) game.sanity = Math.min(100, game.sanity + 10);
       break;
-    }
     case "Music Box":
     case "Haunted Mirror":
       if (Math.random() < 0.3) startHunt();
@@ -221,38 +229,32 @@ export function handleCursedItem(i) {
 }
 
 /***********************
- === PICK ITEM
-************************/
+ * PICKUP ITEM
+ ************************/
 export function pickItem(item) {
-  if (!item) {
-    logToGame("⚠️ No item selected to pick up.");
-    return;
-  }
+  if (!item) return logToGame("⚠️ No item selected.");
 
   if (item === "Notebook" || item === "Lighter") {
-    logToGame(`⚠️ You cannot pick up the ${item}.`);
-    return;
+    return logToGame(`⚠️ The ${item} is always with you.`);
   }
 
-  const carryable = game.inventory.filter(x => x !== "Notebook" && x !== "Lighter");
+  const carryable = game.inventory.filter(i => i !== "Notebook" && i !== "Lighter");
   if (carryable.length >= 3) {
-    logToGame("⚠️ You can only hold 3 items at once (Notebook & Lighter excluded).");
+    logToGame("⚠️ Max 3 carryable items at once (Notebook/Lighter excluded).");
     return;
   }
 
   game.inventory.push(item);
 
-  if (game.nearbyItems.includes(item)) {
-    game.nearbyItems = game.nearbyItems.filter(i => i !== item);
-  }
-
+  // Remove from room
   if (game.roomItems[game.playerRoom]) {
     game.roomItems[game.playerRoom] =
       game.roomItems[game.playerRoom].filter(i => i !== item);
-    if (game.roomItems[game.playerRoom].length === 0) {
+    if (game.roomItems[game.playerRoom].length === 0)
       delete game.roomItems[game.playerRoom];
-    }
   }
+
+  game.nearbyItems = game.nearbyItems.filter(i => i !== item);
 
   logToGame(`You picked up the ${item}.`);
 
