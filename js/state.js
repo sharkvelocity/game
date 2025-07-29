@@ -6,10 +6,10 @@
 
 // === ALL LOADOUT ITEMS ===
 export const allLoadoutItems = [
-  "EMF Reader", "Spirit Box", "Camera", "UV Light", "D.O.T.S Projector",
-  "Thermometer", "Ghost Writing Book", "Video Camera", "Crucifix",
-  "Smudge Stick", "Salt", "Parabolic Microphone", "Motion Sensor",
-  "Sound Sensor", "Candle"
+  "Video Camera", "Camera", "Crucifix", "Smudge Stick", "Candle",
+  "Thermometer", "Ghost Writing Book", "EMF Reader", "Spirit Box",
+  "UV Light", "Salt", "Parabolic Microphone", "Motion Sensor",
+  "Sound Sensor", "D.O.T.S Projector"
 ];
 
 // === CURSED ITEMS ===
@@ -136,17 +136,17 @@ export const ghostProfiles = {
 
 // === ROOM VISUALS (SAMPLE — extend fully) ===
 export const roomVisuals = {
-  Van:        { N: "img/Van_N.png" },
-  Foyer:      { N: "img/Foyer_N.png" },
-  LivingRoom: { N: "img/LivingRoom_N.png" },
-  Kitchen:    { N: "img/Kitchen_N.png" },
-  DiningRoom: { N: "img/DiningRoom_N.png" },
-  Basement:   { N: "img/Basement_N.png" },
-  Garage:     { N: "img/Garage_N.png" },
-  Bathroom:   { N: "img/Bathroom_N.png" },
-  MasterBedroom: { N: "img/MasterBedroom_N.png" },
-  KidsRoom:   { N: "img/KidsRoom_N.png" },
-  Utility:    { N: "img/Utility_N.png" },
+  Van:        { N: "img/van_N.png" },
+  Foyer:      { N: "img/foyer_N.png" },
+  LivingRoom: { N: "img/livingRoom_N.png" },
+  Kitchen:    { N: "img/kitchen_N.png" },
+  DiningRoom: { N: "img/diningRoom_N.png" },
+  Basement:   { N: "img/basement_N.png" },
+  Garage:     { N: "img/garage_N.png" },
+  Bathroom:   { N: "img/bathroom_N.png" },
+  MasterBedroom: { N: "img/masterBedroom_N.png" },
+  KidsRoom:   { N: "img/kidsRoom_N.png" },
+  Utility:    { N: "img/utility_N.png" },
   Office:     { N: "img/Office_N.png" }
 };
 
