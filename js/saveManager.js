@@ -3,6 +3,9 @@
 import { game } from './state.js';
 
 const saveKey = "phasmaPhoneySave";
+export function clearSave() {
+  localStorage.removeItem("phasmaphoneySave");
+}
 
 export function saveGame() {
   try {
