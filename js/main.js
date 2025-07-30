@@ -11,14 +11,19 @@ import {
 import {
   renderHUD, renderActionButtons,
   setupNotebookToggle, populateGhostNotebook,
-  updateBackground, logToGame
+  updateBackground, logToGame,
+  renderInventoryList
 } from "./ui.js";
 
 import { showLoadout } from "./ui.js";
 import { preloadAllAudio } from "./audioManager.js";
 import { checkTurnEvents } from "./events.js";
 import { clearSave } from "./saveManager.js";
-function confirmLoadout() {
+
+/****************************
+ * === CONFIRM LOADOUT ===
+ ****************************/
+export function confirmLoadout() {
   const loadout = document.getElementById("loadout-screen");
   if (loadout) loadout.style.display = "none";
 
@@ -70,7 +75,7 @@ export function startInvestigation(newGame = true) {
 
   logToGame("🚪 You arrive at the haunted location.");
   logToGame(`🌦️ Weather: ${game.weather}`);
-  logToGame("🧭 Your starting point is the Van. Good luck.");
+  logToGame("🧽 Your starting point is the Van. Good luck.");
 
   preloadAllAudio();
 
@@ -129,7 +134,7 @@ document.addEventListener("ui-command", (e) => {
   const cmd = e.detail;
   switch (cmd) {
     case "move":
-      logToGame("🧭 Use compass buttons to move.");
+      logToGame("🧽 Use compass buttons to move.");
       break;
     case "look":
       logToGame("👀 You look around carefully...");
