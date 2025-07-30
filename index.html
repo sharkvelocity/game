@@ -2,270 +2,149 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Phasma‑Phoney</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="description" content="Phasma‑Phoney: Turn-based ghost investigation horror" />
-  <link rel="icon" href="favicon.ico" />
+  <title>Phasma‑Phoney v2.9</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Turn-based ghost investigation horror game" />
   <style>
-    /* === GLOBAL RESET & BASICS === */
     html, body {
-      margin: 0; padding: 0;
-      width: 100vw; height: 100vh;
-      background: black; overflow: hidden;
-      font-family: monospace, sans-serif; color: #eee;
-      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      background: black;
+      color: #eee;
+      font-family: monospace, sans-serif;
+      overflow: hidden;
+    }
+
+    #main-ui {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    #fog {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    #hud {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 100;
+      background: rgba(0, 0, 0, 0.75);
+      padding: 12px;
+      border: 1px solid #444;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    #notebook,
+    #inventory-overlay {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #111;
+      color: #0f0;
+      padding: 16px;
+      border: 2px solid #0f0;
+      z-index: 5000;
+      min-width: 240px;
+      max-height: 60vh;
+      overflow-y: auto;
+      display: none;
+    }
+
+    #notebook h3,
+    #inventory-overlay h3 {
+      margin-top: 0;
+      text-align: center;
+    }
+
+    #inventory-list {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    #inventory-list li {
+      padding: 4px 0;
+    }
+
+    #van-monitor {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+      color: #0f0;
+      font-family: monospace;
+      font-size: 16px;
+      z-index: 9999;
+      padding: 20px;
+      white-space: pre-wrap;
     }
 
     button {
-      font-family: monospace; background: #222; color: #fff;
-      border: 1px solid #444; padding: 6px 12px; margin: 4px;
+      font-family: monospace;
+      background: #222;
+      color: #0f0;
+      border: 1px solid #0f0;
+      padding: 6px 10px;
       cursor: pointer;
     }
 
-    /* === Z-INDEX & LAYOUT === */
-    #main-scene, #background, #lightning, #fog-layer, #orbCanvas {
-      position: absolute; top: 0; left: 0;
-      width: 100%; height: 100%;
-    }
-
-    #background { z-index: 1; }
-    #lightning { z-index: 2; pointer-events: none; }
-    #fog-layer { z-index: 3; pointer-events: none; }
-    #orbCanvas { z-index: 4; pointer-events: none; }
-
-    #hud {
-      position: absolute; top: 10px; left: 10px;
-      background: rgba(0,0,0,0.6); padding: 10px;
-      border-radius: 6px; z-index: 10;
-    }
-
-    #inventory-display {
-      position: absolute; bottom: 10px; left: 10px;
-      background: rgba(0,0,0,0.6); padding: 10px;
-      border-radius: 6px; z-index: 10;
-    }
-
-    #narrator-ui {
-      position: absolute; bottom: 60px; left: 50%;
-      transform: translateX(-50%);
-      width: 90%; max-height: 40%;
-      background: rgba(10,10,10,0.8); padding: 10px;
-      border-radius: 6px; z-index: 11;
-      display: flex; flex-direction: column;
-    }
-
-    #game-log {
-      flex: 1; overflow-y: auto; font-size: 0.9em;
-      margin-bottom: 10px;
-    }
-
-    #command-buttons {
-      display: flex; flex-wrap: wrap; justify-content: center;
-    }
-
-    #notebook {
-      position: absolute; right: 10px; top: 10px;
-      width: 300px; height: 80%;
-      background: rgba(0,0,0,0.9); padding: 10px;
-      border: 1px solid #888; display: none;
-      flex-direction: column; z-index: 12;
-    }
-
-    #notebook.open { display: flex; }
-
-    #notebook-left, #notebook-right {
-      flex: 1; overflow-y: auto;
-    }
-
-    #notebook-button-container {
-      position: absolute; top: 10px; right: 320px;
-      z-index: 13;
-    }
-
-    #loadout-screen {
-      position: absolute; top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      background: #000; color: #fff;
-      display: none; justify-content: center; align-items: center;
-      flex-direction: column; z-index: 20;
-    }
-
-    #loadout-container {
-      background: #111; padding: 20px;
-      border: 1px solid #555; border-radius: 8px;
-      max-width: 600px;
-    }
-
-    #inventory-overlay {
-      position: absolute; top: 20%; left: 50%;
-      transform: translateX(-50%);
-      background: #111; border: 1px solid #666;
-      padding: 10px; z-index: 15; display: none;
-      min-width: 200px;
-    }
-
-    #inventory-list button {
-      display: block; width: 100%; margin: 5px 0;
-    }
-
-    #guess-popup {
-      position: absolute; top: 20%; left: 50%;
-      transform: translateX(-50%);
-      background: #111; border: 1px solid #666;
-      padding: 10px; z-index: 16; display: none;
-      max-height: 60vh; overflow-y: auto;
-    }
-
-    footer {
-      position: fixed; bottom: 0; left: 0;
-      width: 100%; background: #111;
-      color: #ccc; font-size: 0.8em; text-align: center;
-      padding: 4px 10px; z-index: 30;
-    }
-
-    #title-screen {
-      position: fixed; top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      background: black; display: flex;
-      flex-direction: column; justify-content: center;
-      align-items: center; z-index: 100;
-    }
-
-    #title-screen img {
-      width: 80%; max-width: 400px;
-      margin-bottom: 20px;
-    }
-
-    #sanity-bar-container {
-      width: 100px; height: 10px;
-      background: #444; border: 1px solid #666;
-      margin-top: 4px;
-    }
-
-    #sanity-bar {
-      height: 100%; background: limegreen; width: 100%;
-    }
-
-    #notebook-settings-container {
-      position: absolute; bottom: 10px; right: 10px;
-    }
-
-    #notebook-update-badge {
-      color: red; font-weight: bold;
-      animation: pulse 1s infinite alternate;
-    }
-
-    @keyframes pulse {
-      from { opacity: 1; }
-      to { opacity: 0.3; }
+    button:hover {
+      background: #0f0;
+      color: #000;
     }
   </style>
 </head>
 <body>
-  <!-- === TITLE SCREEN === -->
-  <div id="title-screen">
-    <img src="logo.png" alt="Phasma‑Phoney Logo" />
-    <button id="startButton">Start New Game</button>
-  </div>
 
-  <!-- === MAIN SCENE (ONLY VISUAL ELEMENTS) === -->
-  <div id="main-scene" style="display:none;">
-    <div id="background"></div>
-    <div id="lightning"></div>
-    <canvas id="fog-layer"></canvas>
-    <canvas id="orbCanvas"></canvas>
-  </div>
+  <div id="main-ui">
+    <canvas id="fog"></canvas>
 
-  <!-- === HUD === -->
-  <div id="hud">
-    <div>Location: <span id="location">Van</span> | Turns: <span id="turn-count">0</span></div>
-    <div>Sanity:</div>
-    <div id="sanity-bar-container"><div id="sanity-bar"></div></div>
-    <div>Temp: <span id="temp-reading">??°C</span></div>
-  </div>
-
-  <!-- === HELD INVENTORY HUD === -->
-  <div id="inventory-display">
-    <div>Held:</div>
-    <div id="held-items">None</div>
-  </div>
-
-  <!-- === NARRATOR UI === -->
-  <div id="narrator-ui" style="display:none;">
-    <div id="game-log"></div>
-    <div id="command-buttons"></div>
-  </div>
-
-  <!-- === NOTEBOOK PANEL === -->
-  <div id="notebook">
-    <div id="notebook-left">
-      <h4>Ghosts</h4>
-      <ol id="ghost-notebook-list"></ol>
-      <h4>Held Items</h4>
-      <ul id="notebook-held"></ul>
-      <h4>Nearby Items</h4>
-      <ul id="notebook-nearby"></ul>
-      <h4>Evidence</h4>
-      <ul id="notebook-evidence"></ul>
+    <div id="hud">
+      <button id="start-btn">Start Game</button>
+      <button id="notebook-btn">Open Notebook</button>
+      <button id="inventory-btn">Check Inventory</button>
     </div>
-    <div id="notebook-right">
-      <div id="selected-ghost-name">Select a ghost</div>
-      <div id="ghost-image-container">
-        <img id="selected-ghost-image" alt="Ghost visual" />
-      </div>
-      <p id="selected-ghost-details">Details will appear here.</p>
-      <div id="selected-ghost-evidence"></div>
+
+    <div id="notebook">
+      <h3>Evidence Notebook</h3>
+      <ul>
+        <li>Ghost Writing</li>
+        <li>Freezing Temps</li>
+        <li>EMF 5</li>
+      </ul>
     </div>
-    <div id="notebook-settings-container">
-      <button id="open-settings-btn">⚙</button>
+
+    <div id="inventory-overlay">
+      <h3>Held Items</h3>
+      <ul id="inventory-list"></ul>
     </div>
   </div>
 
-  <!-- === NOTEBOOK TOGGLE === -->
-  <div id="notebook-button-container">
-    <button id="notebook-toggle-btn">
-      📓 <span id="notebook-update-badge" style="display:none;">!</span>
-    </button>
-  </div>
-
-  <!-- === LOADOUT SCREEN === -->
-  <div id="loadout-screen" style="display:none;">
-    <div id="loadout-container">
-      <h3>Select your starting gear</h3>
-      <div><strong>Holding:</strong><div id="held-list"></div></div>
-      <div><strong>Van Inventory:</strong><div id="van-list"></div></div>
-      <button id="confirm-loadout" disabled>Confirm</button>
-    </div>
-  </div>
-
-  <!-- === INVENTORY OVERLAY === -->
-  <div id="inventory-overlay" style="display:none;">
-    <div id="inventory-list"></div>
-    <button id="close-inventory-btn">Close</button>
-  </div>
-
-  <!-- === GUESS POPUP === -->
-  <div id="guess-popup" style="display:none;">
-    <div id="guess-list"></div>
-  </div>
-
-  <!-- === FOOTER === -->
-  <footer>
-    <div><strong>Phasma‑Phoney v2.9</strong> — Modular Master Build</div>
-    <div class="update-log">
-      Audio optional — no errors if files missing |
-      <a href="mailto:sharkvelocity@gmail.com?subject=Phasma-Phoney%20Bug%20Report">Report Bug</a>
-    </div>
-  </footer>
-
-  <!-- === MODULE SCRIPTS === -->
+  <!-- Module Scripts -->
   <script type="module" src="js/state.js"></script>
   <script type="module" src="js/audioManager.js"></script>
   <script type="module" src="js/ui.js"></script>
   <script type="module" src="js/items.js"></script>
   <script type="module" src="js/events.js"></script>
   <script type="module" src="js/ghostBehavior.js"></script>
-  <script type="module" src="js/saveManager.js"></script>
+  <script type="module" src="js/fog.js"></script>
+  <script type="module" src="js/vanMonitor.js"></script>
   <script type="module" src="js/main.js"></script>
+
 </body>
 </html>
