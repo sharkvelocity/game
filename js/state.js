@@ -88,3 +88,12 @@ export function resetGame() {
   game.monitorBooted = false;
   game.weather = null;
 }
+export {
+  game,
+  ghostProfiles,
+  roomVisuals, // ✅ Make sure this is included
+  allRooms,
+  allDirections,
+  randomFromArray,
+  resetGame
+};
