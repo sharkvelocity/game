@@ -89,6 +89,18 @@ export function updateBackground(direction) {
   const image = `${game.currentRoom}_${direction}.png`;
   mainScene.style.backgroundImage = `url('images/${image}')`;
 }
+// === Render UI command buttons (bottom panel) ===
+export function renderActionButtons() {
+  const cmd = document.getElementById("command-buttons");
+  if (!cmd) return;
+  cmd.innerHTML = `
+    <button data-cmd="move">Move</button>
+    <button data-cmd="look">Look Around</button>
+    <button data-cmd="inventory">Inventory</button>
+    <button data-cmd="guess">Ghost Guess</button>
+    <button data-cmd="van">Return to Van</button>
+  `;
+}
 
 // Render default HUD/UI after game start
 export function renderUI() {
