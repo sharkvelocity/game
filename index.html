@@ -16,14 +16,28 @@
       font-family: monospace, sans-serif;
       overflow: hidden;
     }
-    #main-ui {
-      position: relative;
+    #title-screen, #loadout-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
-      z-index: 1;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
     }
-    #main-scene {
+    #loadout-screen {
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+      align-items: center;
+    }
+    #main-ui, #main-scene, #fog, #notebook, #inventory-overlay, #van-monitor, #game-log {
       position: absolute;
+    }
+    #main-scene, #fog {
       top: 0;
       left: 0;
       width: 100%;
@@ -32,30 +46,32 @@
       background-size: cover;
       background-position: center;
     }
-    #fog {
-      position: absolute;
+    #main-ui {
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      z-index: 5;
-      pointer-events: none;
+      z-index: 1;
     }
     #hud {
       position: absolute;
       top: 10px;
       left: 10px;
-      z-index: 100;
-      background: rgba(0, 0, 0, 0.75);
+      background: rgba(0,0,0,0.75);
       padding: 12px;
-      border: 1px solid #444;
+      z-index: 100;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 6px;
     }
-    #notebook,
-    #inventory-overlay {
-      position: fixed;
+    #command-buttons {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      z-index: 100;
+      display: none;
+    }
+    #notebook, #inventory-overlay {
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
@@ -64,36 +80,30 @@
       padding: 16px;
       border: 2px solid #0f0;
       z-index: 5000;
-      min-width: 240px;
-      max-height: 60vh;
-      overflow-y: auto;
       display: none;
     }
-    #notebook h3,
-    #inventory-overlay h3 {
-      margin-top: 0;
-      text-align: center;
-    }
-    #inventory-list {
-      list-style: none;
-      padding-left: 0;
-    }
-    #inventory-list li {
-      padding: 4px 0;
-    }
     #van-monitor {
-      position: fixed;
       top: 0;
       left: 0;
       width: 100vw;
       height: 100vh;
       background: #000;
       color: #0f0;
-      font-family: monospace;
       font-size: 16px;
       z-index: 9999;
-      padding: 20px;
-      white-space: pre-wrap;
+      display: none;
+    }
+    .log-box {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      max-height: 25vh;
+      overflow-y: auto;
+      background: rgba(0,0,0,0.75);
+      padding: 8px;
+      z-index: 200;
+      font-size: 14px;
     }
     button {
       font-family: monospace;
@@ -114,29 +124,21 @@
     }
     .btn-danger:hover {
       background: #f00;
-      color: white;
-    }
-    .log-box {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      max-height: 25vh;
-      overflow-y: auto;
-      background: rgba(0,0,0,0.75);
-      padding: 8px;
-      z-index: 200;
-      font-size: 14px;
     }
   </style>
 </head>
 <body>
+  <div id="title-screen">
+    <button id="startButton">Start New Investigation</button>
+  </div>
+  <div id="loadout-screen">
+    <h3>Choose Your Loadout</h3>
+    <button id="confirm-loadout">Confirm Loadout</button>
+  </div>
   <div id="main-ui">
     <div id="main-scene"></div>
     <canvas id="fog"></canvas>
-
     <div id="hud">
-      <button id="start-btn">Start Game</button>
       <button id="notebook-btn">Open Notebook</button>
       <button id="inventory-btn">Check Inventory</button>
       <button id="reset-btn" class="btn-danger">Reset Investigation</button>
@@ -145,46 +147,41 @@
       <div id="hud-sanity"></div>
       <div id="hud-temp" style="display:none;"></div>
     </div>
-
-    <div id="command-buttons" style="display: none;">
+    <div id="command-buttons">
       <button data-cmd="move">Move</button>
       <button data-cmd="look">Look Around</button>
       <button data-cmd="inventory">Check Inventory</button>
       <button data-cmd="guess">Ghost Guess</button>
       <button data-cmd="van">Return to Van</button>
     </div>
-
     <div id="notebook">
       <h3>Evidence Notebook</h3>
       <ul id="notebook-entries"></ul>
     </div>
-
     <div id="inventory-overlay">
       <h3>Held Items</h3>
       <ul id="inventory-list"></ul>
     </div>
-
+    <div id="van-monitor"></div>
     <div id="game-log" class="log-box"></div>
   </div>
-
   <script type="module">
-    import { startInvestigation, confirmLoadout } from './js/main.js';
+    import { startInvestigation } from './js/main.js';
     import { showLoadout } from './js/ui.js';
     import { resetGame } from './js/state.js';
 
     document.addEventListener('DOMContentLoaded', () => {
-      const startBtn = document.getElementById('start-btn');
+      const startBtn = document.getElementById('startButton');
+      const confirmBtn = document.getElementById('confirm-loadout');
+
       if (startBtn) {
         startBtn.addEventListener('click', () => {
-          const title = document.getElementById('title-screen');
-          const loadout = document.getElementById('loadout-screen');
-          if (title) title.style.display = 'none';
-          if (loadout) loadout.style.display = 'flex';
+          document.getElementById('title-screen').style.display = 'none';
+          document.getElementById('loadout-screen').style.display = 'flex';
           showLoadout();
         });
       }
 
-      const confirmBtn = document.getElementById('confirm-loadout');
       if (confirmBtn) {
         confirmBtn.addEventListener('click', () => {
           const confirmEvent = new CustomEvent('confirm-loadout');
@@ -192,10 +189,10 @@
         });
       }
 
-      const resetBtn = document.getElementById("reset-btn");
+      const resetBtn = document.getElementById('reset-btn');
       if (resetBtn) {
-        resetBtn.addEventListener("click", () => {
-          if (confirm("Are you sure you want to reset everything?")) {
+        resetBtn.addEventListener('click', () => {
+          if (confirm("Reset all progress?")) {
             localStorage.clear();
             sessionStorage.clear();
             resetGame();
@@ -204,31 +201,23 @@
         });
       }
 
-      const cmdWrap = document.getElementById("command-buttons");
+      const cmdWrap = document.getElementById('command-buttons');
       if (cmdWrap) {
-        cmdWrap.addEventListener("click", (e) => {
-          const btn = e.target.closest("button[data-cmd]");
+        cmdWrap.addEventListener('click', (e) => {
+          const btn = e.target.closest('button[data-cmd]');
           if (!btn) return;
-          const cmdEvent = new CustomEvent("ui-command", { detail: btn.dataset.cmd });
-          document.dispatchEvent(cmdEvent);
+          const cmd = btn.dataset.cmd;
+          document.dispatchEvent(new CustomEvent('ui-command', { detail: cmd }));
         });
       }
 
       document.addEventListener('confirm-loadout', () => {
-        confirmLoadout?.();
-        setTimeout(() => startInvestigation?.(true), 100);
+        import('./js/main.js').then(mod => {
+          mod.default?.confirmLoadout?.();
+          setTimeout(() => mod.startInvestigation?.(true), 100);
+        });
       });
     });
   </script>
-
-  <script type="module" src="js/state.js"></script>
-  <script type="module" src="js/audioManager.js"></script>
-  <script type="module" src="js/ui.js"></script>
-  <script type="module" src="js/items.js"></script>
-  <script type="module" src="js/events.js"></script>
-  <script type="module" src="js/ghostBehavior.js"></script>
-  <script type="module" src="js/fog.js"></script>
-  <script type="module" src="js/vanMonitor.js"></script>
-  <script type="module" src="js/main.js"></script>
 </body>
 </html>
