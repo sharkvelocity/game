@@ -14,10 +14,27 @@ import {
   updateBackground, logToGame
 } from "./ui.js";
 
-import { showLoadout, confirmLoadout } from "./ui.js";
+import { showLoadout } from "./ui.js";
 import { preloadAllAudio } from "./audioManager.js";
 import { checkTurnEvents } from "./events.js";
 import { clearSave } from "./saveManager.js";
+function confirmLoadout() {
+  const loadout = document.getElementById("loadout-screen");
+  if (loadout) loadout.style.display = "none";
+
+  const scene = document.getElementById("main-scene");
+  if (scene) scene.style.display = "block";
+
+  const narrator = document.getElementById("narrator-ui");
+  if (narrator) narrator.style.display = "flex";
+
+  if (game.confirmedLoadout?.length) {
+    game.inventory = [...game.confirmedLoadout];
+  }
+
+  renderHUD();
+  renderInventoryList?.();
+}
 
 /****************************
  * === INVESTIGATION START ===
