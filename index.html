@@ -24,6 +24,17 @@
       z-index: 1;
     }
 
+    #main-scene {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      background-size: cover;
+      background-position: center;
+    }
+
     #fog {
       position: absolute;
       top: 0;
@@ -107,65 +118,87 @@
       background: #0f0;
       color: #000;
     }
+
+    .btn-danger {
+      background: #900;
+      color: white;
+      font-weight: bold;
+    }
+
+    .btn-danger:hover {
+      background: #f00;
+      color: white;
+    }
+
+    .log-box {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      max-height: 25vh;
+      overflow-y: auto;
+      background: rgba(0,0,0,0.75);
+      padding: 8px;
+      z-index: 200;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
 
-  <div id="main-ui">
-    <canvas id="fog"></canvas>
+<div id="main-ui">
+  <div id="main-scene"></div>
+  <canvas id="fog"></canvas>
 
-    <div id="hud">
-      <button id="start-btn">Start Game</button>
-      <button id="notebook-btn">Open Notebook</button>
-      <button id="inventory-btn">Check Inventory</button>
-    </div>
-
-    <div id="notebook">
-      <h3>Evidence Notebook</h3>
-      <ul>
-        <li>Ghost Writing</li>
-        <li>Freezing Temps</li>
-        <li>EMF 5</li>
-      </ul>
-    </div>
-
-    <div id="inventory-overlay">
-      <h3>Held Items</h3>
-      <ul id="inventory-list"></ul>
-    </div>
+  <div id="hud">
+    <button id="start-btn">Start Game</button>
+    <button id="notebook-btn">Open Notebook</button>
+    <button id="inventory-btn">Check Inventory</button>
+    <button id="reset-btn" class="btn-danger">Reset Investigation</button>
+    <div id="hud-location"></div>
+    <div id="hud-turn"></div>
+    <div id="hud-sanity"></div>
+    <div id="hud-temp" style="display:none;"></div>
   </div>
-<!-- Notebook Toggle -->
-<div id="notebook" style="display:none;"></div>
 
-<!-- Inventory Overlay -->
-<div id="inventory-overlay" style="display:none;">
-  <ul id="inventory-list"></ul>
+  <div id="notebook">
+    <h3>Evidence Notebook</h3>
+    <ul id="notebook-entries">
+      <!-- Evidence entries will be populated dynamically -->
+    </ul>
+  </div>
+
+  <div id="inventory-overlay">
+    <h3>Held Items</h3>
+    <ul id="inventory-list"></ul>
+  </div>
+
+  <div id="game-log" class="log-box"></div>
 </div>
 
-<!-- HUD Elements -->
-<div id="hud">
-  <div id="hud-location"></div>
-  <div id="hud-turn"></div>
-  <div id="hud-sanity"></div>
-  <div id="hud-temp" style="display:none;"></div>
-</div>
+<!-- JS Modules -->
+<script type="module">
+  import { resetGame } from './js/state.js';
 
-<!-- Log Output -->
-<div id="game-log" class="log-box"></div>
+  document.getElementById("reset-btn").addEventListener("click", () => {
+    if (confirm("Are you sure you want to reset everything?")) {
+      localStorage.clear();
+      sessionStorage.clear();
+      if (typeof resetGame === "function") resetGame();
+      location.reload();
+    }
+  });
+</script>
 
-<!-- Main Scene Background -->
-<div id="main-scene"></div>
-
-  <!-- Module Scripts -->
-  <script type="module" src="js/state.js"></script>
-  <script type="module" src="js/audioManager.js"></script>
-  <script type="module" src="js/ui.js"></script>
-  <script type="module" src="js/items.js"></script>
-  <script type="module" src="js/events.js"></script>
-  <script type="module" src="js/ghostBehavior.js"></script>
-  <script type="module" src="js/fog.js"></script>
-  <script type="module" src="js/vanMonitor.js"></script>
-  <script type="module" src="js/main.js"></script>
+<script type="module" src="js/state.js"></script>
+<script type="module" src="js/audioManager.js"></script>
+<script type="module" src="js/ui.js"></script>
+<script type="module" src="js/items.js"></script>
+<script type="module" src="js/events.js"></script>
+<script type="module" src="js/ghostBehavior.js"></script>
+<script type="module" src="js/fog.js"></script>
+<script type="module" src="js/vanMonitor.js"></script>
+<script type="module" src="js/main.js"></script>
 
 </body>
 </html>
