@@ -1,133 +1,80 @@
-/*****************************************************
- * === PHASMA-PHONEY v2.9 — UI.JS (FINAL PATCHED) ===
- * Handles HUD, inventory display, notebook updates,
- * evidence sync, and interaction UI overlays.
- *****************************************************/
-import { game, gameSettings } from "./state.js";
-import { useItem } from "./items.js";
+// === js/ui.js ===
 
-/***********************
- === RENDER HUD
-************************/
-export function renderHUD() {
-  const sanityBar = document.getElementById("sanity-bar");
-  const turnCount = document.getElementById("turn-count");
-  const locationText = document.getElementById("location");
-  const tempText = document.getElementById("temp-reading");
-  const heldItems = document.getElementById("held-items");
+import { game } from './state.js';
+import { playNotebookSound } from './audioManager.js';
 
-  if (sanityBar) sanityBar.style.width = `${game.sanity}%`;
-  if (turnCount) turnCount.textContent = `Turn ${game.currentTurn}`;
-  if (locationText) locationText.textContent = `📍 ${game.playerRoom}`;
-  if (tempText) tempText.textContent = getRoomTemperature();
-
-  const items = game.inventory.filter(i => i !== "Notebook" && i !== "Lighter");
-  if (heldItems) {
-    heldItems.innerHTML = items.length
-      ? items.map(i => `<span class="item-held">${i}</span>`).join(", ")
-      : "<em>None</em>";
-  }
-}
-/***********************
- === GAME LOGGER EXPORT
-************************/
-export function logToGame(message) {
-  const logBox = document.getElementById("game-log");
-  if (!logBox) return;
-  const line = document.createElement("div");
-  line.textContent = message;
-  logBox.appendChild(line);
-  logBox.scrollTop = logBox.scrollHeight;
-}
-
-/***********************
- === INVENTORY OVERLAY
-************************/
-export function toggleInventoryOverlay() {
-  const overlay = document.getElementById("inventory-overlay");
-  if (!overlay) return;
-  if (overlay.style.display === "flex") {
-    overlay.style.display = "none";
-  } else {
-    overlay.style.display = "flex";
-    renderInventoryList();
-  }
-}
-
-function renderInventoryList() {
-  const list = document.getElementById("inventory-list");
-  if (!list) return;
-  list.innerHTML = "";
-
-  const inv = game.inventory.filter(i => i !== "Notebook");
-  if (!inv.length) {
-    list.innerHTML = "<p>No items currently held.</p>";
-    return;
-  }
-
-  inv.forEach(item => {
-    const btn = document.createElement("button");
-    btn.className = "inventory-item-btn";
-    btn.textContent = item;
-    btn.onclick = () => {
-      useItem(item);
-      toggleInventoryOverlay();
-    };
-    list.appendChild(btn);
-  });
-}
-
-/***********************
- === NOTEBOOK SYSTEM
-************************/
+// Toggle the Notebook display
 export function toggleNotebook() {
   const nb = document.getElementById("notebook");
   if (!nb) return;
-  nb.classList.toggle("open");
+  nb.style.display = nb.style.display === "block" ? "none" : "block";
+  if (nb.style.display === "block") playNotebookSound();
 }
 
-export function updateHeldItemsNotebook() {
-  const el = document.getElementById("notebook-held");
-  if (!el) return;
-  const items = game.inventory.filter(i => i !== "Notebook" && i !== "Lighter");
-  el.innerHTML = items.length
-    ? items.map(i => `<li>${i}</li>`).join("")
-    : "<li><em>None</em></li>";
+// Toggle the Inventory overlay
+export function toggleInventoryOverlay() {
+  const overlay = document.getElementById("inventory-overlay");
+  if (!overlay) return;
+  overlay.style.display = overlay.style.display === "block" ? "none" : "block";
+  if (overlay.style.display === "block") renderInventoryList();
 }
 
-export function updateNearbyItemsNotebook() {
-  const el = document.getElementById("notebook-nearby");
-  if (!el) return;
-  const items = game.nearbyItems || [];
-  el.innerHTML = items.length
-    ? items.map(i => `<li>${i}</li>`).join("")
-    : "<li><em>None</em></li>";
+// Render held items inside the inventory overlay
+export function renderInventoryList() {
+  const list = document.getElementById("inventory-list");
+  if (!list) return;
+
+  list.innerHTML = "";
+  const items = game.inventory && game.inventory.length > 0 ? game.inventory : ["None"];
+  items.forEach(item => {
+    const li = document.createElement("li");
+    li.textContent = item;
+    list.appendChild(li);
+  });
 }
 
-export function updateEvidenceNotebook() {
-  const el = document.getElementById("notebook-evidence");
-  if (!el) return;
-  const found = Array.from(game.selectedEvidence);
-  el.innerHTML = found.length
-    ? found.map(e => `<li>${e}</li>`).join("")
-    : "<li><em>No evidence yet.</em></li>";
-}
+// Update the top-left HUD panel (location, sanity, turn, temp)
+export function updateHUD() {
+  const loc = document.getElementById("hud-location");
+  const turn = document.getElementById("hud-turn");
+  const sanity = document.getElementById("hud-sanity");
+  const temp = document.getElementById("hud-temp");
 
-export function showNotebookUpdateBadge() {
-  const badge = document.getElementById("notebook-badge");
-  if (badge) {
-    badge.style.opacity = 1;
-    setTimeout(() => badge.style.opacity = 0, 1500);
+  if (loc) loc.textContent = `📍 ${game.currentRoom || "???"}`;
+  if (turn) turn.textContent = `📅 Turn: ${game.turn}`;
+  if (sanity) sanity.textContent = `🧠 Sanity: ${game.sanity}%`;
+
+  // If holding thermometer, show temp
+  if (temp) {
+    if (game.inventory.includes("Thermometer") && game.temp !== undefined) {
+      temp.textContent = `🌡️ Temp: ${game.temp}°C`;
+      temp.style.display = "block";
+    } else {
+      temp.style.display = "none";
+    }
   }
 }
 
-/***********************
- === TEMP (HUD SIM)
-************************/
-function getRoomTemperature() {
-  if (game.inventory.includes("Thermometer")) {
-    const temp = game.playerRoom === game.ghostRoom ? 3 : 18 + Math.floor(Math.random() * 5);
-    return `${temp}°C`;
-  }
-  return "??°C";
+// Display log narration
+export function logToGame(text) {
+  const log = document.getElementById("game-log");
+  if (!log) return;
+  const div = document.createElement("div");
+  div.textContent = text;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+// Update directional background image
+export function updateBackground(direction) {
+  const mainScene = document.getElementById("main-scene");
+  if (!mainScene || !game.currentRoom) return;
+  const image = `${game.currentRoom}_${direction}.png`;
+  mainScene.style.backgroundImage = `url('images/${image}')`;
+}
+
+// Render default HUD/UI after game start
+export function renderUI() {
+  updateHUD();
+  renderInventoryList();
 }
