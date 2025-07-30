@@ -88,12 +88,18 @@ export function resetGame() {
   game.monitorBooted = false;
   game.weather = null;
 }
-export {
-  game,
-  ghostProfiles,
-  roomVisuals, // ✅ Make sure this is included
-  allRooms,
-  allDirections,
-  randomFromArray,
-  resetGame
+export const roomVisuals = {
+  bathroom: "Bathroom_N.png",
+  bedroom: "Bedroom_N.png",
+  diningroom: "DiningRoom_N.png",
+  foyer: "Foyer_N.png",
+  garage: "Garage_N.png",
+  hallway: "Hallway_N.png",
+  kidsroom: "KidsRoom_N.png",
+  kitchen: "Kitchen_N.png",
+  livingroom: "LivingRoom_N.png",
+  masterbedroom: "MasterBedroom_N.png",
+  storage: "Storage_N.png",
+  utility: "Utility_N.png",
+  basement: "Basement_N.png"
 };
