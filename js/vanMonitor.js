@@ -6,7 +6,7 @@
 import { game } from "./state.js";
 import { logToGame, showNotebookUpdateBadge } from "./ui.js";
 import { ghostProfiles, roomVisuals } from "./state.js";
-import { monitor_boot } from "./audioManager.js";
+import { playMonitorBoot, } from "./audioManager.js";
 
 let vanMonitorBooted = false;
 let vanMonitorInterval = null;
