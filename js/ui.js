@@ -46,6 +46,9 @@ export function renderInventoryList() {
     list.appendChild(li);
   });
 }
+export const possibleWeather = [
+  "Clear", "Rain", "Storm", "Fog", "Windy"
+];
 
 // Update the top-left HUD panel (location, sanity, turn, temp)
 export function updateHUD() {
