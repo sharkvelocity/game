@@ -85,3 +85,6 @@ function hasCrucifixProtection() {
 function hasSmudgeActive() {
   return game.inventory.includes("Smudge Stick");
 }
+export function checkTurnEvents() {
+  advanceTurn();  // This can be expanded if needed
+}
