@@ -1,11 +1,5 @@
 // === js/audioManager.js ===
 
-
-
-export function playNotebookSound() {
-  audioCache.notebook?.play();
-}
-
 // Preloaded game audio assets
 const audioFiles = {
   monitorBoot: new Audio("audio/monitor_boot.mp3"),
@@ -29,7 +23,7 @@ const audioFiles = {
   wildDog: new Audio("audio/wildDog.mp3")
 };
 
-// Volume presets (adjust as needed)
+// Volume presets
 audioFiles.monitorBoot.volume = 1.0;
 audioFiles.notebook.volume = 0.6;
 audioFiles.radio.volume = 0.8;
@@ -41,24 +35,10 @@ audioFiles.fireplace.volume = 0.5;
 audioFiles.spiritBoxStatic.volume = 0.8;
 audioFiles.musicBox.volume = 0.8;
 
-// Loop ambience
+// Loop ambient sounds
 audioFiles.ambientCreak.loop = true;
 audioFiles.ambientWind.loop = true;
 audioFiles.fireplace.loop = true;
-
-// === General-purpose playback ===
-const audioCache = {};
-export function preloadAllAudio() {
-  for (const [key, src] of Object.entries(audioFiles)) {
-    const audio = new Audio(src);
-    audio.preload = "auto";
-    audioCache[key] = audio;
-  }
-}
-export function playGhostRadio() {
-  audioCache.ghostRadio?.play();
-}
-
 
 function safePlay(audio) {
   try {
@@ -69,7 +49,11 @@ function safePlay(audio) {
   }
 }
 
-// === Exported SFX functions ===
+// === Exported Functions ===
+
+export function preloadAllAudio() {
+  // Already preloaded above — nothing needed here unless using dynamic loading.
+}
 
 export function playNotebookSound() {
   safePlay(audioFiles.notebook);
@@ -78,9 +62,7 @@ export function playNotebookSound() {
 export function tryPlayRadioEvent(inGhostRoom, isShade) {
   if (isShade && inGhostRoom) return;
   const chance = inGhostRoom ? 0.5 : 0.05;
-  if (Math.random() < chance) {
-    safePlay(audioFiles.radio);
-  }
+  if (Math.random() < chance) safePlay(audioFiles.radio);
 }
 
 export function playMonitorBoot() {
