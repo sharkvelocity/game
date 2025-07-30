@@ -10,10 +10,7 @@ export function toggleNotebook() {
   nb.style.display = nb.style.display === "block" ? "none" : "block";
   if (nb.style.display === "block") playNotebookSound();
 }
-export function showNotebookUpdateBadge() {
-  const badge = document.getElementById("notebook-badge");
-  if (badge) badge.style.display = "inline-block";
-}
+
 // Toggle the Inventory overlay
 export function toggleInventoryOverlay() {
   const overlay = document.getElementById("inventory-overlay");
@@ -21,7 +18,10 @@ export function toggleInventoryOverlay() {
   overlay.style.display = overlay.style.display === "block" ? "none" : "block";
   if (overlay.style.display === "block") renderInventoryList();
 }
-
+export function showNotebookUpdateBadge() {
+  const badge = document.getElementById("notebook-badge");
+  if (badge) badge.style.display = "inline-block";
+}
 // Render held items inside the inventory overlay
 export function renderInventoryList() {
   const list = document.getElementById("inventory-list");
