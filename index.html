@@ -16,14 +16,12 @@
       font-family: monospace, sans-serif;
       overflow: hidden;
     }
-
     #main-ui {
       position: relative;
       width: 100%;
       height: 100%;
       z-index: 1;
     }
-
     #main-scene {
       position: absolute;
       top: 0;
@@ -34,7 +32,6 @@
       background-size: cover;
       background-position: center;
     }
-
     #fog {
       position: absolute;
       top: 0;
@@ -44,7 +41,6 @@
       z-index: 5;
       pointer-events: none;
     }
-
     #hud {
       position: absolute;
       top: 10px;
@@ -57,7 +53,6 @@
       flex-direction: column;
       gap: 8px;
     }
-
     #notebook,
     #inventory-overlay {
       position: fixed;
@@ -74,22 +69,18 @@
       overflow-y: auto;
       display: none;
     }
-
     #notebook h3,
     #inventory-overlay h3 {
       margin-top: 0;
       text-align: center;
     }
-
     #inventory-list {
       list-style: none;
       padding-left: 0;
     }
-
     #inventory-list li {
       padding: 4px 0;
     }
-
     #van-monitor {
       position: fixed;
       top: 0;
@@ -104,7 +95,6 @@
       padding: 20px;
       white-space: pre-wrap;
     }
-
     button {
       font-family: monospace;
       background: #222;
@@ -113,23 +103,19 @@
       padding: 6px 10px;
       cursor: pointer;
     }
-
     button:hover {
       background: #0f0;
       color: #000;
     }
-
     .btn-danger {
       background: #900;
       color: white;
       font-weight: bold;
     }
-
     .btn-danger:hover {
       background: #f00;
       color: white;
     }
-
     .log-box {
       position: absolute;
       bottom: 0;
@@ -145,125 +131,104 @@
   </style>
 </head>
 <body>
+  <div id="main-ui">
+    <div id="main-scene"></div>
+    <canvas id="fog"></canvas>
 
-<div id="main-ui">
-  <div id="main-scene"></div>
-  <canvas id="fog"></canvas>
+    <div id="hud">
+      <button id="start-btn">Start Game</button>
+      <button id="notebook-btn">Open Notebook</button>
+      <button id="inventory-btn">Check Inventory</button>
+      <button id="reset-btn" class="btn-danger">Reset Investigation</button>
+      <div id="hud-location"></div>
+      <div id="hud-turn"></div>
+      <div id="hud-sanity"></div>
+      <div id="hud-temp" style="display:none;"></div>
+    </div>
 
-  <div id="hud">
-    <button id="start-btn">Start Game</button>
-    <button id="notebook-btn">Open Notebook</button>
-    <button id="inventory-btn">Check Inventory</button>
-    <button id="reset-btn" class="btn-danger">Reset Investigation</button>
-    <div id="hud-location"></div>
-    <div id="hud-turn"></div>
-    <div id="hud-sanity"></div>
-    <div id="hud-temp" style="display:none;"></div>
+    <div id="command-buttons" style="display: none;">
+      <button data-cmd="move">Move</button>
+      <button data-cmd="look">Look Around</button>
+      <button data-cmd="inventory">Check Inventory</button>
+      <button data-cmd="guess">Ghost Guess</button>
+      <button data-cmd="van">Return to Van</button>
+    </div>
+
+    <div id="notebook">
+      <h3>Evidence Notebook</h3>
+      <ul id="notebook-entries"></ul>
+    </div>
+
+    <div id="inventory-overlay">
+      <h3>Held Items</h3>
+      <ul id="inventory-list"></ul>
+    </div>
+
+    <div id="game-log" class="log-box"></div>
   </div>
-<div id="command-buttons" style="display: none;">
-  <button data-cmd="move">Move</button>
-  <button data-cmd="look">Look Around</button>
-  <button data-cmd="inventory">Check Inventory</button>
-  <button data-cmd="guess">Ghost Guess</button>
-  <button data-cmd="van">Return to Van</button>
-</div>
 
-  <div id="notebook">
-    <h3>Evidence Notebook</h3>
-    <ul id="notebook-entries">
-      <!-- Evidence entries will be populated dynamically -->
-    </ul>
-  </div>
+  <script type="module">
+    import { startInvestigation, confirmLoadout } from './js/main.js';
+    import { showLoadout } from './js/ui.js';
+    import { resetGame } from './js/state.js';
 
-  <div id="inventory-overlay">
-    <h3>Held Items</h3>
-    <ul id="inventory-list"></ul>
-  </div>
-
-  <div id="game-log" class="log-box"></div>
-</div>
-  <script>
-   // === CONFIRM LOADOUT ===
-    const confirmBtn = document.getElementById('confirm-loadout');
-    if (confirmBtn) {
-      confirmBtn.addEventListener('click', () => {
-        const confirmEvent = new CustomEvent('confirm-loadout');
-        document.dispatchEvent(confirmEvent);
-      });
-    }
-
-    // === COMMAND BUTTONS (Move, Look, Inventory, etc.) ===
-    const cmdWrap = document.getElementById('command-buttons');
-    if (cmdWrap) {
-      cmdWrap.addEventListener('click', (e) => {
-        const btn = e.target.closest('button[data-cmd]');
-        if (!btn) return;
-        const cmd = btn.dataset.cmd;
-        if (!cmd) return;
-        const cmdEvent = new CustomEvent('ui-command', {
-          detail: cmd
+    document.addEventListener('DOMContentLoaded', () => {
+      const startBtn = document.getElementById('start-btn');
+      if (startBtn) {
+        startBtn.addEventListener('click', () => {
+          const title = document.getElementById('title-screen');
+          const loadout = document.getElementById('loadout-screen');
+          if (title) title.style.display = 'none';
+          if (loadout) loadout.style.display = 'flex';
+          showLoadout();
         });
-        document.dispatchEvent(cmdEvent);
-      });
-    }
+      }
 
-    // === CLEAR SAVE BUTTON (Debug/Test) ===
-    const resetBtn = document.getElementById('reset-save');
-    if (resetBtn) {
-      resetBtn.addEventListener('click', () => {
-        if (window.clearGameSave) window.clearGameSave();
-      });
-    }
-  });
+      const confirmBtn = document.getElementById('confirm-loadout');
+      if (confirmBtn) {
+        confirmBtn.addEventListener('click', () => {
+          const confirmEvent = new CustomEvent('confirm-loadout');
+          document.dispatchEvent(confirmEvent);
+        });
+      }
 
-  // === Loadout Confirm Trigger Integration ===
-  document.addEventListener('confirm-loadout', () => {
-    import('./main.js').then(mod => {
-      mod.default?.confirmLoadout?.(); // Optional fallback
-      setTimeout(() => {
-        mod.startInvestigation?.(true);
-      }, 100);
+      const resetBtn = document.getElementById("reset-btn");
+      if (resetBtn) {
+        resetBtn.addEventListener("click", () => {
+          if (confirm("Are you sure you want to reset everything?")) {
+            localStorage.clear();
+            sessionStorage.clear();
+            resetGame();
+            location.reload();
+          }
+        });
+      }
+
+      const cmdWrap = document.getElementById("command-buttons");
+      if (cmdWrap) {
+        cmdWrap.addEventListener("click", (e) => {
+          const btn = e.target.closest("button[data-cmd]");
+          if (!btn) return;
+          const cmdEvent = new CustomEvent("ui-command", { detail: btn.dataset.cmd });
+          document.dispatchEvent(cmdEvent);
+        });
+      }
+
+      document.addEventListener('confirm-loadout', () => {
+        confirmLoadout?.();
+        setTimeout(() => startInvestigation?.(true), 100);
+      });
     });
-  });
-  
-  import { resetGame } from './js/state.js';
+  </script>
 
-  document.getElementById("reset-btn").addEventListener("click", () => {
-    if (confirm("Are you sure you want to reset everything?")) {
-      localStorage.clear();
-      sessionStorage.clear();
-      if (typeof resetGame === "function") resetGame();
-      location.reload();
-    }
-  });
-</script>
-<script type="module">
-  import { startInvestigation } from 'js/main.js';
-  import { showLoadout } from 'js/ui.js';
-</script>
-  <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    // === START BUTTON (Title Screen) ===
-    const startBtn = document.getElementById('startButton');
-    if (startBtn) {
-      startBtn.addEventListener('click', () => {
-        document.getElementById('title-screen').style.display = 'none';
-        document.getElementById('loadout-screen').style.display = 'flex';
-        showLoadout();
-      });
-    }
-    </script>
-   
-
-<script type="module" src="js/state.js"></script>
-<script type="module" src="js/audioManager.js"></script>
-<script type="module" src="js/ui.js"></script>
-<script type="module" src="js/items.js"></script>
-<script type="module" src="js/events.js"></script>
-<script type="module" src="js/ghostBehavior.js"></script>
-<script type="module" src="js/fog.js"></script>
-<script type="module" src="js/vanMonitor.js"></script>
-<script type="module" src="js/main.js"></script>
-
+  <script type="module" src="js/state.js"></script>
+  <script type="module" src="js/audioManager.js"></script>
+  <script type="module" src="js/ui.js"></script>
+  <script type="module" src="js/items.js"></script>
+  <script type="module" src="js/events.js"></script>
+  <script type="module" src="js/ghostBehavior.js"></script>
+  <script type="module" src="js/fog.js"></script>
+  <script type="module" src="js/vanMonitor.js"></script>
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>
