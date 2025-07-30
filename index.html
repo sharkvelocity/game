@@ -16,28 +16,16 @@
       font-family: monospace, sans-serif;
       overflow: hidden;
     }
-    #title-screen, #loadout-screen {
-      position: fixed;
-      top: 0;
-      left: 0;
+
+    #main-ui {
+      position: relative;
       width: 100%;
       height: 100%;
-      background: #000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
+      z-index: 1;
     }
-    #loadout-screen {
-      display: none;
-      flex-direction: column;
-      gap: 12px;
-      align-items: center;
-    }
-    #main-ui, #main-scene, #fog, #notebook, #inventory-overlay, #van-monitor, #game-log {
+
+    #main-scene {
       position: absolute;
-    }
-    #main-scene, #fog {
       top: 0;
       left: 0;
       width: 100%;
@@ -46,32 +34,33 @@
       background-size: cover;
       background-position: center;
     }
-    #main-ui {
+
+    #fog {
+      position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      z-index: 1;
+      z-index: 5;
+      pointer-events: none;
     }
+
     #hud {
       position: absolute;
       top: 10px;
       left: 10px;
-      background: rgba(0,0,0,0.75);
-      padding: 12px;
       z-index: 100;
+      background: rgba(0, 0, 0, 0.75);
+      padding: 12px;
+      border: 1px solid #444;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
     }
-    #command-buttons {
-      position: absolute;
-      bottom: 10px;
-      left: 10px;
-      z-index: 100;
-      display: none;
-    }
-    #notebook, #inventory-overlay {
+
+    #notebook,
+    #inventory-overlay {
+      position: fixed;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
@@ -80,19 +69,67 @@
       padding: 16px;
       border: 2px solid #0f0;
       z-index: 5000;
+      min-width: 240px;
+      max-height: 60vh;
+      overflow-y: auto;
       display: none;
     }
+
+    #notebook h3,
+    #inventory-overlay h3 {
+      margin-top: 0;
+      text-align: center;
+    }
+
+    #inventory-list {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    #inventory-list li {
+      padding: 4px 0;
+    }
+
     #van-monitor {
+      position: fixed;
       top: 0;
       left: 0;
       width: 100vw;
       height: 100vh;
       background: #000;
       color: #0f0;
+      font-family: monospace;
       font-size: 16px;
       z-index: 9999;
-      display: none;
+      padding: 20px;
+      white-space: pre-wrap;
     }
+
+    button {
+      font-family: monospace;
+      background: #222;
+      color: #0f0;
+      border: 1px solid #0f0;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #0f0;
+      color: #000;
+    }
+
+    .btn-danger {
+      background: #900;
+      color: white;
+      font-weight: bold;
+    }
+
+    .btn-danger:hover {
+      background: #f00;
+      color: white;
+    }
+
     .log-box {
       position: absolute;
       bottom: 0;
@@ -105,119 +142,85 @@
       z-index: 200;
       font-size: 14px;
     }
-    button {
-      font-family: monospace;
-      background: #222;
-      color: #0f0;
-      border: 1px solid #0f0;
-      padding: 6px 10px;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #0f0;
-      color: #000;
-    }
-    .btn-danger {
-      background: #900;
-      color: white;
-      font-weight: bold;
-    }
-    .btn-danger:hover {
-      background: #f00;
-    }
   </style>
 </head>
 <body>
-  <div id="title-screen">
-    <button id="startButton">Start New Investigation</button>
+<div id="title-screen" style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:10000;background:black;color:white;display:flex;justify-content:center;align-items:center;flex-direction:column;">
+  <h1>Phasma‑Phoney</h1>
+  <button id="start-btn">Start Game</button>
+</div>
+<div id="main-ui" style="display:none;">
+  <div id="main-scene"></div>
+  <canvas id="fog"></canvas>
+
+  <div id="hud">
+    <button id="notebook-btn">Open Notebook</button>
+    <button id="inventory-btn">Check Inventory</button>
+    <button id="reset-btn" class="btn-danger">Reset Investigation</button>
+    <div id="hud-location"></div>
+    <div id="hud-turn"></div>
+    <div id="hud-sanity"></div>
+    <div id="hud-temp" style="display:none;"></div>
   </div>
-  <div id="loadout-screen">
-    <h3>Choose Your Loadout</h3>
-    <button id="confirm-loadout">Confirm Loadout</button>
+  <div id="command-buttons" style="display:none;">
+    <button data-cmd="move">Move</button>
+    <button data-cmd="look">Look Around</button>
+    <button data-cmd="inventory">Check Inventory</button>
+    <button data-cmd="guess">Ghost Guess</button>
+    <button data-cmd="van">Return to Van</button>
   </div>
-  <div id="main-ui">
-    <div id="main-scene"></div>
-    <canvas id="fog"></canvas>
-    <div id="hud">
-      <button id="notebook-btn">Open Notebook</button>
-      <button id="inventory-btn">Check Inventory</button>
-      <button id="reset-btn" class="btn-danger">Reset Investigation</button>
-      <div id="hud-location"></div>
-      <div id="hud-turn"></div>
-      <div id="hud-sanity"></div>
-      <div id="hud-temp" style="display:none;"></div>
-    </div>
-    <div id="command-buttons">
-      <button data-cmd="move">Move</button>
-      <button data-cmd="look">Look Around</button>
-      <button data-cmd="inventory">Check Inventory</button>
-      <button data-cmd="guess">Ghost Guess</button>
-      <button data-cmd="van">Return to Van</button>
-    </div>
-    <div id="notebook">
-      <h3>Evidence Notebook</h3>
-      <ul id="notebook-entries"></ul>
-    </div>
-    <div id="inventory-overlay">
-      <h3>Held Items</h3>
-      <ul id="inventory-list"></ul>
-    </div>
-    <div id="van-monitor"></div>
-    <div id="game-log" class="log-box"></div>
+
+  <div id="notebook">
+    <h3>Evidence Notebook</h3>
+    <ul id="notebook-entries"></ul>
   </div>
-  <script type="module">
-    import { startInvestigation } from './js/main.js';
-    import { showLoadout } from './js/ui.js';
-    import { resetGame } from './js/state.js';
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const startBtn = document.getElementById('startButton');
-      const confirmBtn = document.getElementById('confirm-loadout');
+  <div id="inventory-overlay">
+    <h3>Held Items</h3>
+    <ul id="inventory-list"></ul>
+  </div>
 
-      if (startBtn) {
-        startBtn.addEventListener('click', () => {
-          document.getElementById('title-screen').style.display = 'none';
-          document.getElementById('loadout-screen').style.display = 'flex';
-          showLoadout();
-        });
-      }
+  <div id="game-log" class="log-box"></div>
+</div>
+<script type="module">
+  import { startInvestigation } from './js/main.js';
+  import { showLoadout } from './js/ui.js';
 
-      if (confirmBtn) {
-        confirmBtn.addEventListener('click', () => {
-          const confirmEvent = new CustomEvent('confirm-loadout');
-          document.dispatchEvent(confirmEvent);
-        });
-      }
-
-      const resetBtn = document.getElementById('reset-btn');
-      if (resetBtn) {
-        resetBtn.addEventListener('click', () => {
-          if (confirm("Reset all progress?")) {
-            localStorage.clear();
-            sessionStorage.clear();
-            resetGame();
-            location.reload();
-          }
-        });
-      }
-
-      const cmdWrap = document.getElementById('command-buttons');
-      if (cmdWrap) {
-        cmdWrap.addEventListener('click', (e) => {
-          const btn = e.target.closest('button[data-cmd]');
-          if (!btn) return;
-          const cmd = btn.dataset.cmd;
-          document.dispatchEvent(new CustomEvent('ui-command', { detail: cmd }));
-        });
-      }
-
-      document.addEventListener('confirm-loadout', () => {
-        import('./js/main.js').then(mod => {
-          mod.default?.confirmLoadout?.();
-          setTimeout(() => mod.startInvestigation?.(true), 100);
-        });
-      });
+  document.addEventListener('DOMContentLoaded', () => {
+    const startBtn = document.getElementById('start-btn');
+    startBtn?.addEventListener('click', () => {
+      document.getElementById('title-screen').style.display = 'none';
+      document.getElementById('main-ui').style.display = 'block';
+      startInvestigation(true);
     });
-  </script>
+
+    document.getElementById('notebook-btn')?.addEventListener('click', () => {
+      const n = document.getElementById('notebook');
+      if (n) n.style.display = n.style.display === 'none' ? 'block' : 'none';
+    });
+
+    document.getElementById('inventory-btn')?.addEventListener('click', () => {
+      const i = document.getElementById('inventory-overlay');
+      if (i) i.style.display = i.style.display === 'none' ? 'block' : 'none';
+    });
+
+    document.getElementById('reset-btn')?.addEventListener('click', () => {
+      if (confirm("Reset the investigation?")) {
+        localStorage.clear();
+        sessionStorage.clear();
+        location.reload();
+      }
+    });
+  });
+</script>
+<script type="module" src="./js/state.js"></script>
+<script type="module" src="./js/audioManager.js"></script>
+<script type="module" src="./js/ui.js"></script>
+<script type="module" src="./js/items.js"></script>
+<script type="module" src="./js/events.js"></script>
+<script type="module" src="./js/ghostBehavior.js"></script>
+<script type="module" src="./js/fog.js"></script>
+<script type="module" src="./js/vanMonitor.js"></script>
+<script type="module" src="./js/main.js"></script>
 </body>
 </html>
