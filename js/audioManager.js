@@ -1,28 +1,9 @@
 // === js/audioManager.js ===
-// === js/audioManager.js ===
 
-const audioFiles = {
-  notebook: "audio/Notebook.mp3",
-  ghostRadio: "audio/Radio.mp3",
-  // add more if needed
-};
 
-const audioCache = {};
-
-export function preloadAllAudio() {
-  for (const [key, src] of Object.entries(audioFiles)) {
-    const audio = new Audio(src);
-    audio.preload = "auto";
-    audioCache[key] = audio;
-  }
-}
 
 export function playNotebookSound() {
   audioCache.notebook?.play();
-}
-
-export function playGhostRadio() {
-  audioCache.ghostRadio?.play();
 }
 
 // Preloaded game audio assets
@@ -66,6 +47,18 @@ audioFiles.ambientWind.loop = true;
 audioFiles.fireplace.loop = true;
 
 // === General-purpose playback ===
+const audioCache = {};
+export function preloadAllAudio() {
+  for (const [key, src] of Object.entries(audioFiles)) {
+    const audio = new Audio(src);
+    audio.preload = "auto";
+    audioCache[key] = audio;
+  }
+}
+export function playGhostRadio() {
+  audioCache.ghostRadio?.play();
+}
+
 
 function safePlay(audio) {
   try {
