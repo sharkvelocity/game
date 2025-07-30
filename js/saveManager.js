@@ -1,51 +1,45 @@
-/*****************************************************
- * === PHASMA-PHONEY v2.9 — SAVE MANAGER (FINAL) ===
- * Saves & loads full game state, including notebook.
- *****************************************************/
-import { game, gameSettings, resetGame as stateReset } from "./state.js";
-import { logToGame, renderHUD, updateBackground } from "./ui.js";
-import { startInvestigation } from "./main.js";
+// === js/saveManager.js ===
 
-export function saveGame(showIndicator = false) {
-  if (!gameSettings.autosave) return;
+import { game } from './state.js';
+
+const saveKey = "phasmaPhoneySave";
+
+export function saveGame() {
   try {
-    const saveData = { ...game, selectedEvidence: Array.from(game.selectedEvidence), settings: { ...gameSettings } };
-    localStorage.setItem("phasmaPhoneySave", JSON.stringify(saveData));
-    if (showIndicator) console.log("Game saved!");
+    const data = {
+      ghost: game.ghost,
+      ghostRoom: game.ghostRoom,
+      currentRoom: game.currentRoom,
+      inventory: [...game.inventory],
+      sanity: game.sanity,
+      turn: game.turn,
+      weather: game.weather
+    };
+    localStorage.setItem(saveKey, JSON.stringify(data));
+    console.log("✅ Game saved.");
   } catch (e) {
-    console.error("Save failed:", e);
+    console.warn("❌ Failed to save game:", e);
   }
 }
 
 export function loadGame() {
-  const data = localStorage.getItem("phasmaPhoneySave");
-  if (!data) {
-    logToGame("⚠ No save found.");
-    return;
-  }
   try {
-    const s = JSON.parse(data);
-    Object.assign(game, s);
-    game.selectedEvidence = new Set(s.selectedEvidence || []);
-    if (s.settings) Object.assign(gameSettings, s.settings);
+    const data = JSON.parse(localStorage.getItem(saveKey));
+    if (!data) {
+      console.warn("⚠️ No save data found.");
+      return;
+    }
 
-    document.getElementById("title-screen").style.display = "none";
-    document.getElementById("main-scene").style.display = "block";
-    document.getElementById("narrator-ui").style.display = "flex";
+    game.ghost = data.ghost;
+    game.ghostRoom = data.ghostRoom;
+    game.currentRoom = data.currentRoom;
+    game.inventory = data.inventory || [];
+    game.sanity = data.sanity;
+    game.turn = data.turn;
+    game.weather = data.weather;
 
-    renderHUD();
-    updateBackground();
-    saveGame();
-    logToGame("📂 Game loaded.");
+    console.log("✅ Game loaded.");
   } catch (e) {
-    console.error("Load failed:", e);
-    clearSave();
-    stateReset();
-    startInvestigation(false);
+    console.warn("❌ Failed to load game:", e);
   }
-}
-
-export function clearSave() {
-  localStorage.removeItem("phasmaPhoneySave");
-  logToGame("🗑️ Save data cleared.");
 }
