@@ -29,6 +29,17 @@ export function renderHUD() {
       : "<em>None</em>";
   }
 }
+/***********************
+ === GAME LOGGER EXPORT
+************************/
+export function logToGame(message) {
+  const logBox = document.getElementById("game-log");
+  if (!logBox) return;
+  const line = document.createElement("div");
+  line.textContent = message;
+  logBox.appendChild(line);
+  logBox.scrollTop = logBox.scrollHeight;
+}
 
 /***********************
  === INVENTORY OVERLAY
