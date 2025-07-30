@@ -10,7 +10,10 @@ export function toggleNotebook() {
   nb.style.display = nb.style.display === "block" ? "none" : "block";
   if (nb.style.display === "block") playNotebookSound();
 }
-
+export function showNotebookUpdateBadge() {
+  const badge = document.getElementById("notebook-badge");
+  if (badge) badge.style.display = "inline-block";
+}
 // Toggle the Inventory overlay
 export function toggleInventoryOverlay() {
   const overlay = document.getElementById("inventory-overlay");
