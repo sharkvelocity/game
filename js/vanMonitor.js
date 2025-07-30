@@ -47,7 +47,7 @@ export function closeVanMonitor() {
     vanMonitorInterval = null;
   }
 }
-import { showNotebookUpdateBadge } from './ui.js';
+
 
 /***********************
  === BOOT SEQUENCE ===
