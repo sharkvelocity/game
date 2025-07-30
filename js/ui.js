@@ -143,3 +143,24 @@ export function logToGame(text) {
 export const possibleWeather = [
   "Clear", "Rain", "Storm", "Fog", "Windy"
 ];
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("start-btn")?.addEventListener("click", () => {
+    console.log("Start Game clicked");
+    startGame();
+  });
+
+  document.getElementById("notebook-btn")?.addEventListener("click", () => {
+    console.log("Notebook toggled");
+    toggleNotebook();
+  });
+
+  document.getElementById("inventory-btn")?.addEventListener("click", () => {
+    console.log("Inventory toggled");
+    toggleInventoryOverlay();
+  });
+
+  document.getElementById("reset-btn")?.addEventListener("click", () => {
+    console.log("Reset clicked");
+    location.reload();
+  });
+});
