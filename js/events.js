@@ -1,106 +1,87 @@
-/*****************************************************
- * === PHASMA-PHONEY v2.9 — EVENTS (FINAL MASTER) ===
- * Turn events, mimic shifts, hunts & cursed item discovery.
- *****************************************************/
-import { game, randomFromArray, cursedItems, ghostProfiles } from "./state.js";
+// === js/events.js ===
+
+import { game } from './state.js';
+import { ghostBehaviorTurn } from './ghostBehavior.js';
 import {
-  logToGame, updateSanityBar, updateHeldItemsNotebook,
-  updateNearbyItemsNotebook, showNotebookUpdateBadge
-} from "./ui.js";
-import { playAudio } from "./audioManager.js";
-import { startHunt, assignMimicForm } from "./ghostBehavior.js";
+  playHuntStart,
+  playHuntHeartbeat,
+  playGameKilled,
+  playSpiritBoxStatic,
+  playDoorCreakRandom,
+  playDoorSlam,
+  playCrucifixBurn,
+  playWildDog
+} from './audioManager.js';
 
-/***********************
- === TURN ADVANCEMENT ===
-************************/
+// === TURN PROGRESSION ===
+
 export function advanceTurn() {
-  game.currentTurn++;
+  game.turn++;
 
-  // ✅ Mimic Behavior Shift
-  if (game.ghost === "TheMimic" && game.currentTurn >= game.nextMimicShift) {
-    assignMimicForm();
-  }
+  // Random sanity drain
+  const sanityLoss = Math.floor(Math.random() * 5) + 3; // 3–7
+  game.sanity = Math.max(0, game.sanity - sanityLoss);
 
-  // ✅ Sanity Drain
-  if (game.playerRoom === game.ghostRoom) {
-    game.sanity -= 3 + Math.random() * 3;
-  } else {
-    game.sanity -= 1;
-  }
-  game.sanity = Math.max(0, game.sanity);
-  updateSanityBar();
+  // Random ambient cue
+  randomAmbientEvent();
 
-  // ✅ Ambient Ghost Cues
-  if (game.playerRoom === game.ghostRoom && Math.random() < 0.3) {
-    const ghost = game.ghost === "TheMimic" ? game.mimicForm : game.ghost;
-    const behaviorHint = ghostProfiles[ghost]?.behavior || "The air feels heavy...";
-    logToGame(`[Ambient] ${behaviorHint}`);
-    if (Math.random() < 0.4) playAudio("audio/doorCreak1.mp3");
-  }
-
-  // ✅ Ambient Environmental Sounds
-  if (Math.random() < 0.25) {
-    const ambient = [
-      "audio/ambient_house_creak.mp3",
-      "audio/ambient_wind.mp3",
-      "audio/doorCreak2.mp3",
-      "audio/doorCreak3.mp3"
-    ];
-    playAudio(randomFromArray(ambient));
-  }
-
-  updateHeldItemsNotebook();
-  updateNearbyItemsNotebook();
-  showNotebookUpdateBadge();
-
-  // ✅ Hunt Attempt
-  attemptHunt();
+  // Ghost behavior and possible hunt
+  ghostBehaviorTurn();
 }
 
-/***********************
- === HUNT ATTEMPTS ===
-************************/
-export function attemptHunt() {
-  if (game.smudgeActive > 0) {
-    game.smudgeActive--;
-    return;
-  }
-  if (game.huntCooldown > 0) {
-    game.huntCooldown--;
-    return;
-  }
-  if (game.sanity < 30 && Math.random() < 0.25) {
-    logToGame("💀 The ghost is starting a hunt!");
-    startHunt();
+// === AMBIENT EVENTS ===
+
+function randomAmbientEvent() {
+  const inGhostRoom = game.currentRoom === game.ghostRoom;
+
+  const roll = Math.random();
+  if (roll < 0.2) {
+    playSpiritBoxStatic();
+  } else if (roll < 0.35) {
+    playDoorCreakRandom();
+  } else if (roll < 0.45 && inGhostRoom) {
+    playDoorSlam();
+  } else if (roll < 0.5) {
+    playWildDog();
   }
 }
 
-/***********************
- === CURSED ITEM DISCOVERY ===
-************************/
-export function discoverCursedItemsInRoom(roomName = game.playerRoom) {
-  if (!game.roomItems[roomName]) game.roomItems[roomName] = [];
-  const undiscovered = Object.keys(cursedItems)
-    .filter(ci => !game.roomItems[roomName].includes(ci));
-  if (undiscovered.length === 0) {
-    logToGame("You search but find nothing unusual.");
+// === HUNT RESPONSE ===
+
+export function triggerHuntEvent() {
+  // Play hunt audio
+  playHuntStart();
+  setTimeout(() => playHuntHeartbeat(), 800);
+
+  // Check for defensive items
+  if (hasCrucifixProtection()) {
+    playCrucifixBurn();
     return;
   }
-  if (Math.random() < 0.3) {
-    const foundItem = randomFromArray(undiscovered);
-    game.roomItems[roomName].push(foundItem);
-    logToGame(`You found a cursed item: ${foundItem}!`);
-    game.nearbyItems = [...(game.roomItems[game.playerRoom] || [])];
-    updateNearbyItemsNotebook();
-    showNotebookUpdateBadge();
-  } else {
-    logToGame("You search but find nothing unusual.");
+
+  if (hasSmudgeActive()) {
+    // Smudge active: disable hunt this turn
+    return;
   }
+
+  killPlayer();
 }
 
-/***********************
- ✅ CHECK TURN EVENTS
-************************/
-export function checkTurnEvents() {
-  advanceTurn();
+// === DEATH ===
+
+function killPlayer() {
+  playGameKilled();
+  // This can be replaced with visual red screen flash or blackout
+  alert("You were killed by the ghost. Game over.");
+  // TODO: Add return to title logic here if not already handled
+}
+
+// === DEFENSES ===
+
+function hasCrucifixProtection() {
+  return game.inventory.includes("Crucifix");
+}
+
+function hasSmudgeActive() {
+  return game.inventory.includes("Smudge Stick");
 }
