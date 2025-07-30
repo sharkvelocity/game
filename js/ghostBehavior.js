@@ -1,77 +1,99 @@
-/*****************************************************
- * === PHASMA-PHONEY v2.9 — GHOSTBEHAVIOR.JS (FINAL MP3) ===
- * Mimic logic, hunt system & death synced with audio.
- *****************************************************/
-import { game, ghostProfiles, randomFromArray } from "./state.js";
-import { logToGame } from "./ui.js";
-import { playAudio, stopAllSounds, stopLoopAudio } from "./audioManager.js";
+// === js/ghostBehavior.js ===
 
-/***********************
- === MIMIC LOGIC
-************************/
-export function assignMimicForm() {
-  const ghostList = Object.keys(ghostProfiles).filter(g => g !== "TheMimic");
-  game.mimicForm = randomFromArray(ghostList);
-  game.nextMimicShift = game.currentTurn + 3 + Math.floor(Math.random() * 4);
-  logToGame("The Mimic shifts its behavior...");
-}
+import { game, ghostProfiles, allRooms, randomFromArray } from './state.js';
+import { tryPlayRadioEvent, playHuntStart, playHuntHeartbeat } from './audioManager.js';
 
-/***********************
- === HUNT SYSTEM
-************************/
-export function attemptHunt() {
-  if (game.smudgeActive > 0) {
-    game.smudgeActive--;
-    return;
-  }
-  if (game.huntCooldown > 0) {
-    game.huntCooldown--;
-    return;
-  }
-  if (game.sanity < 30 && Math.random() < 0.25) {
-    startHunt();
-  }
-}
+let mimicTimer = 0;
+let mimicTarget = null;
+let yureiSmudgeLock = 0;
+let huntCooldown = 0;
 
-export function startHunt() {
-  logToGame("💀 The ghost is hunting!");
-  playAudio("audio/hunt_start_rumble.mp3");
-  setTimeout(() => playAudio("audio/hunt_start_rumble_heartbeat.mp3", true, 0.7), 2000);
+// Called every turn
+export function ghostBehaviorTurn() {
+  if (!game.ghost) return;
 
-  if (game.playerRoom === game.ghostRoom) {
-    if (game.placedCrucifix && game.placedCrucifix[game.playerRoom] > 0) {
-      game.placedCrucifix[game.playerRoom]--;
-      logToGame(
-        game.placedCrucifix[game.playerRoom] === 0
-          ? "The crucifix has burned away completely."
-          : `The crucifix burns, stopping the hunt. (${game.placedCrucifix[game.playerRoom]} uses left)`
-      );
-      if (game.placedCrucifix[game.playerRoom] === 0) delete game.placedCrucifix[game.playerRoom];
-      playAudio("audio/crucifix_burn.mp3");
-      setTimeout(() => stopLoopAudio("audio/hunt_start_rumble_heartbeat.mp3"), 500);
+  const ghostName = game.ghost.name;
+
+  // Handle mimic mimicry
+  if (ghostName === "The Mimic") {
+    if (mimicTimer <= 0 || !mimicTarget) {
+      mimicTarget = randomFromArray(ghostProfiles.filter(g => g.name !== "The Mimic"));
+      mimicTimer = Math.floor(Math.random() * 4) + 3; // 3–6 turns
     } else {
-      setTimeout(playerDeath, 3000);
+      mimicTimer--;
     }
-  } else {
-    logToGame("You survived the hunt...");
-    setTimeout(() => stopLoopAudio("audio/hunt_start_rumble_heartbeat.mp3"), 2000);
   }
 
-  const aggressive = ["Demon", "Oni", "Raiju", "Moroi"];
-  game.huntCooldown = aggressive.includes(game.ghost)
-    ? 3 + Math.floor(Math.random() * 2)
-    : 5 + Math.floor(Math.random() * 3);
+  // Handle ghost room changes unless fixed
+  if (huntCooldown > 0) huntCooldown--;
+  if (ghostName !== "Goryo") {
+    if (ghostName === "Yurei" && yureiSmudgeLock > 0) {
+      yureiSmudgeLock--;
+    } else if (Math.random() < 0.25) {
+      game.ghostRoom = randomFromArray(allRooms.filter(r => r !== game.ghostRoom));
+    }
+  }
+
+  // Ghost interaction
+  ghostInteraction();
+
+  // Attempt hunt
+  if (game.sanity <= 20 && huntCooldown === 0) {
+    attemptHunt();
+  }
 }
 
-/***********************
- === PLAYER DEATH
-************************/
-export function playerDeath() {
-  logToGame("💀 The ghost finds you. Everything goes cold...");
-  playAudio("audio/gameKilled.mp3");
-  setTimeout(() => stopAllSounds(), 300);
-  setTimeout(() => {
-    alert("You died.");
-    window.location.reload();
-  }, 1200);
+export function ghostInteraction() {
+  const isShade = getCurrentGhostName() === "Shade";
+  const inGhostRoom = game.currentRoom === game.ghostRoom;
+
+  tryPlayRadioEvent(inGhostRoom, isShade);
+}
+
+// Get active ghost name (Mimic-aware)
+function getCurrentGhostName() {
+  return game.ghost.name === "The Mimic" && mimicTarget
+    ? mimicTarget.name
+    : game.ghost.name;
+}
+
+// Get active evidence (Mimic-aware)
+export function getCurrentGhostEvidence() {
+  return game.ghost.name === "The Mimic" && mimicTarget
+    ? game.ghost.evidence // Still uses Mimic's actual evidence
+    : game.ghost.evidence;
+}
+
+// === HUNT LOGIC ===
+function attemptHunt() {
+  const name = getCurrentGhostName();
+  const aggressiveGhosts = ["Demon", "Oni", "Thaye", "Deogen", "Raiju", "Moroi", "Revenant", "Succubus"];
+  const passiveGhosts = ["Shade", "Goryo", "Yokai"];
+
+  let baseChance = 0.3;
+
+  if (aggressiveGhosts.includes(name)) {
+    baseChance += 0.25;
+  }
+  if (passiveGhosts.includes(name)) {
+    baseChance -= 0.15;
+  }
+
+  if (Math.random() < baseChance) {
+    triggerHunt();
+  }
+}
+
+function triggerHunt() {
+  playHuntStart();
+  setTimeout(() => playHuntHeartbeat(), 800);
+  huntCooldown = 4; // prevent immediate re-hunt
+  // The rest of the hunt (smudge, crucifix, death) handled in events.js or a huntManager
+}
+
+// External hook to apply Yurei smudge behavior
+export function applyYureiSmudge() {
+  if (game.ghost.name === "Yurei") {
+    yureiSmudgeLock = 5;
+  }
 }
