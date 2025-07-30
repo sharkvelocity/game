@@ -175,9 +175,64 @@
 
   <div id="game-log" class="log-box"></div>
 </div>
-
-<!-- JS Modules -->
 <script type="module">
+  import { startInvestigation } from './main.js';
+  import { showLoadout } from './ui.js';
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // === START BUTTON (Title Screen) ===
+    const startBtn = document.getElementById('startButton');
+    if (startBtn) {
+      startBtn.addEventListener('click', () => {
+        document.getElementById('title-screen').style.display = 'none';
+        document.getElementById('loadout-screen').style.display = 'flex';
+        showLoadout();
+      });
+    }
+
+    // === CONFIRM LOADOUT ===
+    const confirmBtn = document.getElementById('confirm-loadout');
+    if (confirmBtn) {
+      confirmBtn.addEventListener('click', () => {
+        const confirmEvent = new CustomEvent('confirm-loadout');
+        document.dispatchEvent(confirmEvent);
+      });
+    }
+
+    // === COMMAND BUTTONS (Move, Look, Inventory, etc.) ===
+    const cmdWrap = document.getElementById('command-buttons');
+    if (cmdWrap) {
+      cmdWrap.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-cmd]');
+        if (!btn) return;
+        const cmd = btn.dataset.cmd;
+        if (!cmd) return;
+        const cmdEvent = new CustomEvent('ui-command', {
+          detail: cmd
+        });
+        document.dispatchEvent(cmdEvent);
+      });
+    }
+
+    // === CLEAR SAVE BUTTON (Debug/Test) ===
+    const resetBtn = document.getElementById('reset-save');
+    if (resetBtn) {
+      resetBtn.addEventListener('click', () => {
+        if (window.clearGameSave) window.clearGameSave();
+      });
+    }
+  });
+
+  // === Loadout Confirm Trigger Integration ===
+  document.addEventListener('confirm-loadout', () => {
+    import('./main.js').then(mod => {
+      mod.default?.confirmLoadout?.(); // Optional fallback
+      setTimeout(() => {
+        mod.startInvestigation?.(true);
+      }, 100);
+    });
+  });
+  
   import { resetGame } from './js/state.js';
 
   document.getElementById("reset-btn").addEventListener("click", () => {
