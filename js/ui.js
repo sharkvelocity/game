@@ -5,7 +5,6 @@
  *****************************************************/
 import { game, gameSettings } from "./state.js";
 import { useItem } from "./items.js";
-import { logToGame } from "./events.js";
 
 /***********************
  === RENDER HUD
