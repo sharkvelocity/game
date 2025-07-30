@@ -45,6 +45,12 @@ export const ghostProfiles = [
   { name: "Thaye", evidence: ["Ghost Orb", "Ghost Writing", "D.O.T.S Projector"] },
   { name: "Succubus", evidence: ["Spirit Box", "Ghost Orb", "Ghost Writing"] }
 ];
+export const gameSettings = {
+  difficulty: "normal",
+  allowHints: true,
+  enableVoice: true,
+  showAmbientNarration: true
+};
 
 export function initGame() {
   assignRandomGhost();
