@@ -39,12 +39,13 @@ export const ghostProfiles = [
   { name: "The Twins", evidence: ["EMF 5", "Spirit Box", "Freezing Temps"] },
   { name: "Raiju", evidence: ["EMF 5", "Ghost Orb", "D.O.T.S Projector"] },
   { name: "Obake", evidence: ["EMF 5", "Fingerprints", "Ghost Orb"] },
-  { name: "The Mimic", evidence: ["Spirit Box", "Fingerprints", "Freezing Temps"] }, // Orbs appear, but not actual evidence
+  { name: "The Mimic", evidence: ["Spirit Box", "Fingerprints", "Freezing Temps"] }, // Fake Orbs
   { name: "Moroi", evidence: ["Spirit Box", "Ghost Writing", "Freezing Temps"] },
   { name: "Deogen", evidence: ["Spirit Box", "Ghost Writing", "D.O.T.S Projector"] },
   { name: "Thaye", evidence: ["Ghost Orb", "Ghost Writing", "D.O.T.S Projector"] },
   { name: "Succubus", evidence: ["Spirit Box", "Ghost Orb", "Ghost Writing"] }
 ];
+
 export const gameSettings = {
   difficulty: "normal",
   allowHints: true,
@@ -85,4 +86,5 @@ export function resetGame() {
   game.sanity = 100;
   game.turn = 0;
   game.monitorBooted = false;
+  game.weather = null;
 }
