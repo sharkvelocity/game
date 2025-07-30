@@ -1,4 +1,4 @@
-/***************************************************** 
+/*****************************************************
  * === PHASMA‑PHONEY v2.9 — MAIN.JS (FINAL MASTER) ===
  * Game start, title screen, investigation, UI routing.
  *****************************************************/
@@ -11,8 +11,7 @@ import {
 import {
   renderHUD, renderActionButtons,
   setupNotebookToggle, populateGhostNotebook,
-  updateBackground, logToGame,
-  renderInventoryList
+  updateBackground, logToGame, renderInventoryList
 } from "./ui.js";
 
 import { showLoadout } from "./ui.js";
@@ -20,10 +19,7 @@ import { preloadAllAudio } from "./audioManager.js";
 import { checkTurnEvents } from "./events.js";
 import { clearSave } from "./saveManager.js";
 
-/****************************
- * === CONFIRM LOADOUT ===
- ****************************/
-export function confirmLoadout() {
+function confirmLoadout() {
   const loadout = document.getElementById("loadout-screen");
   if (loadout) loadout.style.display = "none";
 
@@ -33,17 +29,16 @@ export function confirmLoadout() {
   const narrator = document.getElementById("narrator-ui");
   if (narrator) narrator.style.display = "flex";
 
-  if (game.confirmedLoadout?.length) {
+  if (Array.isArray(game.confirmedLoadout)) {
     game.inventory = [...game.confirmedLoadout];
+  } else {
+    game.inventory = [];
   }
 
   renderHUD();
   renderInventoryList?.();
 }
 
-/****************************
- * === INVESTIGATION START ===
- ****************************/
 export function startInvestigation(newGame = true) {
   const loadout = document.getElementById("loadout-screen");
   if (loadout) loadout.style.display = "none";
@@ -63,7 +58,7 @@ export function startInvestigation(newGame = true) {
     game.playerDirection = "N";
     game.sanity = 100;
     game.currentTurn = 1;
-    game.inventory = [...game.confirmedLoadout];
+    game.inventory = [...(game.confirmedLoadout || [])];
     game.itemsPlaced = {};
   }
 
@@ -75,7 +70,7 @@ export function startInvestigation(newGame = true) {
 
   logToGame("🚪 You arrive at the haunted location.");
   logToGame(`🌦️ Weather: ${game.weather}`);
-  logToGame("🧽 Your starting point is the Van. Good luck.");
+  logToGame("🧭 Your starting point is the Van. Good luck.");
 
   preloadAllAudio();
 
@@ -83,19 +78,17 @@ export function startInvestigation(newGame = true) {
   if (log) log.scrollTop = log.scrollHeight;
 }
 
-/****************************
- * === INITIAL SETUP LOGIC ===
- ****************************/
+// === INITIAL SETUP ===
 document.addEventListener("DOMContentLoaded", () => {
-  const startButton = document.getElementById("startButton");
+  const startButton = document.getElementById("start-btn");
   setupNotebookToggle();
   populateGhostNotebook();
   preloadAllAudio();
 
   if (startButton) {
     startButton.addEventListener("click", () => {
-      document.getElementById("title-screen").style.display = "none";
-      document.getElementById("loadout-screen").style.display = "flex";
+      document.getElementById("title-screen")?.style.display = "none";
+      document.getElementById("loadout-screen")?.style.display = "flex";
       showLoadout();
     });
   }
@@ -111,9 +104,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-/*******************************
- * === RANDOM SETUP FUNCTIONS ===
- *******************************/
 function assignWeather() {
   game.weather = randomFromArray(possibleWeather);
 }
@@ -127,14 +117,11 @@ function assignGhostRoom() {
   game.ghostRoom = randomFromArray(allRooms.filter(r => r !== "Van"));
 }
 
-/****************************
- * === COMMAND UI HANDLER ===
- ****************************/
 document.addEventListener("ui-command", (e) => {
   const cmd = e.detail;
   switch (cmd) {
     case "move":
-      logToGame("🧽 Use compass buttons to move.");
+      logToGame("🧭 Use compass buttons to move.");
       break;
     case "look":
       logToGame("👀 You look around carefully...");
@@ -151,9 +138,6 @@ document.addEventListener("ui-command", (e) => {
   }
 });
 
-/****************************
- * === GHOST GUESS POPUP ===
- ****************************/
 function openGhostGuess() {
   const popup = document.getElementById("guess-popup");
   if (!popup) return;
@@ -169,9 +153,6 @@ function openGhostGuess() {
   };
 }
 
-/****************************
- * === RETURN TO VAN ===
- ****************************/
 function returnToVan() {
   game.playerRoom = "Van";
   renderHUD();
@@ -179,9 +160,6 @@ function returnToVan() {
   checkTurnEvents();
 }
 
-/****************************
- * === CLEAR SAVE DEBUG ===
- ****************************/
 window.clearGameSave = () => {
   clearSave();
   alert("Save cleared.");
