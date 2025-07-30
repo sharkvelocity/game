@@ -110,3 +110,8 @@ export function renderUI() {
   updateHUD();
   renderInventoryList();
 }
+export function setupNotebookToggle() {
+  const btn = document.getElementById("notebook-toggle");
+  if (!btn) return;
+  btn.addEventListener("click", toggleNotebook);
+}
