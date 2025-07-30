@@ -10,6 +10,17 @@ export function toggleNotebook() {
   nb.style.display = nb.style.display === "block" ? "none" : "block";
   if (nb.style.display === "block") playNotebookSound();
 }
+export function populateGhostNotebook() {
+  const notebook = document.getElementById("notebook");
+  if (!notebook) return;
+
+  notebook.innerHTML = `<h2>Ghost Notes</h2>`;
+  if (game.evidence.length === 0) {
+    notebook.innerHTML += `<p>No evidence recorded yet.</p>`;
+  } else {
+    notebook.innerHTML += `<ul>` + game.evidence.map(ev => `<li>${ev}</li>`).join("") + `</ul>`;
+  }
+}
 
 // Toggle the Inventory overlay
 export function toggleInventoryOverlay() {
