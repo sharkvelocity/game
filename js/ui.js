@@ -101,7 +101,10 @@ export function renderActionButtons() {
     <button data-cmd="van">Return to Van</button>
   `;
 }
-
+export function renderHUD() {
+  updateHUD();
+  renderInventoryList();
+}
 // Render default HUD/UI after game start
 export function renderUI() {
   updateHUD();
