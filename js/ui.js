@@ -25,13 +25,11 @@ export function populateGhostNotebook() {
   }
 }
 
-
 export function showNotebookUpdateBadge() {
   const badge = document.getElementById("notebook-badge");
   if (badge) badge.style.display = "inline-block";
 }
 
-// Optional helper if needed to rebind toggleNotebook to a button
 export function setupNotebookToggle() {
   const btn = document.getElementById("notebook-toggle");
   if (btn) btn.onclick = toggleNotebook;
@@ -104,6 +102,7 @@ export function updateBackground(direction) {
 
 export function renderActionButtons() {
   const cmd = document.getElementById("command-buttons");
+  if (!cmd) return;
   cmd.innerHTML = `
     <button data-cmd="move">Move</button>
     <button data-cmd="look">Look Around</button>
@@ -138,29 +137,8 @@ export function logToGame(text) {
   log.scrollTop = log.scrollHeight;
 }
 
-// === WEATHER ===
+// === WEATHER (Optional Reference Array) ===
 
 export const possibleWeather = [
   "Clear", "Rain", "Storm", "Fog", "Windy"
 ];
-document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("start-btn")?.addEventListener("click", () => {
-    console.log("Start Game clicked");
-    startGame();
-  });
-
-  document.getElementById("notebook-btn")?.addEventListener("click", () => {
-    console.log("Notebook toggled");
-    toggleNotebook();
-  });
-
-  document.getElementById("inventory-btn")?.addEventListener("click", () => {
-    console.log("Inventory toggled");
-    toggleInventoryOverlay();
-  });
-
-  document.getElementById("reset-btn")?.addEventListener("click", () => {
-    console.log("Reset clicked");
-    location.reload();
-  });
-});
