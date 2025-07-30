@@ -17,12 +17,14 @@ export function populateGhostNotebook() {
   if (!notebook) return;
 
   notebook.innerHTML = `<h2>Ghost Notes</h2>`;
-  if (game.evidence.length === 0) {
+
+  if (!Array.isArray(game.evidence) || game.evidence.length === 0) {
     notebook.innerHTML += `<p>No evidence recorded yet.</p>`;
   } else {
     notebook.innerHTML += `<ul>` + game.evidence.map(ev => `<li>${ev}</li>`).join("") + `</ul>`;
   }
 }
+
 
 export function showNotebookUpdateBadge() {
   const badge = document.getElementById("notebook-badge");
