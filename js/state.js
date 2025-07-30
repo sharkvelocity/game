@@ -15,6 +15,9 @@ export const allRooms = [
   "bathroom", "bedroom", "diningRoom", "foyer", "garage", "hallway",
   "kidsRoom", "kitchen", "livingRoom", "masterBedroom", "storage", "utility", "basement"
 ];
+export const possibleWeather = [
+  "Clear", "Rain", "Storm", "Fog", "Windy"
+];
 
 export const allDirections = ["N", "S", "E", "W"];
 
