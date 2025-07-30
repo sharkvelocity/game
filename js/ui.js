@@ -3,13 +3,15 @@
 import { game } from './state.js';
 import { playNotebookSound } from './audioManager.js';
 
-// Toggle the Notebook display
+// === NOTEBOOK ===
+
 export function toggleNotebook() {
   const nb = document.getElementById("notebook");
   if (!nb) return;
   nb.style.display = nb.style.display === "block" ? "none" : "block";
   if (nb.style.display === "block") playNotebookSound();
 }
+
 export function populateGhostNotebook() {
   const notebook = document.getElementById("notebook");
   if (!notebook) return;
@@ -22,18 +24,26 @@ export function populateGhostNotebook() {
   }
 }
 
-// Toggle the Inventory overlay
+export function showNotebookUpdateBadge() {
+  const badge = document.getElementById("notebook-badge");
+  if (badge) badge.style.display = "inline-block";
+}
+
+// Optional helper if needed to rebind toggleNotebook to a button
+export function setupNotebookToggle() {
+  const btn = document.getElementById("notebook-toggle");
+  if (btn) btn.onclick = toggleNotebook;
+}
+
+// === INVENTORY ===
+
 export function toggleInventoryOverlay() {
   const overlay = document.getElementById("inventory-overlay");
   if (!overlay) return;
   overlay.style.display = overlay.style.display === "block" ? "none" : "block";
   if (overlay.style.display === "block") renderInventoryList();
 }
-export function showNotebookUpdateBadge() {
-  const badge = document.getElementById("notebook-badge");
-  if (badge) badge.style.display = "inline-block";
-}
-// Render held items inside the inventory overlay
+
 export function renderInventoryList() {
   const list = document.getElementById("inventory-list");
   if (!list) return;
@@ -46,11 +56,9 @@ export function renderInventoryList() {
     list.appendChild(li);
   });
 }
-export const possibleWeather = [
-  "Clear", "Rain", "Storm", "Fog", "Windy"
-];
 
-// Update the top-left HUD panel (location, sanity, turn, temp)
+// === HUD ===
+
 export function updateHUD() {
   const loc = document.getElementById("hud-location");
   const turn = document.getElementById("hud-turn");
@@ -61,7 +69,6 @@ export function updateHUD() {
   if (turn) turn.textContent = `📅 Turn: ${game.turn}`;
   if (sanity) sanity.textContent = `🧠 Sanity: ${game.sanity}%`;
 
-  // If holding thermometer, show temp
   if (temp) {
     if (game.inventory.includes("Thermometer") && game.temp !== undefined) {
       temp.textContent = `🌡️ Temp: ${game.temp}°C`;
@@ -72,7 +79,54 @@ export function updateHUD() {
   }
 }
 
-// Display log narration
+export function renderHUD() {
+  updateHUD();
+  renderInventoryList();
+}
+
+export function renderUI() {
+  renderHUD();
+}
+
+// === BACKGROUND ===
+
+export function updateBackground(direction) {
+  const mainScene = document.getElementById("main-scene");
+  if (!mainScene || !game.currentRoom) return;
+  const room = game.currentRoom;
+  const image = `${room}_${direction}`.toLowerCase() + `.png`; // lowercase for filename consistency
+  mainScene.style.backgroundImage = `url('images/${image}')`;
+}
+
+// === ACTION BUTTONS ===
+
+export function renderActionButtons() {
+  const cmd = document.getElementById("command-buttons");
+  cmd.innerHTML = `
+    <button data-cmd="move">Move</button>
+    <button data-cmd="look">Look Around</button>
+    <button data-cmd="inventory">Inventory</button>
+    <button data-cmd="guess">Ghost Guess</button>
+    <button data-cmd="van">${game.currentRoom === "Van" ? "Check Gear" : "Return to Van"}</button>
+  `;
+}
+
+// === LOADOUT ===
+
+export function showLoadout() {
+  const overlays = document.querySelectorAll(".overlay");
+  overlays.forEach(o => o.style.display = "none");
+  const loadout = document.getElementById("loadout-screen");
+  if (loadout) loadout.style.display = "block";
+}
+
+export function confirmLoadout() {
+  const loadout = document.getElementById("loadout-screen");
+  if (loadout) loadout.style.display = "none";
+}
+
+// === NARRATION LOG ===
+
 export function logToGame(text) {
   const log = document.getElementById("game-log");
   if (!log) return;
@@ -82,36 +136,8 @@ export function logToGame(text) {
   log.scrollTop = log.scrollHeight;
 }
 
-// Update directional background image
-export function updateBackground(direction) {
-  const mainScene = document.getElementById("main-scene");
-  if (!mainScene || !game.currentRoom) return;
-  const image = `${game.currentRoom}_${direction}.png`;
-  mainScene.style.backgroundImage = `url('images/${image}')`;
-}
-// === Render UI command buttons (bottom panel) ===
-export function renderActionButtons() {
-  const cmd = document.getElementById("command-buttons");
-  if (!cmd) return;
-  cmd.innerHTML = `
-    <button data-cmd="move">Move</button>
-    <button data-cmd="look">Look Around</button>
-    <button data-cmd="inventory">Inventory</button>
-    <button data-cmd="guess">Ghost Guess</button>
-    <button data-cmd="van">Return to Van</button>
-  `;
-}
-export function renderHUD() {
-  updateHUD();
-  renderInventoryList();
-}
-// Render default HUD/UI after game start
-export function renderUI() {
-  updateHUD();
-  renderInventoryList();
-}
-export function setupNotebookToggle() {
-  const btn = document.getElementById("notebook-toggle");
-  if (!btn) return;
-  btn.addEventListener("click", toggleNotebook);
-}
+// === WEATHER ===
+
+export const possibleWeather = [
+  "Clear", "Rain", "Storm", "Fog", "Windy"
+];
