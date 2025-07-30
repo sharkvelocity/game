@@ -175,22 +175,8 @@
 
   <div id="game-log" class="log-box"></div>
 </div>
-<script type="module">
-  import { startInvestigation } from './main.js';
-  import { showLoadout } from './ui.js';
-
-  document.addEventListener('DOMContentLoaded', () => {
-    // === START BUTTON (Title Screen) ===
-    const startBtn = document.getElementById('startButton');
-    if (startBtn) {
-      startBtn.addEventListener('click', () => {
-        document.getElementById('title-screen').style.display = 'none';
-        document.getElementById('loadout-screen').style.display = 'flex';
-        showLoadout();
-      });
-    }
-
-    // === CONFIRM LOADOUT ===
+  <script>
+   // === CONFIRM LOADOUT ===
     const confirmBtn = document.getElementById('confirm-loadout');
     if (confirmBtn) {
       confirmBtn.addEventListener('click', () => {
@@ -244,6 +230,23 @@
     }
   });
 </script>
+<script type="module">
+  import { startInvestigation } from 'js/main.js';
+  import { showLoadout } from 'js/ui.js';
+</script>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // === START BUTTON (Title Screen) ===
+    const startBtn = document.getElementById('startButton');
+    if (startBtn) {
+      startBtn.addEventListener('click', () => {
+        document.getElementById('title-screen').style.display = 'none';
+        document.getElementById('loadout-screen').style.display = 'flex';
+        showLoadout();
+      });
+    }
+    </script>
+   
 
 <script type="module" src="js/state.js"></script>
 <script type="module" src="js/audioManager.js"></script>
