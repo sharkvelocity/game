@@ -1,265 +1,169 @@
-/*****************************************************
- * === PHASMA-PHONEY v2.9 — ITEMS.JS (FINAL CLEANED) ===
- * Inventory use, cursed item effects, pickups, and HUD sync
- *****************************************************/
-import { game, cursedItems, getCursedItemCost, gameSettings, ghostProfiles } from "./state.js";
+// === js/items.js ===
+
+import { game } from './state.js';
+import { applyYureiSmudge } from './ghostBehavior.js';
 import {
-  logToGame, renderHUD, updateHeldItemsNotebook,
-  updateNearbyItemsNotebook, showNotebookUpdateBadge
-} from "./ui.js";
-import { checkTurnEvents } from "./events.js";
-import { startHunt } from "./ghostBehavior.js";
+  playCrucifixBurn,
+  playSpiritBoxStatic,
+  playDoorCreakRandom,
+  playTarotFlip,
+  playMusicBox,
+  playWildDog
+} from './audioManager.js';
+import { advanceTurn } from './events.js';
 
-/***********************
- * INVENTORY OVERLAY
- ************************/
-export function openInventoryOverlay() {
-  const overlay = document.getElementById("inventory-overlay");
-  if (!overlay) return console.error("❌ Inventory overlay not found!");
-  overlay.style.display = "flex";
-  renderInventoryOverlay();
-}
+// === ITEM USAGE ENTRYPOINT ===
 
-function renderInventoryOverlay() {
-  const list = document.getElementById("inventory-list");
-  if (!list) return;
-  list.innerHTML = "";
+export function useItem(itemName) {
+  const inGhostRoom = game.currentRoom === game.ghostRoom;
 
-  const inv = game.inventory.filter(i => i !== "Notebook");
-  if (inv.length) {
-    inv.forEach(item => {
-      const btn = document.createElement("button");
-      btn.className = "inventory-item";
-      btn.textContent = item;
-      btn.onclick = () => {
-        useItem(item);
-        closeInventoryOverlay();
-      };
-      list.appendChild(btn);
-    });
-  } else {
-    list.innerHTML = "<p>No items currently held.</p>";
-  }
-}
-
-export function closeInventoryOverlay() {
-  const overlay = document.getElementById("inventory-overlay");
-  if (overlay) overlay.style.display = "none";
-}
-
-/***********************
- * USE ITEM
- ************************/
-export function useItem(i) {
-  if (i === "Notebook") {
-    logToGame("You open your Notebook...");
-    document.getElementById("notebook").classList.add("open");
-    return;
-  }
-
-  switch (i) {
-    case "Smudge Stick":
-      if (game.playerRoom === game.ghostRoom) {
-        game.smudgeActive = 3;
-        logToGame("You smudge the ghost room. The entity recoils.");
-      } else {
-        logToGame("You smudge, but nothing reacts.");
-      }
-      consumeItem(i);
-      break;
-
-    case "Camera":
-      if (
-        game.playerRoom === game.ghostRoom &&
-        (ghostProfiles[game.ghost]?.evidence.includes("Ghost Orb") || game.ghost === "The Mimic")
-      ) {
-        logToGame("You snap a photo — shimmering orbs appear on IR!");
-      } else {
-        logToGame("You take a photo, but nothing unusual shows.");
-      }
-      break;
-
-    case "Video Camera":
-      if (game.playerRoom === "Van") {
-        logToGame("You can't place cameras in the van.");
-        break;
-      }
-      if (!game.roomItems[game.playerRoom]?.includes("Video Camera")) {
-        game.roomItems[game.playerRoom] = game.roomItems[game.playerRoom] || [];
-        game.roomItems[game.playerRoom].push("Video Camera");
-        game.cameraPlacements.push(game.playerRoom);
-        logToGame(`You set up a video camera in the ${game.playerRoom}.`);
-      } else {
-        logToGame("There's already a video camera here.");
-      }
-      break;
-
-    case "Crucifix":
-      if (game.playerRoom === "Van") {
-        logToGame("Can't place crucifix in the van.");
-        break;
-      }
-      game.placedCrucifix[game.playerRoom] = 2;
-      logToGame("You place the crucifix to block hunts (2 charges).");
-      consumeItem(i);
-      break;
-
-    case "Salt":
-      if (game.playerRoom === "Van") {
-        logToGame("Salt won't help inside the van.");
-        break;
-      }
-      game.roomItems[game.playerRoom] = game.roomItems[game.playerRoom] || [];
-      if (!game.roomItems[game.playerRoom].includes("Salt")) {
-        game.roomItems[game.playerRoom].push("Salt");
-        logToGame("You sprinkle salt across the floor.");
-        consumeItem(i);
-      } else {
-        logToGame("You've already used salt in this room.");
-      }
-      break;
-
-    case "UV Light":
-      if (game.roomItems[game.playerRoom]?.includes("Footprints")) {
-        logToGame("UV reveals glowing footprints!");
-        game.selectedEvidence.add("Fingerprints");
-      } else {
-        logToGame("You scan the room... nothing lights up.");
-      }
-      break;
-
-    case "Candle":
-      if (game.playerRoom === "Van") {
-        logToGame("No need to place a candle in the van.");
-        break;
-      }
-      game.roomItems[game.playerRoom] = game.roomItems[game.playerRoom] || [];
-      if (!game.roomItems[game.playerRoom].includes("Candle")) {
-        game.roomItems[game.playerRoom].push("Candle");
-        logToGame("You light a candle in the room.");
-        consumeItem(i);
-      } else {
-        logToGame("A candle is already burning here.");
-      }
-      break;
-
-    case "Motion Sensor":
-      if (game.playerRoom !== "Van") {
-        game.roomItems[game.playerRoom] = game.roomItems[game.playerRoom] || [];
-        if (!game.roomItems[game.playerRoom].includes("Motion Sensor")) {
-          game.roomItems[game.playerRoom].push("Motion Sensor");
-          logToGame("You set up a motion sensor.");
-          consumeItem(i);
-        } else {
-          logToGame("Motion sensor already placed.");
-        }
-      } else {
-        logToGame("Motion sensors don’t work inside the van.");
-      }
-      break;
-
+  switch (itemName) {
+    case "EMF Reader": return handleEMFReader(inGhostRoom);
+    case "Spirit Box": return handleSpiritBox(inGhostRoom);
+    case "Thermometer": return handleThermometer(inGhostRoom);
+    case "Camera": return handleCamera(inGhostRoom);
+    case "Smudge Stick": return handleSmudge(inGhostRoom);
+    case "Crucifix": return handleCrucifix(inGhostRoom);
+    case "Tarot Cards": return handleTarotCards();
+    case "Music Box": return handleMusicBox(inGhostRoom);
+    case "Ouija Board": return handleOuijaBoard();
+    case "Voodoo Doll": return handleVoodooDoll(inGhostRoom);
     default:
-      if (cursedItems[i]) {
-        handleCursedItem(i);
-      } else {
-        logToGame(`You use the ${i}, but nothing happens.`);
-      }
+      console.warn("Item not implemented:", itemName);
   }
 
-  endItemTurn();
+  advanceTurn();
 }
 
-function consumeItem(i) {
-  game.inventory = game.inventory.filter(x => x !== i);
-}
+// === STANDARD TOOLS ===
 
-/***********************
- * END TURN + HUD UPDATE
- ************************/
-function endItemTurn() {
-  game.currentTurn++;
-  game.nearbyItems = [...(game.roomItems[game.playerRoom] || [])];
-  renderHUD();
-  updateHeldItemsNotebook();
-  updateNearbyItemsNotebook();
-  showNotebookUpdateBadge();
-  checkTurnEvents();
-  if (gameSettings.autosave) {
-    localStorage.setItem("phasmaPhoneySave", JSON.stringify(game));
+function handleEMFReader(inGhostRoom) {
+  if (inGhostRoom && hasEvidence("EMF 5")) {
+    log("📶 EMF 5 spikes detected!");
+  } else {
+    log("📶 EMF levels are inconclusive.");
   }
 }
 
-/***********************
- * CURSED ITEMS
- ************************/
-export function handleCursedItem(i) {
-  if (game.usedCursedItems[i]) {
-    logToGame(`The ${i} is inert now.`);
-    return;
+function handleSpiritBox(inGhostRoom) {
+  playSpiritBoxStatic();
+  if (inGhostRoom && hasEvidence("Spirit Box")) {
+    log("📻 A voice whispers through the Spirit Box...");
+  } else {
+    log("📻 Nothing but static.");
   }
-  logToGame(`You use the ${i}...`);
-  game.sanity = Math.max(0, game.sanity - getCursedItemCost(i));
-
-  switch (i) {
-    case "Ouija Board":
-      if (Math.random() < 0.2) startHunt();
-      break;
-    case "Tarot Cards":
-      const r = Math.random();
-      if (r < 0.2) logToGame("The Fool — nothing happens.");
-      else if (r < 0.4) logToGame("The Tower — sudden burst of ghost activity!");
-      else if (r < 0.6) { logToGame("The Death card — a hunt is triggered!"); startHunt(); }
-      else logToGame("The Sun — your mind clears. Sanity +10.");
-      if (r >= 0.6) game.sanity = Math.min(100, game.sanity + 10);
-      break;
-    case "Music Box":
-    case "Haunted Mirror":
-      if (Math.random() < 0.3) startHunt();
-      break;
-    case "Summoning Circle":
-      startHunt();
-      break;
-    case "Monkey Paw":
-      if (Math.random() < 0.5) startHunt();
-      break;
-  }
-
-  game.usedCursedItems[i] = true;
-  endItemTurn();
 }
 
-/***********************
- * PICKUP ITEM
- ************************/
-export function pickItem(item) {
-  if (!item) return logToGame("⚠️ No item selected.");
-
-  if (item === "Notebook" || item === "Lighter") {
-    return logToGame(`⚠️ The ${item} is always with you.`);
+function handleThermometer(inGhostRoom) {
+  if (inGhostRoom && hasEvidence("Freezing Temps")) {
+    log("❄️ Breath becomes visible — it's freezing in here.");
+  } else {
+    log("🌡️ Temperature is normal.");
   }
+}
 
-  const carryable = game.inventory.filter(i => i !== "Notebook" && i !== "Lighter");
-  if (carryable.length >= 3) {
-    logToGame("⚠️ Max 3 carryable items at once (Notebook/Lighter excluded).");
+function handleCamera(inGhostRoom) {
+  const ghost = game.ghost.name;
+  if (ghost === "The Mimic" && inGhostRoom) {
+    log("📸 Orbs detected through the camera — possibly a Mimic?");
+  } else if (inGhostRoom && hasEvidence("Ghost Orb")) {
+    log("📸 Ghost Orb spotted!");
+  } else {
+    log("📸 No ghostly activity captured.");
+  }
+}
+
+function handleSmudge(inGhostRoom) {
+  if (!game.inventory.includes("Smudge Stick")) {
+    log("🔥 You need a Smudge Stick to perform that.");
     return;
   }
 
-  game.inventory.push(item);
-
-  // Remove from room
-  if (game.roomItems[game.playerRoom]) {
-    game.roomItems[game.playerRoom] =
-      game.roomItems[game.playerRoom].filter(i => i !== item);
-    if (game.roomItems[game.playerRoom].length === 0)
-      delete game.roomItems[game.playerRoom];
+  if (inGhostRoom) {
+    log("🌀 You light the Smudge Stick — the ghost is repelled.");
+    if (game.ghost.name === "Yurei") {
+      applyYureiSmudge();
+    }
+  } else {
+    log("🌀 You burn the Smudge Stick, but nothing happens.");
   }
 
-  game.nearbyItems = game.nearbyItems.filter(i => i !== item);
+  game.inventory = game.inventory.filter(i => i !== "Smudge Stick");
+}
 
-  logToGame(`You picked up the ${item}.`);
+function handleCrucifix(inGhostRoom) {
+  if (inGhostRoom) {
+    log("✝️ Crucifix placed. You feel a little safer.");
+    playCrucifixBurn();
+  } else {
+    log("✝️ You place the crucifix down, but it's not the ghost's room.");
+  }
+}
 
-  renderHUD();
-  updateHeldItemsNotebook();
-  updateNearbyItemsNotebook();
-  showNotebookUpdateBadge();
+// === CURSED ITEMS ===
+
+function handleTarotCards() {
+  playTarotFlip();
+  const effects = [
+    () => { game.sanity = Math.max(0, game.sanity - 25); log("🎴 The Fool: You feel your mind slip... (-25 Sanity)"); },
+    () => { game.sanity = Math.min(100, game.sanity + 25); log("🎴 The Sun: Warmth fills your mind. (+25 Sanity)"); },
+    () => { triggerGhostInteraction(); log("🎴 The Devil: Something stirs nearby..."); },
+    () => { log("🎴 The Moon: You feel cold. Something is coming."); triggerHunt(); }
+  ];
+  const card = effects[Math.floor(Math.random() * effects.length)];
+  card();
+}
+
+function handleMusicBox(inGhostRoom) {
+  playMusicBox();
+  if (inGhostRoom) {
+    log("🎵 The ghost is lured by the music...");
+    triggerHunt();
+  } else {
+    log("🎵 The box plays its eerie tune, but the air remains still.");
+  }
+}
+
+function handleOuijaBoard() {
+  game.sanity = Math.max(0, game.sanity - 15);
+  log(`🔮 The planchette moves: "${game.ghostRoom.toUpperCase()}" (-15 Sanity)`);
+}
+
+function handleVoodooDoll(inGhostRoom) {
+  if (Math.random() < 0.4) {
+    log("🪆 The doll jerks violently! Ghost responds...");
+    triggerGhostInteraction();
+  } else {
+    log("🪆 Nothing happens. Just a creepy little doll.");
+  }
+}
+
+// === HOOKS ===
+
+function triggerHunt() {
+  // Delegate hunt logic to events.js
+  const evt = new CustomEvent("forceHunt");
+  window.dispatchEvent(evt);
+}
+
+function triggerGhostInteraction() {
+  playDoorCreakRandom();
+}
+
+// === UTILITY ===
+
+function hasEvidence(type) {
+  return game.ghost.evidence.includes(type);
+}
+
+function log(msg) {
+  const logBox = document.getElementById("game-log");
+  if (logBox) {
+    const line = document.createElement("div");
+    line.textContent = msg;
+    logBox.appendChild(line);
+    logBox.scrollTop = logBox.scrollHeight;
+  } else {
+    console.log(msg);
+  }
 }
