@@ -32,7 +32,7 @@ export function openVanMonitor() {
 
   if (!vanMonitorBooted) {
     vanMonitorBooted = true;
-    playAudio("audio/monitor_boot.mp3");
+playMonitorBoot();
     runVanBootSequence(monitor);
   } else {
     renderCameraGrid(monitor);
@@ -54,9 +54,11 @@ export function closeVanMonitor() {
 function runVanBootSequence(monitor) {
   monitor.innerHTML = `
     <img src="logo.png" alt="Logo" style="max-width:200px;margin-bottom:20px;opacity:0.9;">
-    <div id="boot-text" style="width:80%;text-align:left;margin-bottom:10px;"></div>
+    <div id="boot-text" style="width:80%;text-align:left;margin-bottom:10px;">
+    </div>
     <div id="boot-bar-container" style="width:80%;height:20px;background:#111;border:1px solid #0f0;">
-      <div id="boot-bar" style="width:0%;height:100%;background:#0f0;transition:width 0.3s linear;"></div>
+      <div id="boot-bar" style="width:0%;height:100%;background:#0f0;transition:width 0.3s linear;">
+      </div>
     </div>
   `;
   const lines = [
